@@ -12,12 +12,12 @@ name = "storm"
 path = "src/main.rs"
 
 [dependencies]
-pyo3 = { version = "0.19", features = ["extension-module"], optional = true }
-thiserror = "1.0"
+pyo3 = { version = "0.25.0", features = ["extension-module"], optional = true }
+thiserror = "2.0.12"
 
 [features]
 default = []
 python = ["pyo3"]
 
 [dev-dependencies]
-criterion = "0.5" 
+criterion = "0.6.0" 
