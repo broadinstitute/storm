@@ -1,5 +1,5 @@
-# Use Alpine as the base image
-FROM alpine:latest
+# Use a multi-architecture base image
+FROM --platform=$BUILDPLATFORM alpine:latest
 
 # Install minimal required libraries
 RUN apk add --no-cache \
