@@ -117,20 +117,27 @@ jobs:
       
       - name: Build release binary
         run: |
+          # Install both targets
           rustup target add x86_64-unknown-linux-musl
+          rustup target add aarch64-unknown-linux-musl
+          
+          # Build for both architectures
           cargo build --release --target x86_64-unknown-linux-musl --bin storm --no-default-features
-          # Verify the binary is built for musl
-          file target/x86_64-unknown-linux-musl/release/storm
+          cargo build --release --target aarch64-unknown-linux-musl --bin storm --no-default-features
       
-      - name: Upload binary artifact
+      - name: Upload binary artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: storm-binary
-          path: target/x86_64-unknown-linux-musl/release/storm
-      
+          name: storm-binaries
+          path: |
+            target/x86_64-unknown-linux-musl/release/storm
+            target/aarch64-unknown-linux-musl/release/storm
+
       # Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
 
       # Setup Google Cloud Auth
       - id: 'auth'
@@ -169,7 +176,7 @@ jobs:
           build-args: |
             BUILDKIT_INLINE_CACHE=1
           build-contexts: |
-            binary=./target/x86_64-unknown-linux-musl/release
+            binary=./target
 
   wheel:
     name: Build Python Wheel

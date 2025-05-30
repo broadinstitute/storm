@@ -6,8 +6,9 @@ RUN apk add --no-cache \
     ca-certificates \
     musl
 
-# Copy the prebuilt static Rust binary
-COPY --from=binary /storm /usr/local/bin/storm
+# Copy the appropriate binary based on architecture
+ARG TARGETARCH
+COPY --from=binary /target/${TARGETARCH}-unknown-linux-musl/release/storm /usr/local/bin/storm
 
 # Set entrypoint
 ENTRYPOINT ["/usr/local/bin/storm"]
