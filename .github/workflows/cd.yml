@@ -171,7 +171,7 @@ jobs:
           python-version: "3.11"
       
       - name: Upload binary artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-artifacts
           path: |
@@ -262,7 +262,7 @@ jobs:
           maturin build --release --no-default-features --target ${{ matrix.target }}
       
       - name: Upload wheel artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: python-wheel-${{ matrix.platform }}
           path: target/wheels/*.whl
@@ -274,9 +274,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: python-wheel-*
+          merge-multiple: true
      
       - name: Generate release notes
         uses: softprops/action-gh-release@v1
@@ -285,10 +287,7 @@ jobs:
           name: Release v${{ needs.version-bump.outputs.version }}
           files: |
             artifacts/release-artifacts/*
-            artifacts/python-wheel-manylinux/*
-            artifacts/python-wheel-macosx_arm64/*
-            artifacts/python-wheel-macosx_x86_64/*
-            artifacts/python-wheel-win_amd64/*
+            artifacts/python-wheel-*
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
