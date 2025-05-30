@@ -1,7 +1,12 @@
-# Start from an empty base image
-FROM scratch
+# Use Alpine as the base image
+FROM alpine:latest
 
-# Copy the prebuilt static Rust binary from a prior build stage
+# Install minimal required libraries
+RUN apk add --no-cache \
+    ca-certificates \
+    musl
+
+# Copy the prebuilt static Rust binary
 COPY --from=binary /storm /usr/local/bin/storm
 
 # Set entrypoint

@@ -107,22 +107,24 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            target/release
-            target/release/.fingerprint
-            target/release/build
-            target/release/deps
-          key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
+            target/x86_64-unknown-linux-musl/release
+            target/x86_64-unknown-linux-musl/release/.fingerprint
+            target/x86_64-unknown-linux-musl/release/build
+            target/x86_64-unknown-linux-musl/release/deps
+          key: ${{ runner.os }}-target-musl-release-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-target-release-
+            ${{ runner.os }}-target-musl-release-
       
       - name: Build release binary
-        run: cargo build --release --bin storm --no-default-features
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          cargo build --release --target x86_64-unknown-linux-musl --bin storm --no-default-features
       
       - name: Upload binary artifact
         uses: actions/upload-artifact@v3
         with:
           name: storm-binary
-          path: target/release/storm
+          path: target/x86_64-unknown-linux-musl/release/storm
       
       # Set up Docker Buildx
       - name: Set up Docker Buildx
