@@ -181,6 +181,8 @@ jobs:
       # Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
 
       # Setup Google Cloud Auth
       - id: 'auth'
@@ -210,6 +212,7 @@ jobs:
         with:
           context: ./docker
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             us.gcr.io/broad-dsp-lrma/lr-storm:${{ needs.version-bump.outputs.version }}
             us.gcr.io/broad-dsp-lrma/lr-storm:latest
