@@ -1,0 +1,275 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Rust formatting
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      
+      - name: Format Rust code
+        run: cargo fmt --all
+      
+      # Python formatting
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      
+      - name: Install Python formatters
+        run: |
+          python -m pip install black isort
+      
+      - name: Format Python code
+        run: |
+          black python/
+          isort python/
+      
+      # Commit changes if any
+      - name: Commit formatting changes
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git diff --quiet || (git add . && git commit -m "style: format code with black, isort, and rustfmt" && git push)
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "test-build"
+          save-if: true
+      
+      - name: Run tests
+        run: cargo test --verbose --no-default-features
+
+  version-bump:
+    name: Version Bump
+    needs: [format, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Install cargo-bump
+        run: cargo install cargo-bump
+      
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+      
+      - name: Bump version
+        id: bump
+        run: |
+          cargo bump patch
+          VERSION=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          sed -i "s/__version__ = .*/__version__ = \"${VERSION}\"/" python/storm/__init__.py
+          git add Cargo.toml python/storm/__init__.py
+          git commit -m "chore: bump version to ${VERSION}"
+          git tag -a "v${VERSION}" -m "Version ${VERSION}"
+          git push && git push --tags
+        
+  build:
+    name: Build Main Release
+    needs: [format, version-bump]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "release-build"
+          save-if: true
+      
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: |
+            target/release
+            target/release/.fingerprint
+            target/release/build
+            target/release/deps
+          key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-target-release-
+      
+      - name: Build release binary
+        run: cargo build --release --bin storm --no-default-features
+      
+      - name: Prepare release assets
+        run: |
+          cd target/release
+          chmod +x storm
+          sha256sum storm > storm.sha256
+      
+      # Build Python wheel
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      
+      - name: Upload binary artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-artifacts
+          path: |
+            target/release/storm
+            target/release/storm.sha256
+      
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Setup Google Cloud Auth
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+          
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker us.gcr.io --quiet
+
+      # Get branch name for tag
+      - name: Get branch name
+        id: branch-name
+        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+
+      # Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          push: true
+          tags: |
+            us.gcr.io/broad-dsp-lrma/lr-storm:${{ needs.version-bump.outputs.version }}
+            us.gcr.io/broad-dsp-lrma/lr-storm:latest
+          cache-from: |
+            type=registry,ref=us.gcr.io/broad-dsp-lrma/lr-storm:buildcache
+            type=registry,ref=us.gcr.io/broad-dsp-lrma/lr-storm:latest
+          cache-to: type=registry,ref=us.gcr.io/broad-dsp-lrma/lr-storm:buildcache,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+          build-contexts: |
+            binary=./target/release
+
+  wheel:
+    name: Build Python Wheel
+    needs: [format, version-bump]
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: manylinux
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: macosx_arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: win_amd64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.version-bump.outputs.version }}
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      
+      - name: Install maturin
+        run: pip install maturin cffi
+      
+      - name: Build wheel
+        run: |
+          maturin build --release --no-default-features --target ${{ matrix.target }}
+      
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-wheel-${{ matrix.platform }}
+          path: target/wheels/*.whl
+
+  release:
+    name: Create GitHub Release
+    needs: [build, wheel, version-bump]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+     
+      - name: Generate release notes
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.version-bump.outputs.version }}
+          name: Release v${{ needs.version-bump.outputs.version }}
+          files: |
+            artifacts/release-artifacts/*
+            artifacts/python-wheel-manylinux/*
+            artifacts/python-wheel-macosx_arm64/*
+            artifacts/python-wheel-macosx_x86_64/*
+            artifacts/python-wheel-win_amd64/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,6 @@
+cffi==1.17.1
+maturin==1.8.0
+pycparser==2.22
+black==24.2.0
+isort==5.13.2
+ruff==0.2.2

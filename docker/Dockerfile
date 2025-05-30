@@ -1,0 +1,63 @@
+FROM python:3.9-slim AS builder
+
+MAINTAINER Kiran V Garimella
+
+ARG branch
+
+# Install dependencies
+RUN apt-get update --allow-releaseinfo-change && \
+    apt-get install -y --no-install-recommends \
+    curl wget bzip2 make gcc cmake g++ keychain git build-essential zlib1g-dev libssl-dev lbzip2 \
+    libbz2-dev libcurl4-gnutls-dev libncurses5-dev libstdc++6 libncursesw5-dev liblzma-dev clang \
+    libclang-dev pkg-config libtcmalloc-minimal4 python3-dev python3-setuptools fontconfig && \
+    rm -rf /var/lib/apt/lists/*
+
+# Reduced gcloud installation (from framegrace: https://github.com/GoogleCloudPlatform/gsutil/issues/1732#issuecomment-2029591598)
+ENV PATH /google-cloud-sdk/bin:$PATH
+ENV CLOUD_SDK_VERSION=496.0.0
+ENV ARCH=x86_64
+
+RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${CLOUD_SDK_VERSION}-linux-${ARCH}.tar.gz && \
+    tar xzf google-cloud-cli-${CLOUD_SDK_VERSION}-linux-${ARCH}.tar.gz && \
+    rm google-cloud-cli-${CLOUD_SDK_VERSION}-linux-${ARCH}.tar.gz && \
+    rm -rf /google-cloud-sdk/platform/bundledpythonunix && \
+    gcloud config set core/disable_usage_reporting true && \
+    gcloud config set component_manager/disable_update_check true && \
+    gcloud config set metrics/environment github_docker_image && \
+    gcloud components remove -q bq && \
+    rm -rf $(find google-cloud-sdk/ -regex ".*/__pycache__") && \
+    rm -rf google-cloud-sdk/.install/.backup && \
+    rm -rf google-cloud-sdk/bin/anthoscli && \
+    gcloud --version
+
+# Setup crcmodc for gsutil
+RUN pip3 uninstall -y crcmod && \
+    pip3 install --no-cache-dir -U crcmod
+
+# Fix python malloc bug
+RUN echo 'export LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4"' >> ~/.bashrc
+
+# Final stage
+FROM python:3.9-slim
+
+# Install some libraries in final image
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends fontconfig libcurl4-gnutls-dev \
+    libbz2-dev zlib1g-dev libncurses5-dev libncursesw5-dev liblzma-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy necessary files from builder stage
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4 /usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4
+
+# Copy gcloud utilities from builder stage
+COPY --from=builder /google-cloud-sdk /google-cloud-sdk
+
+# Set environment variables
+ENV PATH="/root/.cargo/bin:/google-cloud-sdk/bin:${PATH}"
+ENV LD_PRELOAD="/usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4"
+
+# We want this to be interactive
+CMD ["/bin/bash"]
+
+# Copy storm binary from Github action artifact
+COPY --from=binary /storm /usr/local/bin/storm

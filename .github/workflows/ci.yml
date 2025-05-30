@@ -1,0 +1,210 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+    - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Rust checks
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      
+      - name: Check Rust formatting
+        continue-on-error: true
+        run: |
+          cargo fmt --all -- --check 2>&1 | while read -r line; do
+            echo "::warning file=$(echo $line | cut -d ' ' -f 1)::$(echo $line | cut -d ' ' -f 2-)"
+          done
+      
+      - name: Lint Rust with clippy
+        continue-on-error: true
+        run: |
+          cargo clippy -- -D warnings 2>&1 | while read -r line; do
+            if [[ $line == *"warning:"* ]]; then
+              echo "::warning::$line"
+            fi
+          done
+      
+      # Python checks
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      
+      - name: Check Python formatting
+        continue-on-error: true
+        run: |
+          pip install black isort
+          black --check python/ 2>&1 | while read -r line; do
+            echo "::warning file=python::$line"
+          done
+          isort --check python/ 2>&1 | while read -r line; do
+            echo "::warning file=python::$line"
+          done
+      
+      - name: Lint Python
+        continue-on-error: true
+        run: |
+          pip install ruff
+          ruff check python/ --output-format=github
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "test-build"
+          save-if: true
+      
+      - name: Run tests
+        run: cargo test --verbose --no-default-features
+
+  build:
+    name: Build Branch Release
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "release-build"
+          save-if: true
+      
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: |
+            target/release
+            target/release/.fingerprint
+            target/release/build
+            target/release/deps
+          key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-target-release-
+      
+      - name: Build release binary
+        run: cargo build --release --bin storm --no-default-features
+      
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: storm-binary
+          path: target/release/storm
+      
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Setup Google Cloud Auth
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+          
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker us.gcr.io --quiet
+
+      # Get branch name for tag
+      - name: Get branch name
+        id: branch-name
+        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+
+      # Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          push: true
+          tags: us.gcr.io/broad-dsp-lrma/lr-storm:${{ steps.branch-name.outputs.branch }}
+          cache-from: |
+            type=registry,ref=us.gcr.io/broad-dsp-lrma/lr-storm:buildcache
+            type=registry,ref=us.gcr.io/broad-dsp-lrma/lr-storm:latest
+          cache-to: type=registry,ref=us.gcr.io/broad-dsp-lrma/lr-storm:buildcache,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+          build-contexts: |
+            binary=./target/release
+
+  wheel:
+    name: Build Python Wheel
+    needs: [test, lint]
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: manylinux
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: macosx_arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: win_amd64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      
+      - name: Install maturin
+        run: pip install maturin cffi
+      
+      - name: Build wheel
+        run: |
+          maturin build --release --no-default-features --target ${{ matrix.target }}
+      
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-wheel-${{ matrix.platform }}
+          path: target/wheels/*.whl

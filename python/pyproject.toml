@@ -1,0 +1,29 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "storm"
+requires-python = ">=3.7"
+dependencies = ["cffi"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+] 
+
+[tool.maturin]
+features = ["python"]
+python-source = "python"
+dependencies = ["cffi"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$' 
+
+[tool.ruff]
+# Ignore F403 (unable to detect undefined names from *)
+# and F405 (may be undefined, or defined from star imports)
+ignore = ["F403", "F405"]
+# Also specify which files to check
+include = ["*.py", "*.pyi"] 
