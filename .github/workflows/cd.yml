@@ -79,6 +79,8 @@ jobs:
     needs: [format, test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write
     outputs:
       version: ${{ steps.bump.outputs.version }}
     steps:
@@ -98,15 +100,32 @@ jobs:
       - name: Bump version
         id: bump
         run: |
+          # Pull latest changes
+          git pull origin main
+          
+          # Bump version
           cargo bump patch
           VERSION=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          
+          # Update Python version
           sed -i "s/__version__ = .*/__version__ = \"${VERSION}\"/" python/storm/__init__.py
+          
+          # Commit and push changes
           git add Cargo.toml python/storm/__init__.py
           git commit -m "chore: bump version to ${VERSION}"
           git tag -a "v${VERSION}" -m "Version ${VERSION}"
-          git push && git push --tags
-        
+          
+          # Push with retry logic
+          for i in {1..3}; do
+            if git push origin main && git push origin "v${VERSION}"; then
+              break
+            fi
+            echo "Push attempt $i failed, pulling latest changes..."
+            git pull --rebase origin main
+            sleep 2
+          done
+
   build:
     name: Build Main Release
     needs: [format, version-bump]
