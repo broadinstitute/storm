@@ -1,13 +1,14 @@
-# Use a multi-architecture base image
-FROM --platform=$BUILDPLATFORM alpine:latest
+# Use a minimal base image with required libraries
+FROM debian:bookworm-slim
 
 # Install minimal required libraries
-RUN apk add --no-cache \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     ca-certificates \
-    musl
+    libc6 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the appropriate binary based on architecture
-ARG TARGETARCH
+# Copy the prebuilt static Rust binary
 COPY --from=binary /storm /usr/local/bin/storm
 
 # Set entrypoint
