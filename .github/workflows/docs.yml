@@ -1,0 +1,100 @@
+name: Build and deploy documentation
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Setup Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      # Setup Rust
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      # Install Python dependencies
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/requirements.txt
+          pip install -e python/
+
+      # Build Rust documentation
+      - name: Build Rust documentation
+        run: cargo doc --no-deps --all-features
+
+      # Build Python documentation
+      - name: Build Python documentation
+        run: |
+          cd docs
+          make html
+
+      # Prepare documentation directory
+      - name: Prepare documentation directory
+        run: |
+          mkdir -p target/doc
+          # Create main index.html that redirects to Python docs
+          echo "<!DOCTYPE html>
+          <html>
+            <head>
+              <meta http-equiv=\"refresh\" content=\"0; url=python/index.html\">
+              <title>Storm Documentation</title>
+            </head>
+            <body>
+              <p>Redirecting to <a href=\"python/index.html\">Python documentation</a>...</p>
+            </body>
+          </html>" > target/doc/index.html
+          
+          # Move Python docs to a subdirectory
+          mv docs/build/html target/doc/python
+          
+          # Move Rust docs to a subdirectory
+          mv target/doc/storm target/doc/rust
+          
+          # Create a navigation page
+          echo "<!DOCTYPE html>
+          <html>
+            <head>
+              <title>Storm Documentation</title>
+              <style>
+                body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                h1 { color: #333; }
+                .doc-links { margin-top: 20px; }
+                .doc-links a { display: block; margin: 10px 0; padding: 10px; background: #f5f5f5; text-decoration: none; color: #333; }
+                .doc-links a:hover { background: #e5e5e5; }
+              </style>
+            </head>
+            <body>
+              <h1>Storm Documentation</h1>
+              <div class=\"doc-links\">
+                <a href=\"python/index.html\">Python API Documentation</a>
+                <a href=\"rust/index.html\">Rust API Documentation</a>
+              </div>
+            </body>
+          </html>" > target/doc/index.html
+          
+          touch target/doc/.nojekyll
+
+      # Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: target/doc 
