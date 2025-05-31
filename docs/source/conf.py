@@ -6,12 +6,24 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-import storm
+import os
+import re
+from pathlib import Path
+
+# Get version from Cargo.toml
+def get_version():
+    cargo_toml = Path(__file__).parent.parent.parent / "Cargo.toml"
+    with open(cargo_toml) as f:
+        content = f.read()
+        match = re.search(r'version\s*=\s*"([^"]+)"', content)
+        if match:
+            return match.group(1)
+        return "0.0.0"  # fallback version
 
 project = 'storm'
 copyright = '2024, Kiran V Garimella'
 author = 'Kiran V Garimella'
-release = storm.version()
+release = get_version()
 version = release
 
 
