@@ -163,7 +163,6 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64
           tags: |
             us.gcr.io/broad-dsp-lrma/lr-storm:${{ needs.version-bump.outputs.version }}
             us.gcr.io/broad-dsp-lrma/lr-storm:latest
@@ -173,6 +172,7 @@ jobs:
           cache-to: type=registry,ref=us.gcr.io/broad-dsp-lrma/lr-storm:buildcache,mode=max
           build-args: |
             BUILDKIT_INLINE_CACHE=1
+          file: ./docker/Dockerfile
 
   wheel:
     name: Build Python Wheel
