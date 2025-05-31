@@ -1,0 +1,31 @@
+# Build stage
+FROM rust:1.75-slim as builder
+
+# Install build essentials
+RUN apt-get update && \
+    apt-get install -y build-essential
+
+# Set the working directory
+WORKDIR /usr/src/storm
+
+# Copy the source code
+COPY . .
+
+# Build the binary for the native architecture
+RUN cargo build --release
+
+# Final stage
+FROM debian:bookworm-slim
+
+# Install minimal required libraries
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libc6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the prebuilt binary from the builder stage
+COPY --from=builder /usr/src/storm/target/release/storm /usr/local/bin/storm
+
+# Set entrypoint
+ENTRYPOINT ["/usr/local/bin/storm"] 
