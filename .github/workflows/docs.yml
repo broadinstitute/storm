@@ -33,7 +33,6 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install maturin
           pip install -r docs/requirements.txt
           # Build and install the Python package
           maturin build --manifest-path Cargo.toml

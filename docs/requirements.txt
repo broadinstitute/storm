@@ -1,4 +1,6 @@
 sphinx
 sphinx-rtd-theme
 sphinxcontrib-napoleon
+maturin
+cffi
 
