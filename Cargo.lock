@@ -491,7 +491,7 @@ dependencies = [
 
 [[package]]
 name = "storm"
-version = "0.0.14"
+version = "0.0.16"
 dependencies = [
  "criterion",
  "pyo3",
