@@ -1,5 +1,5 @@
 # Build stage
-FROM messense/rust-musl-cross:x86_64-musl as builder
+FROM messense/rust-musl-cross:x86_64-musl AS builder
 
 # Set the working directory
 WORKDIR /usr/src/storm
