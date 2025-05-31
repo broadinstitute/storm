@@ -36,10 +36,8 @@ jobs:
           pip install maturin
           pip install -r docs/requirements.txt
           # Build and install the Python package
-          cd python
-          maturin build
-          pip install dist/*.whl
-          cd ..
+          maturin build --manifest-path Cargo.toml
+          pip install target/wheels/*.whl
 
       # Build Rust documentation
       - name: Build Rust documentation
