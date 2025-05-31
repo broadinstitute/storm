@@ -94,37 +94,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: "release-build"
-          save-if: true
-      
-      - name: Cache target directory
-        uses: actions/cache@v3
-        with:
-          path: |
-            target/x86_64-unknown-linux-musl/release
-            target/x86_64-unknown-linux-musl/release/.fingerprint
-            target/x86_64-unknown-linux-musl/release/build
-            target/x86_64-unknown-linux-musl/release/deps
-          key: ${{ runner.os }}-target-musl-release-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-target-musl-release-
-      
-      - name: Build release binary
-        run: |
-          cargo build --release --bin storm --no-default-features
-      
-      - name: Upload binary artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: storm-binary
-          path: target/release/storm
-
       # Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -155,7 +124,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: ./docker
+          context: .
           push: true
           tags: us.gcr.io/broad-dsp-lrma/lr-storm:${{ steps.branch-name.outputs.branch }}
           cache-from: |
@@ -164,8 +133,6 @@ jobs:
           cache-to: type=registry,ref=us.gcr.io/broad-dsp-lrma/lr-storm:buildcache,mode=max
           build-args: |
             BUILDKIT_INLINE_CACHE=1
-          build-contexts: |
-            binary=./target/release
 
   wheel:
     name: Build Python Wheel

@@ -134,50 +134,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: "release-build"
-          save-if: true
-      
-      - name: Cache target directory
-        uses: actions/cache@v3
-        with:
-          path: |
-            target/release
-            target/release/.fingerprint
-            target/release/build
-            target/release/deps
-          key: ${{ runner.os }}-target-release-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-target-release-
-      
-      - name: Build release binary
-        run: cargo build --release --bin storm --no-default-features
-      
-      - name: Prepare release assets
-        run: |
-          cd target/release
-          chmod +x storm
-          sha256sum storm > storm.sha256
-      
-      # Build Python wheel
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-      
-      - name: Upload binary artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-artifacts
-          path: |
-            target/release/storm
-            target/release/storm.sha256
-      
       # Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -193,11 +149,6 @@ jobs:
       - name: Configure Docker for GCR
         run: gcloud auth configure-docker us.gcr.io --quiet
 
-      # Get branch name for tag
-      - name: Get branch name
-        id: branch-name
-        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
-
       # Cache Docker layers
       - name: Cache Docker layers
         uses: actions/cache@v3
@@ -210,7 +161,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: ./docker
+          context: .
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
@@ -222,8 +173,6 @@ jobs:
           cache-to: type=registry,ref=us.gcr.io/broad-dsp-lrma/lr-storm:buildcache,mode=max
           build-args: |
             BUILDKIT_INLINE_CACHE=1
-          build-contexts: |
-            binary=./target/release
 
   wheel:
     name: Build Python Wheel
@@ -289,7 +238,6 @@ jobs:
           tag_name: v${{ needs.version-bump.outputs.version }}
           name: Release v${{ needs.version-bump.outputs.version }}
           files: |
-            artifacts/release-artifacts/*
             artifacts/python-wheel-*
           generate_release_notes: true
         env:
