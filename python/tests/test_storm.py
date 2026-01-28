@@ -434,6 +434,31 @@ class TestAssociationWithRealData:
             assert "unit_id" in result
             # Results should have real statistics (not all zeros)
             assert "p_value" in result or "error" in result
+    
+    def test_run_glm_with_covariates(self, cache):
+        """Test run_glm with covariates DataFrame."""
+        import polars as pl
+        
+        # Get sample IDs
+        sample_ids = cache.genotypes["sample_id"].unique().to_list()
+        n_samples = len(sample_ids)
+        
+        # Create phenotype
+        phenotype = pl.Series("phenotype", [float(i % 2) for i in range(n_samples)])
+        
+        # Create covariates DataFrame with sample_id column
+        covariates = pl.DataFrame({
+            "sample_id": sample_ids,
+            "age": [float(25 + i) for i in range(n_samples)],
+            "sex": [float(i % 2) for i in range(n_samples)],
+        })
+        
+        # Run with covariates
+        results = storm.run_glm(cache, phenotype, covariates=covariates)
+        
+        assert len(results) > 0
+        assert "unit_id" in results.columns
+        assert "p_value" in results.columns
 
 
 if __name__ == "__main__":

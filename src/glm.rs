@@ -178,10 +178,13 @@ fn residualize(y: &[f64], covariates: &[Vec<f64>]) -> Result<Vec<f64>, GlmError>
 }
 
 /// Logistic regression using iteratively reweighted least squares (IRLS)
+///
+/// When covariates are provided, they are included in the model alongside the main predictor.
+/// Uses Newton-Raphson to fit all coefficients simultaneously.
 pub fn logistic_regression(
     x: &[f64],        // Predictor
     y: &[f64],        // Binary outcome (0/1)
-    _covariates: Option<&[Vec<f64>]>, // Optional covariates (TODO: implement)
+    covariates: Option<&[Vec<f64>]>, // Optional covariates
     max_iter: usize,
 ) -> Result<(f64, f64, f64, f64), GlmError> {
     if x.len() != y.len() {
@@ -200,63 +203,169 @@ pub fn logistic_regression(
         }
     }
 
-    // Simple logistic regression using Newton-Raphson
-    let mut beta0: f64 = 0.0;
-    let mut beta1: f64 = 0.0;
+    // Validate covariates if provided
+    let n_covs = covariates.map(|c| c.len()).unwrap_or(0);
+    if let Some(covs) = covariates {
+        for cov in covs {
+            if cov.len() != n {
+                return Err(GlmError::InvalidInput(
+                    "Covariate length must match sample size".to_string()
+                ));
+            }
+        }
+    }
+
+    // Total number of parameters: intercept + main effect + covariates
+    let n_params = 2 + n_covs;
+    
+    // Initialize coefficients
+    let mut betas: Vec<f64> = vec![0.0; n_params];
     
     for _iter in 0..max_iter {
-        let mut grad0 = 0.0;
-        let mut grad1 = 0.0;
-        let mut hess00 = 0.0;
-        let mut hess01 = 0.0;
-        let mut hess11 = 0.0;
+        // Compute gradient and Hessian
+        let mut grad: Vec<f64> = vec![0.0; n_params];
+        let mut hess: Vec<Vec<f64>> = vec![vec![0.0; n_params]; n_params];
         
         for i in 0..n {
-            let eta = beta0 + beta1 * x[i];
+            // Compute linear predictor: eta = b0 + b1*x + sum(bk*covk)
+            let mut eta = betas[0] + betas[1] * x[i];
+            if let Some(covs) = covariates {
+                for (k, cov) in covs.iter().enumerate() {
+                    eta += betas[2 + k] * cov[i];
+                }
+            }
+            
             let p = 1.0 / (1.0 + (-eta).exp());
             let w = p * (1.0 - p);
-            
             let residual = y[i] - p;
             
-            grad0 += residual;
-            grad1 += residual * x[i];
+            // Build design vector for this observation
+            let mut design: Vec<f64> = vec![1.0, x[i]];
+            if let Some(covs) = covariates {
+                for cov in covs {
+                    design.push(cov[i]);
+                }
+            }
             
-            hess00 += w;
-            hess01 += w * x[i];
-            hess11 += w * x[i] * x[i];
+            // Update gradient and Hessian
+            for j in 0..n_params {
+                grad[j] += residual * design[j];
+                for k in 0..n_params {
+                    hess[j][k] += w * design[j] * design[k];
+                }
+            }
         }
         
-        // Solve 2x2 system
-        let det = hess00 * hess11 - hess01 * hess01;
-        if det.abs() < 1e-10 {
-            break;
+        // Solve system using simple 2x2 or general approach
+        let delta = if n_params == 2 {
+            // Simple 2x2 case (no covariates)
+            let det = hess[0][0] * hess[1][1] - hess[0][1] * hess[1][0];
+            if det.abs() < 1e-10 {
+                break;
+            }
+            vec![
+                (hess[1][1] * grad[0] - hess[0][1] * grad[1]) / det,
+                (-hess[1][0] * grad[0] + hess[0][0] * grad[1]) / det,
+            ]
+        } else {
+            // General case: use simple iteration (Gauss-Seidel style)
+            // For small number of covariates, this works reasonably well
+            solve_linear_system(&hess, &grad)?
+        };
+        
+        // Update betas
+        let mut converged = true;
+        for j in 0..n_params {
+            betas[j] += delta[j];
+            if delta[j].abs() > 1e-6 {
+                converged = false;
+            }
         }
         
-        let delta0 = (hess11 * grad0 - hess01 * grad1) / det;
-        let delta1 = (-hess01 * grad0 + hess00 * grad1) / det;
-        
-        beta0 += delta0;
-        beta1 += delta1;
-        
-        if delta0.abs() < 1e-6 && delta1.abs() < 1e-6 {
+        if converged {
             break;
         }
     }
     
-    // Compute standard error from Hessian
+    // Compute standard error from Hessian for main effect (beta[1])
     let mut hess11 = 0.0;
     for i in 0..n {
-        let eta = beta0 + beta1 * x[i];
+        let mut eta = betas[0] + betas[1] * x[i];
+        if let Some(covs) = covariates {
+            for (k, cov) in covs.iter().enumerate() {
+                eta += betas[2 + k] * cov[i];
+            }
+        }
         let p = 1.0 / (1.0 + (-eta).exp());
         let w = p * (1.0 - p);
         hess11 += w * x[i] * x[i];
     }
     
     let se = if hess11 > 1e-10 { 1.0 / hess11.sqrt() } else { f64::INFINITY };
-    let z_stat = beta1 / se;
+    let z_stat = betas[1] / se;
     let p_value = 2.0 * (1.0 - normal_cdf(z_stat.abs()));
     
-    Ok((beta1, se, z_stat, p_value))
+    Ok((betas[1], se, z_stat, p_value))
+}
+
+/// Simple linear system solver for small systems (used in logistic regression with covariates)
+fn solve_linear_system(a: &[Vec<f64>], b: &[f64]) -> Result<Vec<f64>, GlmError> {
+    let n = b.len();
+    if n == 0 || a.len() != n {
+        return Err(GlmError::InvalidInput("Invalid system dimensions".to_string()));
+    }
+    
+    // Make copies for in-place operations
+    let mut aug: Vec<Vec<f64>> = a.iter().map(|row| {
+        let mut r = row.clone();
+        r.push(0.0); // Will set b value
+        r
+    }).collect();
+    
+    for i in 0..n {
+        aug[i][n] = b[i];
+    }
+    
+    // Gaussian elimination with partial pivoting
+    for col in 0..n {
+        // Find pivot
+        let mut max_row = col;
+        let mut max_val = aug[col][col].abs();
+        for row in (col + 1)..n {
+            if aug[row][col].abs() > max_val {
+                max_val = aug[row][col].abs();
+                max_row = row;
+            }
+        }
+        
+        if max_val < 1e-10 {
+            // Near-singular, return zeros
+            return Ok(vec![0.0; n]);
+        }
+        
+        // Swap rows
+        aug.swap(col, max_row);
+        
+        // Eliminate
+        for row in (col + 1)..n {
+            let factor = aug[row][col] / aug[col][col];
+            for j in col..=n {
+                aug[row][j] -= factor * aug[col][j];
+            }
+        }
+    }
+    
+    // Back substitution
+    let mut x = vec![0.0; n];
+    for i in (0..n).rev() {
+        let mut sum = aug[i][n];
+        for j in (i + 1)..n {
+            sum -= aug[i][j] * x[j];
+        }
+        x[i] = sum / aug[i][i];
+    }
+    
+    Ok(x)
 }
 
 /// BinomiRare test for rare variant burden testing

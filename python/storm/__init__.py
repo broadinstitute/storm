@@ -273,11 +273,33 @@ def run_glm(
             
             phenotype_json = json.dumps(pheno_dict)
             
+            # Convert covariates to JSON if provided
+            covariates_json = None
+            if covariates is not None and HAS_POLARS:
+                # Covariates should be a DataFrame with sample_id column
+                cov_dict = {}
+                if "sample_id" in covariates.columns:
+                    sample_ids = covariates["sample_id"].to_list()
+                    for col in covariates.columns:
+                        if col != "sample_id":
+                            values = covariates[col].to_list()
+                            cov_dict[col] = {sid: float(v) for sid, v in zip(sample_ids, values)}
+                else:
+                    # Assume rows align with genotypes sample order
+                    if cache.genotypes is not None:
+                        sample_ids = cache.genotypes["sample_id"].unique().to_list()
+                        for col in covariates.columns:
+                            values = covariates[col].to_list()
+                            cov_dict[col] = {sid: float(values[i]) for i, sid in enumerate(sample_ids) if i < len(values)}
+                if cov_dict:
+                    covariates_json = json.dumps(cov_dict)
+            
             # Call Rust run_association
             results_json = py_run_association(
                 str(cache.cache_dir),
                 phenotype_json,
                 plan,
+                covariates_json,
             )
             
             results_list = json.loads(results_json)
