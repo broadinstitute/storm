@@ -17,3 +17,7 @@ target/
 #.idea/
 # Ralph config (may contain API key)
 .cursor/ralph-config.json
+**/__pycache__/
+*.so
+test_*_cache/
+*.pyc

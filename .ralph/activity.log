@@ -668,3 +668,67 @@ except Exception as e:
 [14:36:55] 🟢 SHELL cd /Users/kiran/repositories/storm && maturin --version 2>&1 || echo "maturin not installed" → exit 0
 [14:37:01] 🟢 SHELL cd /Users/kiran/repositories/storm && maturin develop --features python 2>&1 → exit 0
 [14:37:04] 🟢 TOKENS: 45313 / 80000 (56%) [read:172KB write:0KB assist:1KB shell:0KB]
+[14:37:16] 🟢 SHELL cd /Users/kiran/repositories/storm && unset VIRTUAL_ENV && maturin develop --features python 2>&1 → exit 0
+[14:37:20] 🟢 SHELL cd /Users/kiran/repositories/storm && unset VIRTUAL_ENV && python -c "import storm; print('Version:', storm.version()); print('HAS_RUST:', storm.HAS_RUST)" → exit 0
+[14:37:27] 🟡 READ /Users/kiran/repositories/storm/python/storm/__init__.py (351 lines, ~34.2KB)
+[14:37:34] 🟡 TOKENS: 54201 / 80000 (67%) [read:207KB write:0KB assist:1KB shell:0KB]
+[14:37:38] 🟡 SHELL cd /Users/kiran/repositories/storm && unset VIRTUAL_ENV && python -c "
+import storm
+
+# Test version
+print('1. storm.version():', storm.version())
+
+# Test verify_cache
+result = storm.verify_cache('storm_cache')
+print('2. verify_cache:', result['is_valid'])
+
+# Test load_plan  
+plan = storm.load_plan('fixtures/plan.yaml')
+print('3. load_plan:', list(plan.keys())[:3])
+
+# Test load_cache
+cache = storm.load_cache('storm_cache')
+print('4. load_cache:', cache.cache_dir)
+
+# Test explain
+exp = storm.explain(cache, cache.test_units['id'][0])
+print('5. explain:', exp[:50].replace(chr(10), ' '))
+
+print('\\nAll Python binding tests passed!')
+" → exit 0
+[14:37:44] 🟡 SHELL cd /Users/kiran/repositories/storm && unset VIRTUAL_ENV && rm -rf /tmp/storm_test_cache && python -c "
+import storm
+
+# Test StormCache.build
+cache = storm.StormCache.build(
+    sv_vcf='fixtures/sv_small.vcf',
+    trgt_vcf='fixtures/trgt_small.vcf',
+    catalog_bed='fixtures/trexplorer.bed',
+    catalog_json='fixtures/trexplorer.json',
+    output_dir='/tmp/storm_test_cache',
+)
+print('Build stats:', cache._build_stats)
+print('Test units:', cache.test_units.shape if cache.test_units is not None else 'None')
+print('Genotypes:', cache.genotypes.shape if cache.genotypes is not None else 'None')
+print('Catalog:', cache.catalog.shape if cache.catalog is not None else 'None')
+" → exit 0
+[14:37:51] 🟡 SHELL cd /Users/kiran/repositories/storm && unset VIRTUAL_ENV && python -c "
+import polars as pl
+import storm
+
+cache = storm.load_cache('storm_cache')
+print('Cache loaded:', cache.cache_dir)
+
+# Create a simple phenotype series
+samples = cache.genotypes['sample_id'].unique().to_list()
+phenotype = pl.Series('phenotype', [1 if i % 2 == 0 else 0 for i in range(len(samples))])
+
+# Run GLM
+results = storm.run_glm(cache, phenotype)
+print('Results shape:', results.shape)
+print('Result columns:', results.columns)
+print('First row:', results.row(0, named=True) if len(results) > 0 else 'empty')
+" → exit 0
+[14:38:04] 🟡 TOKENS: 54241 / 80000 (67%) [read:207KB write:0KB assist:1KB shell:0KB]
+[14:38:12] 🔴 READ /Users/kiran/repositories/storm/src/lib.rs (780 lines, ~76.1KB)
+[14:38:12] 🔴 WARN: Approaching token limit (73773 >= 70000)

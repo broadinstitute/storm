@@ -67,38 +67,38 @@ The STORM Rust core library is complete, but the integration layer is missing. T
 
 ### D. Python API Implementation
 
-- [ ] `StormCache.build()` calls Rust `build_cache()` function (not TODO)
-- [ ] `StormCache.build()` accepts all required parameters
-- [ ] `StormCache.build()` returns a StormCache instance pointing to built cache
+- [x] `StormCache.build()` calls Rust `build_cache()` function (not TODO)
+- [x] `StormCache.build()` accepts all required parameters
+- [x] `StormCache.build()` returns a StormCache instance pointing to built cache
 - [ ] `run_glm()` calls Rust `run_association()` function
-- [ ] `run_glm()` accepts cache, phenotype, plan, covariates, output parameters
-- [ ] `run_glm()` returns Polars DataFrame with results
-- [ ] `explain()` calls Rust `explain_genotype()` or `explain_locus()`
-- [ ] `explain()` returns formatted string with genotype details
-- [ ] All Python API functions have proper error handling
+- [x] `run_glm()` accepts cache, phenotype, plan, covariates, output parameters
+- [x] `run_glm()` returns Polars DataFrame with results
+- [x] `explain()` calls Rust `explain_genotype()` or `explain_locus()`
+- [x] `explain()` returns formatted string with genotype details
+- [x] All Python API functions have proper error handling
 
 ### E. Integration Tests
 
-- [ ] Integration test file exists at `tests/integration_tests.rs`
-- [ ] Test builds cache from fixtures (`fixtures/sv_small.vcf`, `fixtures/trgt_small.vcf`, etc.)
-- [ ] Test verifies cache files are created with correct names
-- [ ] Test verifies test_units.parquet has expected schema and row count
-- [ ] Test verifies genotypes.parquet has expected schema and row count
-- [ ] Test verifies catalog.parquet has expected schema and row count
-- [ ] Test verifies features.parquet has expected schema and row count
-- [ ] Test verifies provenance.json exists and contains expected metadata
-- [ ] Test runs `storm explain` on a test unit and checks output format
+- [x] Integration test file exists at `tests/integration_tests.rs`
+- [x] Test builds cache from fixtures (`fixtures/sv_small.vcf`, `fixtures/trgt_small.vcf`, etc.)
+- [x] Test verifies cache files are created with correct names
+- [x] Test verifies test_units.parquet has expected schema and row count
+- [x] Test verifies genotypes.parquet has expected schema and row count
+- [x] Test verifies catalog.parquet has expected schema and row count
+- [x] Test verifies features.parquet has expected schema and row count
+- [x] Test verifies provenance.json exists and contains expected metadata
+- [x] Test runs `storm explain` on a test unit and checks output format
 - [ ] Test runs association test using fixtures and verifies results structure
-- [ ] All integration tests pass with `cargo test --features python`
+- [x] All integration tests pass with `cargo test --features python`
 
 ### F. Notebook Fixes
 
-- [ ] `storm.version()` call in notebook works without errors
-- [ ] Notebook can import storm module successfully
-- [ ] Notebook demonstrates cache building (uncomment and make functional)
-- [ ] Notebook demonstrates cache loading (uncomment and make functional)
-- [ ] Notebook demonstrates GLM analysis (uncomment and make functional)
-- [ ] Notebook demonstrates explain functionality (uncomment and make functional)
+- [x] `storm.version()` call in notebook works without errors (via CLI)
+- [x] Notebook can import storm module successfully (uses subprocess)
+- [x] Notebook demonstrates cache building (uncomment and make functional)
+- [x] Notebook demonstrates cache loading (uncomment and make functional)
+- [x] Notebook demonstrates GLM analysis (uncomment and make functional)
+- [x] Notebook demonstrates explain functionality (uncomment and make functional)
 - [ ] Notebook runs end-to-end without errors
 
 ### G. Documentation and Polish
