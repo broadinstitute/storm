@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
+use serde::Serialize;
 use thiserror::Error;
 
 /// Errors that can occur during TRGT VCF parsing
@@ -20,7 +21,7 @@ pub enum TrgtVcfError {
 }
 
 /// A parsed TRGT record
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TrgtRecord {
     /// Chromosome
     pub chrom: String,
@@ -43,7 +44,7 @@ pub struct TrgtRecord {
 }
 
 /// TRGT genotype with allele lengths
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct TrgtGenotype {
     /// Genotype allele indices
     pub gt: Vec<Option<u8>>,

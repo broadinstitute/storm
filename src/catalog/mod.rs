@@ -9,6 +9,7 @@ pub use bed::{parse_trexplorer_bed, BedRecord, BedError};
 pub use json::{parse_trexplorer_json, JsonRecord, JsonError};
 
 use std::collections::HashMap;
+use serde::Serialize;
 use thiserror::Error;
 
 /// Errors that can occur with catalog operations
@@ -23,7 +24,7 @@ pub enum CatalogError {
 }
 
 /// A unified catalog entry combining BED and JSON data
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CatalogEntry {
     /// Repeat ID
     pub id: String,
@@ -54,7 +55,7 @@ pub struct CatalogEntry {
 }
 
 /// Unified repeat catalog
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct Catalog {
     /// Entries indexed by ID
     pub entries: HashMap<String, CatalogEntry>,
