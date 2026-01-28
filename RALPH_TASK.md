@@ -61,22 +61,22 @@ The STORM integration layer is complete, but there are several bugs and incomple
 
 ### E. Code Quality and Documentation
 
-- [ ] Remove placeholder comments in `py_run_association()` (line 862-863)
-- [ ] Add docstrings explaining phenotype format requirements
-- [ ] Add docstrings explaining plan-based model selection
+- [x] Remove placeholder comments in `py_run_association()` (line 862-863)
+- [x] Add docstrings explaining phenotype format requirements
+- [x] Add docstrings explaining plan-based model selection
 - [ ] Add examples in docstrings for common use cases
-- [ ] Update README with association testing examples
-- [ ] Document expected phenotype formats (Polars Series, dict, list)
-- [ ] Code follows consistent style (run formatters if needed)
+- [x] Update README with association testing examples
+- [x] Document expected phenotype formats (Polars Series, dict, list)
+- [x] Code follows consistent style (run formatters if needed)
 
 ### F. Verification and Testing
 
-- [ ] Run full test suite: `cargo test --features python && cd python && python -m pytest -W error`
-- [ ] Verify Python extension builds correctly with `maturin develop`
+- [x] Run full test suite: `cargo test --features python && cd python && python -m pytest -W error`
+- [x] Verify Python extension builds correctly with `maturin develop`
 - [ ] Verify notebook runs without warnings
-- [ ] Verify CLI commands work end-to-end
-- [ ] Verify association results are reasonable (not all zeros/ones)
-- [ ] Verify plan-based model selection works correctly
+- [x] Verify CLI commands work end-to-end
+- [x] Verify association results are reasonable (not all zeros/ones)
+- [x] Verify plan-based model selection works correctly
 
 ---
 

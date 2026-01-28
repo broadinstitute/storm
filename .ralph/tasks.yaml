@@ -3,8 +3,8 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769642584
-generated_at: 2026-01-28T23:23:05Z
+source_mtime: 1769642597
+generated_at: 2026-01-28T23:23:43Z
 
 tasks:
   - id: "line_21"
@@ -226,21 +226,21 @@ tasks:
     raw_marker: -
   - id: "line_64"
     line_number: 64
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Remove placeholder comments in `py_run_association()` (line 862-863)
     indent_level: 0
     raw_marker: -
   - id: "line_65"
     line_number: 65
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Add docstrings explaining phenotype format requirements
     indent_level: 0
     raw_marker: -
   - id: "line_66"
     line_number: 66
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Add docstrings explaining plan-based model selection
     indent_level: 0
@@ -254,35 +254,35 @@ tasks:
     raw_marker: -
   - id: "line_68"
     line_number: 68
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Update README with association testing examples
     indent_level: 0
     raw_marker: -
   - id: "line_69"
     line_number: 69
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Document expected phenotype formats (Polars Series, dict, list)
     indent_level: 0
     raw_marker: -
   - id: "line_70"
     line_number: 70
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Code follows consistent style (run formatters if needed)
     indent_level: 0
     raw_marker: -
   - id: "line_74"
     line_number: 74
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Run full test suite: `cargo test --features python && cd python && python -m pytest -W error`
     indent_level: 0
     raw_marker: -
   - id: "line_75"
     line_number: 75
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Verify Python extension builds correctly with `maturin develop`
     indent_level: 0
@@ -296,21 +296,21 @@ tasks:
     raw_marker: -
   - id: "line_77"
     line_number: 77
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Verify CLI commands work end-to-end
     indent_level: 0
     raw_marker: -
   - id: "line_78"
     line_number: 78
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Verify association results are reasonable (not all zeros/ones)
     indent_level: 0
     raw_marker: -
   - id: "line_79"
     line_number: 79
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Verify plan-based model selection works correctly
     indent_level: 0
