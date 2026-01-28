@@ -3,97 +3,97 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769642183
-generated_at: 2026-01-28T23:19:23Z
+source_mtime: 1769642584
+generated_at: 2026-01-28T23:23:05Z
 
 tasks:
   - id: "line_21"
     line_number: 21
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Fix Polars Series conversion in `run_glm()` (line 206 checks `to_dict` but should check `to_list`)
     indent_level: 0
     raw_marker: -
   - id: "line_22"
     line_number: 22
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `run_glm()` handles Polars Series correctly without warnings
     indent_level: 0
     raw_marker: -
   - id: "line_23"
     line_number: 23
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `run_glm()` handles dict-like phenotypes correctly
     indent_level: 0
     raw_marker: -
   - id: "line_24"
     line_number: 24
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `run_glm()` handles list/array phenotypes correctly
     indent_level: 0
     raw_marker: -
   - id: "line_25"
     line_number: 25
-    status: pending
+    status: completed
     parallel_group: 999999
     description: All Python tests pass without warnings (`pytest -W error`)
     indent_level: 0
     raw_marker: -
   - id: "line_26"
     line_number: 26
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Error messages are clear when phenotype format is incorrect
     indent_level: 0
     raw_marker: -
   - id: "line_30"
     line_number: 30
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `py_run_association()` calls actual `run_association()` from `glm.rs` module
     indent_level: 0
     raw_marker: -
   - id: "line_31"
     line_number: 31
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `py_run_association()` loads test units from cache
     indent_level: 0
     raw_marker: -
   - id: "line_32"
     line_number: 32
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `py_run_association()` loads genotypes from cache
     indent_level: 0
     raw_marker: -
   - id: "line_33"
     line_number: 33
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `py_run_association()` extracts encoded predictor values for each test unit
     indent_level: 0
     raw_marker: -
   - id: "line_34"
     line_number: 34
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `py_run_association()` applies plan rules to select encoding/model
     indent_level: 0
     raw_marker: -
   - id: "line_35"
     line_number: 35
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `py_run_association()` runs association test for each test unit
     indent_level: 0
     raw_marker: -
   - id: "line_36"
     line_number: 36
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `py_run_association()` returns real statistics (beta, SE, p-value, etc.)
     indent_level: 0
@@ -107,35 +107,35 @@ tasks:
     raw_marker: -
   - id: "line_38"
     line_number: 38
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `py_run_association()` respects plan configuration (rare-variant ladder, etc.)
     indent_level: 0
     raw_marker: -
   - id: "line_39"
     line_number: 39
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Results include proper metadata (encoding, model, rule_id, etc.)
     indent_level: 0
     raw_marker: -
   - id: "line_43"
     line_number: 43
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Add `pytest` to `dev-requirements.txt` or `python/pyproject.toml`
     indent_level: 0
     raw_marker: -
   - id: "line_44"
     line_number: 44
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Add `polars` to test dependencies (if not already present)
     indent_level: 0
     raw_marker: -
   - id: "line_45"
     line_number: 45
-    status: pending
+    status: completed
     parallel_group: 999999
     description: All Python tests pass with `pytest -W error` (no warnings)
     indent_level: 0
@@ -149,14 +149,14 @@ tasks:
     raw_marker: -
   - id: "line_47"
     line_number: 47
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Add test for association testing with real data
     indent_level: 0
     raw_marker: -
   - id: "line_48"
     line_number: 48
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Add test for plan-based model selection
     indent_level: 0
@@ -170,56 +170,56 @@ tasks:
     raw_marker: -
   - id: "line_50"
     line_number: 50
-    status: pending
+    status: completed
     parallel_group: 999999
     description: CI runs Python tests automatically (check `.github/workflows/ci.yml`)
     indent_level: 0
     raw_marker: -
   - id: "line_54"
     line_number: 54
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `run_glm()` provides clear error message when cache is missing required tables
     indent_level: 0
     raw_marker: -
   - id: "line_55"
     line_number: 55
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `run_glm()` provides clear error message when phenotype length doesn't match samples
     indent_level: 0
     raw_marker: -
   - id: "line_56"
     line_number: 56
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `run_glm()` handles missing sample IDs gracefully
     indent_level: 0
     raw_marker: -
   - id: "line_57"
     line_number: 57
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `py_run_association()` handles empty cache gracefully
     indent_level: 0
     raw_marker: -
   - id: "line_58"
     line_number: 58
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `py_run_association()` handles invalid plan YAML gracefully
     indent_level: 0
     raw_marker: -
   - id: "line_59"
     line_number: 59
-    status: pending
+    status: completed
     parallel_group: 999999
     description: All error messages are user-friendly and actionable
     indent_level: 0
     raw_marker: -
   - id: "line_60"
     line_number: 60
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Error handling is consistent across Python API functions
     indent_level: 0

@@ -18,46 +18,46 @@ The STORM integration layer is complete, but there are several bugs and incomple
 
 ### A. Fix Python API Bugs
 
-- [ ] Fix Polars Series conversion in `run_glm()` (line 206 checks `to_dict` but should check `to_list`)
-- [ ] `run_glm()` handles Polars Series correctly without warnings
-- [ ] `run_glm()` handles dict-like phenotypes correctly
-- [ ] `run_glm()` handles list/array phenotypes correctly
-- [ ] All Python tests pass without warnings (`pytest -W error`)
-- [ ] Error messages are clear when phenotype format is incorrect
+- [x] Fix Polars Series conversion in `run_glm()` (line 206 checks `to_dict` but should check `to_list`)
+- [x] `run_glm()` handles Polars Series correctly without warnings
+- [x] `run_glm()` handles dict-like phenotypes correctly
+- [x] `run_glm()` handles list/array phenotypes correctly
+- [x] All Python tests pass without warnings (`pytest -W error`)
+- [x] Error messages are clear when phenotype format is incorrect
 
 ### B. Implement Real Association Testing
 
-- [ ] `py_run_association()` calls actual `run_association()` from `glm.rs` module
-- [ ] `py_run_association()` loads test units from cache
-- [ ] `py_run_association()` loads genotypes from cache
-- [ ] `py_run_association()` extracts encoded predictor values for each test unit
-- [ ] `py_run_association()` applies plan rules to select encoding/model
-- [ ] `py_run_association()` runs association test for each test unit
-- [ ] `py_run_association()` returns real statistics (beta, SE, p-value, etc.)
+- [x] `py_run_association()` calls actual `run_association()` from `glm.rs` module
+- [x] `py_run_association()` loads test units from cache
+- [x] `py_run_association()` loads genotypes from cache
+- [x] `py_run_association()` extracts encoded predictor values for each test unit
+- [x] `py_run_association()` applies plan rules to select encoding/model
+- [x] `py_run_association()` runs association test for each test unit
+- [x] `py_run_association()` returns real statistics (beta, SE, p-value, etc.)
 - [ ] `py_run_association()` handles covariates if provided
-- [ ] `py_run_association()` respects plan configuration (rare-variant ladder, etc.)
-- [ ] Results include proper metadata (encoding, model, rule_id, etc.)
+- [x] `py_run_association()` respects plan configuration (rare-variant ladder, etc.)
+- [x] Results include proper metadata (encoding, model, rule_id, etc.)
 
 ### C. Test Infrastructure
 
-- [ ] Add `pytest` to `dev-requirements.txt` or `python/pyproject.toml`
-- [ ] Add `polars` to test dependencies (if not already present)
-- [ ] All Python tests pass with `pytest -W error` (no warnings)
+- [x] Add `pytest` to `dev-requirements.txt` or `python/pyproject.toml`
+- [x] Add `polars` to test dependencies (if not already present)
+- [x] All Python tests pass with `pytest -W error` (no warnings)
 - [ ] Add test for error cases (invalid phenotype format, missing cache, etc.)
-- [ ] Add test for association testing with real data
-- [ ] Add test for plan-based model selection
+- [x] Add test for association testing with real data
+- [x] Add test for plan-based model selection
 - [ ] Add test for covariates handling
-- [ ] CI runs Python tests automatically (check `.github/workflows/ci.yml`)
+- [x] CI runs Python tests automatically (check `.github/workflows/ci.yml`)
 
 ### D. Error Handling and Robustness
 
-- [ ] `run_glm()` provides clear error message when cache is missing required tables
-- [ ] `run_glm()` provides clear error message when phenotype length doesn't match samples
-- [ ] `run_glm()` handles missing sample IDs gracefully
-- [ ] `py_run_association()` handles empty cache gracefully
-- [ ] `py_run_association()` handles invalid plan YAML gracefully
-- [ ] All error messages are user-friendly and actionable
-- [ ] Error handling is consistent across Python API functions
+- [x] `run_glm()` provides clear error message when cache is missing required tables
+- [x] `run_glm()` provides clear error message when phenotype length doesn't match samples
+- [x] `run_glm()` handles missing sample IDs gracefully
+- [x] `py_run_association()` handles empty cache gracefully
+- [x] `py_run_association()` handles invalid plan YAML gracefully
+- [x] All error messages are user-friendly and actionable
+- [x] Error handling is consistent across Python API functions
 
 ### E. Code Quality and Documentation
 

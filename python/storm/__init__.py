@@ -506,7 +506,9 @@ def read_cache_from_dir(cache_dir: str) -> Dict[str, Any]:
 
 
 def write_cache_to_dir(cache_dir: str) -> None:
-    """Write cache to directory (placeholder).
+    """Write cache to directory.
+    
+    Creates the cache directory if it doesn't exist.
     
     Args:
         cache_dir: Path to cache directory.
