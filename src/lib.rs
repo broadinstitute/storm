@@ -843,38 +843,198 @@ fn py_run_association(
     phenotype_json: &str,
     plan_path: Option<&str>,
 ) -> PyResult<String> {
+    use arrow::array::{StringArray, Float64Array};
+    
     // Load cache
     let cache = cache::read_cache_from_dir(Path::new(cache_dir))
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
     
-    // Parse phenotype from JSON
+    // Parse phenotype from JSON (sample_id -> value)
     let phenotype: HashMap<String, f64> = serde_json::from_str(phenotype_json)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
     
-    // Load plan if provided
-    let _plan = if let Some(path) = plan_path {
-        Some(Plan::from_yaml(path)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?)
+    // Load plan if provided, otherwise use default
+    let plan = if let Some(path) = plan_path {
+        Plan::from_yaml(path)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?
     } else {
-        None
+        Plan::default()
     };
     
-    // Run association - placeholder results for now
-    // Full implementation would call run_association from glm module
     let mut results = Vec::new();
     
-    if let Some(ref test_units) = cache.test_units {
-        use arrow::array::StringArray;
-        if let Some(id_col) = test_units.column_by_name("id")
-            .and_then(|c| c.as_any().downcast_ref::<StringArray>()) {
-            for i in 0..id_col.len() {
-                let unit_id = id_col.value(i);
+    // Need both test_units and features tables
+    let test_units = match &cache.test_units {
+        Some(tu) => tu,
+        None => {
+            return Err(pyo3::exceptions::PyRuntimeError::new_err(
+                "Cache missing test_units table"
+            ));
+        }
+    };
+    
+    let features = match &cache.features {
+        Some(f) => f,
+        None => {
+            return Err(pyo3::exceptions::PyRuntimeError::new_err(
+                "Cache missing features table"
+            ));
+        }
+    };
+    
+    // Extract column arrays from test_units
+    let unit_id_col = test_units.column_by_name("id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Missing id column in test_units"))?;
+    
+    let unit_type_col = test_units.column_by_name("unit_type")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>());
+    
+    let motif_col = test_units.column_by_name("motif")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>());
+    
+    // Extract column arrays from features
+    let feat_unit_id_col = features.column_by_name("unit_id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Missing unit_id column in features"))?;
+    
+    let feat_sample_id_col = features.column_by_name("sample_id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .ok_or_else(|| pyo3::exceptions::PyRuntimeError::new_err("Missing sample_id column in features"))?;
+    
+    // Get encoding column names based on what's available
+    let encoding_columns: Vec<(&str, Option<&Float64Array>)> = vec![
+        ("S", features.column_by_name("S").and_then(|c| c.as_any().downcast_ref::<Float64Array>())),
+        ("M", features.column_by_name("M").and_then(|c| c.as_any().downcast_ref::<Float64Array>())),
+        ("D", features.column_by_name("D").and_then(|c| c.as_any().downcast_ref::<Float64Array>())),
+        ("binary", features.column_by_name("binary").and_then(|c| c.as_any().downcast_ref::<Float64Array>())),
+    ];
+    
+    // Process each test unit
+    for unit_idx in 0..unit_id_col.len() {
+        let unit_id = unit_id_col.value(unit_idx);
+        let unit_type = unit_type_col.map(|c| c.value(unit_idx)).unwrap_or("Unknown");
+        let motif = motif_col.map(|c| c.value(unit_idx));
+        
+        // Find all feature rows for this unit
+        let mut sample_indices: Vec<usize> = Vec::new();
+        for i in 0..feat_unit_id_col.len() {
+            if feat_unit_id_col.value(i) == unit_id {
+                sample_indices.push(i);
+            }
+        }
+        
+        if sample_indices.is_empty() {
+            continue;
+        }
+        
+        // Count carriers for plan selection (using binary column if available)
+        let n_carriers = if let Some(binary_col) = encoding_columns.iter()
+            .find(|(name, _)| *name == "binary")
+            .and_then(|(_, col)| *col) 
+        {
+            sample_indices.iter()
+                .filter(|&&i| binary_col.value(i) > 0.0)
+                .count()
+        } else {
+            0
+        };
+        
+        let call_rate = sample_indices.len() as f64 / phenotype.len().max(1) as f64;
+        
+        // Select encoding and model based on plan
+        let (encoding, model) = plan.select(unit_type, motif, n_carriers, call_rate);
+        
+        // Get the encoding column name
+        let encoding_col_name = match encoding {
+            plan::Encoding::S => "S",
+            plan::Encoding::M => "M",
+            plan::Encoding::D => "D",
+            plan::Encoding::Binary => "binary",
+            plan::Encoding::Tail => "S", // Default to S for now
+            plan::Encoding::Categorical => "S", // Default to S for now
+        };
+        
+        // Find the encoding column
+        let encoding_col = encoding_columns.iter()
+            .find(|(name, _)| *name == encoding_col_name)
+            .and_then(|(_, col)| *col);
+        
+        let encoding_col = match encoding_col {
+            Some(c) => c,
+            None => {
+                // Fall back to first available encoding
+                match encoding_columns.iter().find(|(_, c)| c.is_some()) {
+                    Some((_, Some(c))) => c,
+                    _ => continue, // Skip this unit if no encoding available
+                }
+            }
+        };
+        
+        // Build predictor (x) and outcome (y) arrays
+        let mut x: Vec<f64> = Vec::new();
+        let mut y: Vec<f64> = Vec::new();
+        
+        for &idx in &sample_indices {
+            let sample_id = feat_sample_id_col.value(idx);
+            
+            // Only include samples that have phenotype data
+            if let Some(&pheno_value) = phenotype.get(sample_id) {
+                let predictor_value = encoding_col.value(idx);
+                if predictor_value.is_finite() {
+                    x.push(predictor_value);
+                    y.push(pheno_value);
+                }
+            }
+        }
+        
+        // Need at least 3 samples for regression
+        if x.len() < 3 {
+            results.push(serde_json::json!({
+                "unit_id": unit_id,
+                "beta": null,
+                "se": null,
+                "statistic": null,
+                "p_value": null,
+                "n_samples": x.len(),
+                "n_carriers": n_carriers,
+                "call_rate": call_rate,
+                "model": format!("{:?}", model),
+                "encoding": format!("{:?}", encoding),
+                "error": "Insufficient samples for regression",
+            }));
+            continue;
+        }
+        
+        // Run association test
+        match glm::run_association(unit_id, &x, &y, &model, &encoding, None) {
+            Ok(result) => {
+                results.push(serde_json::json!({
+                    "unit_id": result.unit_id,
+                    "beta": result.beta,
+                    "se": result.se,
+                    "statistic": result.statistic,
+                    "p_value": result.p_value,
+                    "n_samples": result.n_samples,
+                    "n_carriers": result.n_carriers,
+                    "call_rate": result.call_rate,
+                    "model": result.model,
+                    "encoding": result.encoding,
+                }));
+            }
+            Err(e) => {
                 results.push(serde_json::json!({
                     "unit_id": unit_id,
-                    "beta": 0.0,
-                    "se": 1.0,
-                    "p_value": 1.0,
-                    "n_samples": phenotype.len(),
+                    "beta": null,
+                    "se": null,
+                    "statistic": null,
+                    "p_value": null,
+                    "n_samples": x.len(),
+                    "n_carriers": n_carriers,
+                    "call_rate": call_rate,
+                    "model": format!("{:?}", model),
+                    "encoding": format!("{:?}", encoding),
+                    "error": e.to_string(),
                 }));
             }
         }

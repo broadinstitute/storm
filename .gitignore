@@ -22,3 +22,5 @@ target/
 test_*_cache/
 *.pyc
 *_cache/
+.venv/
+venv/
