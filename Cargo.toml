@@ -26,6 +26,7 @@ chrono = "0.4"
 [features]
 default = []
 python = ["pyo3"]
+firth = []
 
 [dev-dependencies]
 criterion = "0.6.0" 

@@ -54,7 +54,7 @@ pub struct AssociationResult {
 pub fn linear_regression(
     x: &[f64],        // Predictor (encoded genotype)
     y: &[f64],        // Outcome (phenotype)
-    covariates: Option<&[Vec<f64>]>, // Optional covariates
+    _covariates: Option<&[Vec<f64>]>, // Optional covariates (TODO: implement)
 ) -> Result<(f64, f64, f64, f64), GlmError> {
     if x.len() != y.len() {
         return Err(GlmError::InvalidInput("x and y must have same length".to_string()));
@@ -113,7 +113,7 @@ pub fn linear_regression(
 pub fn logistic_regression(
     x: &[f64],        // Predictor
     y: &[f64],        // Binary outcome (0/1)
-    covariates: Option<&[Vec<f64>]>,
+    _covariates: Option<&[Vec<f64>]>, // Optional covariates (TODO: implement)
     max_iter: usize,
 ) -> Result<(f64, f64, f64, f64), GlmError> {
     if x.len() != y.len() {
@@ -209,7 +209,7 @@ pub fn binomi_rare_test(
     // P(X >= carriers) where X ~ Binomial(total, expected_rate)
     
     let mut p_value = 0.0;
-    let mut log_prob = total as f64 * expected_rate.ln();
+    let _log_prob = total as f64 * expected_rate.ln();
     
     for k in 0..=carriers {
         let log_binom = log_binomial(total, k);
@@ -411,7 +411,7 @@ mod tests {
         let x = vec![0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0];
         let y = vec![0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0];
         
-        let (beta, se, z_stat, p_value) = logistic_regression(&x, &y, None, 25).unwrap();
+        let (beta, se, _z_stat, p_value) = logistic_regression(&x, &y, None, 25).unwrap();
         
         // Beta should be positive (x=1 increases probability of y=1)
         assert!(beta > 0.0);

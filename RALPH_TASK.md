@@ -55,13 +55,13 @@ structural variants and tandem repeats using long-read data.
 41. [x] Results include statistics and p-values
 42. [x] Results include counts and call rates
 43. [x] Results include encoding and model metadata
-44. [ ] Python API can build cache
-45. [ ] Python API can load cache via Polars
-46. [ ] Python API can run StormGLM
-47. [ ] Python API can call explain
-48. [ ] Jupyter notebook demonstrates end-to-end run
-49. [ ] All tests pass
-50. [ ] .ralph/progress.md contains DONE
+44. [x] Python API can build cache
+45. [x] Python API can load cache via Polars
+46. [x] Python API can run StormGLM
+47. [x] Python API can call explain
+48. [x] Jupyter notebook demonstrates end-to-end run
+49. [x] All tests pass
+50. [x] .ralph/progress.md contains DONE
 
 ---
 

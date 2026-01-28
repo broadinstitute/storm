@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use arrow::array::{
-    ArrayRef, StringBuilder, Float64Builder, UInt64Builder, Int64Builder,
+    ArrayRef, StringBuilder, Float64Builder, UInt64Builder,
 };
 use arrow::datatypes::{DataType, Field, Schema};
 use arrow::record_batch::RecordBatch;
@@ -218,7 +218,7 @@ impl Covariates {
 
     /// Get all covariates as a matrix (for GLM)
     pub fn as_matrix(&self, names: &[String], num_pcs: usize) -> Vec<Vec<f64>> {
-        let n = self.sample_ids.len();
+        let _n = self.sample_ids.len();
         let mut result = Vec::new();
 
         // Add named covariates

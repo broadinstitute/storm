@@ -418,3 +418,39 @@ EOF
 )" && git push → exit 0
 [23:09:13] 🟢 TOKENS: 13833 / 80000 (17%) [read:48KB write:0KB assist:2KB shell:0KB]
 [23:09:22] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -20 → exit 0
+[23:09:34] 🟢 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: implement covariates, rare-variant ladder, and results output
+
+Results module:
+- Build Arrow RecordBatch from association results
+- Write results to Parquet with statistics and p-values
+- Include counts (n_samples, n_carriers) and call rates
+- Include encoding and model metadata
+- ResultsSummary for aggregate statistics
+
+Covariates:
+- Support named covariates
+- Support principal components (PCs)
+- Matrix generation for GLM input
+
+RareVariantLadder:
+- Progressive model selection based on carrier count
+- BinomiRare for very rare (< 5)
+- Firth for rare (< 10)
+- Logistic for uncommon (< 50)
+- Linear for common
+
+All 56 tests passing
+
+Criteria 38-43 complete
+EOF
+)" → exit 0
+[23:09:39] 🟢 READ /Users/kiran/repositories/storm/python/storm/__init__.py (17 lines, ~1.6KB)
+[23:09:43] 🟢 TOKENS: 14273 / 80000 (17%) [read:50KB write:0KB assist:2KB shell:0KB]
+[23:10:11] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -15 → exit 0
+[23:10:13] 🟢 TOKENS: 14273 / 80000 (17%) [read:50KB write:0KB assist:2KB shell:0KB]
+[23:10:53] 🟢 TOKENS: 14286 / 80000 (17%) [read:50KB write:0KB assist:2KB shell:0KB]
+[23:10:56] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -10 → exit 0
+[23:11:01] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[23:11:21] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | grep -E "(warning|error|test result)" → exit 0
+[23:11:25] 🟢 TOKENS: 14305 / 80000 (17%) [read:50KB write:0KB assist:2KB shell:0KB]
