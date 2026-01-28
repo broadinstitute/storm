@@ -4,3 +4,5 @@ pycparser==2.22
 black==24.3.0
 isort==5.13.2
 ruff==0.2.2
+pytest>=7.0.0
+polars>=0.20.0

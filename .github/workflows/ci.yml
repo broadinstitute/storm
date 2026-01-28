@@ -83,8 +83,22 @@ jobs:
           shared-key: "test-build"
           save-if: true
       
-      - name: Run tests
+      - name: Run Rust tests
         run: cargo test --verbose --no-default-features
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      
+      - name: Install Python dependencies
+        run: pip install -r dev-requirements.txt
+      
+      - name: Build Python extension
+        run: maturin develop --release
+      
+      - name: Run Python tests
+        run: cd python && python -m pytest -W error -v
 
   build:
     name: Build Branch Release
