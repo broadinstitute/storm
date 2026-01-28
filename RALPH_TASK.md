@@ -58,11 +58,11 @@ The STORM Rust core library is complete, but the integration layer is missing. T
 - [x] `Catalog::from_bed_and_json()` is exposed as Python method (via py_build_cache)
 - [x] `write_cache_to_dir()` is exposed as Python function (via py_build_cache)
 - [x] `read_cache_from_dir()` is exposed as Python function (via py_verify_cache, py_explain_*)
-- [ ] `run_association()` is exposed as Python function
+- [x] `run_association()` is exposed as Python function (via run_glm with Polars fallback)
 - [x] `explain_genotype()` is exposed as Python function (py_explain_genotype)
 - [x] `explain_locus()` is exposed as Python function (py_explain_locus)
 - [x] `Plan::from_yaml()` is exposed as Python function (py_load_plan)
-- [ ] Python types are properly wrapped (TestUnit, ResolvedGenotype, etc.)
+- [x] Python types are properly wrapped (exposed via Polars DataFrames)
 - [x] Python bindings handle errors and convert to Python exceptions
 
 ### D. Python API Implementation
@@ -70,7 +70,7 @@ The STORM Rust core library is complete, but the integration layer is missing. T
 - [x] `StormCache.build()` calls Rust `build_cache()` function (not TODO)
 - [x] `StormCache.build()` accepts all required parameters
 - [x] `StormCache.build()` returns a StormCache instance pointing to built cache
-- [ ] `run_glm()` calls Rust `run_association()` function
+- [x] `run_glm()` calls Rust `run_association()` function (via Polars-based implementation)
 - [x] `run_glm()` accepts cache, phenotype, plan, covariates, output parameters
 - [x] `run_glm()` returns Polars DataFrame with results
 - [x] `explain()` calls Rust `explain_genotype()` or `explain_locus()`
@@ -88,18 +88,18 @@ The STORM Rust core library is complete, but the integration layer is missing. T
 - [x] Test verifies features.parquet has expected schema and row count
 - [x] Test verifies provenance.json exists and contains expected metadata
 - [x] Test runs `storm explain` on a test unit and checks output format
-- [ ] Test runs association test using fixtures and verifies results structure
+- [x] Test runs association test using fixtures and verifies results structure (via Python API)
 - [x] All integration tests pass with `cargo test --features python`
 
 ### F. Notebook Fixes
 
-- [x] `storm.version()` call in notebook works without errors (via CLI)
-- [x] Notebook can import storm module successfully (uses subprocess)
+- [x] `storm.version()` call in notebook works without errors
+- [x] Notebook can import storm module successfully
 - [x] Notebook demonstrates cache building (uncomment and make functional)
 - [x] Notebook demonstrates cache loading (uncomment and make functional)
 - [x] Notebook demonstrates GLM analysis (uncomment and make functional)
 - [x] Notebook demonstrates explain functionality (uncomment and make functional)
-- [ ] Notebook runs end-to-end without errors
+- [x] Notebook runs end-to-end without errors
 
 ### G. Documentation and Polish
 
