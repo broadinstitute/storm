@@ -7,6 +7,7 @@
 use pyo3::prelude::*;
 
 use std::collections::HashMap;
+use std::io::Write;
 use std::path::Path;
 use thiserror::Error;
 
