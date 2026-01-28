@@ -12,6 +12,7 @@ pub mod catalog;
 pub mod mapping;
 pub mod testunit;
 pub mod resolver;
+pub mod cache;
 
 // Re-exports
 pub use vcf::sv::{parse_sv_vcf, SvRecord, SvType, SvVcfError, Genotype};
@@ -24,6 +25,10 @@ pub use catalog::{
 pub use mapping::{map_svs_to_catalog, map_svs_with_overlaps, SvMapping, MappingStats, compute_mapping_stats};
 pub use testunit::{TestUnit, TestUnitType, TestUnitBuilder, DataSource};
 pub use resolver::{Resolver, ResolvedGenotype, PresenceSource, AlleleSource, LocusSvAlleles};
+pub use cache::{
+    ArrowCache, ArrowCacheError, Provenance, write_parquet, read_parquet, ParquetError,
+    parquet_cache::{write_cache_to_dir, read_cache_from_dir},
+};
 
 // Example library function
 #[cfg(feature = "python")]

@@ -27,13 +27,13 @@ structural variants and tandem repeats using long-read data.
 13. [x] TRGT allele lengths override proxy alleles when available
 14. [x] Resolved genotypes record presence source
 15. [x] Resolved genotypes record allele source
-16. [ ] Arrow cache can be written
-17. [ ] Parquet cache files can be written
-18. [ ] Cache includes test units table
-19. [ ] Cache includes genotypes table
-20. [ ] Cache includes catalog table
-21. [ ] Cache includes features table
-22. [ ] Cache includes provenance metadata
+16. [x] Arrow cache can be written
+17. [x] Parquet cache files can be written
+18. [x] Cache includes test units table
+19. [x] Cache includes genotypes table
+20. [x] Cache includes catalog table
+21. [x] Cache includes features table
+22. [x] Cache includes provenance metadata
 23. [ ] storm explain prints resolved genotype details
 24. [ ] Plan YAML can be parsed
 25. [ ] Plan rules deterministically select encodings

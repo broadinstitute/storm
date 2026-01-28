@@ -324,3 +324,29 @@ EOF
 )" && git push → exit 0
 [23:01:37] 🟢 TOKENS: 13383 / 80000 (16%) [read:47KB write:0KB assist:1KB shell:0KB]
 [23:01:44] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[23:01:57] 🟢 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: implement Resolver for genotype resolution
+
+- Create resolver module with ResolvedGenotype struct
+- Separate presence (is_present) from allele values (allele1, allele2)
+- Implement PresenceSource and AlleleSource tracking
+- Add LocusSvAlleles for grouping SVs by locus
+- Implement diploid reconstruction from INS/DEL alleles
+- Add resolve_merged for TRGT override of proxy alleles
+- Support S, M, D encoding computations
+- All 23 tests passing
+
+Criteria 10, 11, 12, 13, 14, 15 complete
+EOF
+)" → exit 0
+[23:02:50] 🟢 TOKENS: 13417 / 80000 (16%) [read:47KB write:0KB assist:1KB shell:0KB]
+[23:03:27] 🟢 TOKENS: 13417 / 80000 (16%) [read:47KB write:0KB assist:1KB shell:0KB]
+[23:03:38] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[23:03:42] 🟢 READ /Users/kiran/repositories/storm/rust-toolchain.toml (10 lines, ~.9KB)
+[23:03:43] 🟢 SHELL rustc --version → exit 0
+[23:04:01] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[23:04:01] 🟢 TOKENS: 13708 / 80000 (17%) [read:48KB write:0KB assist:1KB shell:0KB]
+[23:04:14] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[23:04:24] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[23:04:34] 🟢 TOKENS: 13735 / 80000 (17%) [read:48KB write:0KB assist:1KB shell:0KB]
+[23:04:42] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -20 → exit 0
