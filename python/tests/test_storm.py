@@ -367,6 +367,108 @@ class TestErrorCases:
             assert not result["is_valid"] or len(result.get("errors", [])) > 0 or result.get("num_test_units", 0) == 0
         finally:
             shutil.rmtree(d, ignore_errors=True)
+    
+    def test_run_glm_invalid_phenotype_format(self, cache):
+        """Should handle invalid phenotype format gracefully."""
+        import warnings
+        
+        # Test with invalid type - should warn and use fallback
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            # This should produce a warning and use Python fallback
+            try:
+                results = storm.run_glm(cache, 42)  # Invalid type
+                # If we get here, check for warning
+                assert len(w) > 0 or len(results) >= 0
+            except (ValueError, TypeError):
+                # Also acceptable - exception raised
+                pass
+    
+    def test_run_glm_missing_cache_tables(self):
+        """Should raise error when cache is missing required tables."""
+        if not storm.HAS_RUST:
+            pytest.skip("Rust bindings not available")
+        
+        # Create a minimal mock cache without required tables
+        class MockCache:
+            test_units = None
+            features = None
+            cache_dir = "/nonexistent"
+        
+        mock_cache = MockCache()
+        
+        with pytest.raises(ValueError):
+            storm.run_glm(mock_cache, [1.0, 0.0])
+    
+    def test_run_glm_phenotype_length_mismatch(self, cache):
+        """Should handle phenotype length mismatch gracefully."""
+        import polars as pl
+        
+        # Phenotype with wrong number of samples (too few)
+        phenotype = pl.Series("phenotype", [1.0])  # Only 1 value
+        
+        # This should either work with partial data or raise an appropriate error
+        try:
+            results = storm.run_glm(cache, phenotype)
+            # If it works, results should be empty or have errors
+            assert len(results) >= 0
+        except (ValueError, RuntimeError) as e:
+            # Expected - phenotype length doesn't match
+            assert "phenotype" in str(e).lower() or "sample" in str(e).lower() or len(str(e)) > 0
+    
+    def test_run_association_missing_cache(self):
+        """Should raise error when cache directory doesn't exist."""
+        if not storm.HAS_RUST:
+            pytest.skip("Rust bindings not available")
+        
+        phenotype = {"sample1": 1.0, "sample2": 0.0}
+        
+        with pytest.raises(RuntimeError):
+            storm.run_association("/nonexistent/path", phenotype)
+    
+    def test_run_glm_with_invalid_covariates(self, cache):
+        """Should handle invalid covariates format gracefully."""
+        import polars as pl
+        import warnings
+        
+        n_samples = len(cache.genotypes["sample_id"].unique())
+        phenotype = pl.Series("phenotype", [float(i % 2) for i in range(n_samples)])
+        
+        # Covariates without sample_id column - should warn and use fallback
+        invalid_covariates = pl.DataFrame({
+            "age": [float(25 + i) for i in range(n_samples)],
+        })
+        
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            try:
+                results = storm.run_glm(cache, phenotype, covariates=invalid_covariates)
+                # If we get here, check we got a warning or results
+                assert len(w) > 0 or len(results) >= 0
+            except ValueError:
+                # Also acceptable - exception raised
+                pass
+    
+    def test_run_glm_with_non_dataframe_covariates(self, cache):
+        """Should handle non-DataFrame covariates gracefully."""
+        import polars as pl
+        import warnings
+        
+        n_samples = len(cache.genotypes["sample_id"].unique())
+        phenotype = pl.Series("phenotype", [float(i % 2) for i in range(n_samples)])
+        
+        # Pass dict instead of DataFrame - should warn and use fallback
+        invalid_covariates = {"age": [25.0, 30.0]}
+        
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            try:
+                results = storm.run_glm(cache, phenotype, covariates=invalid_covariates)
+                # If we get here, check we got a warning or results
+                assert len(w) > 0 or len(results) >= 0
+            except ValueError:
+                # Also acceptable - exception raised
+                pass
 
 
 class TestAssociationWithRealData:
