@@ -3,7 +3,357 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769582520
-generated_at: 2026-01-28T06:42:16Z
+source_mtime: 1769582936
+generated_at: 2026-01-28T06:49:10Z
 
 tasks:
+  - id: "line_15"
+    line_number: 15
+    status: pending
+    parallel_group: 999999
+    description: Integrated SV VCF can be parsed (SVTYPE, SVLEN, GT)
+    indent_level: 0
+    raw_marker: 1.
+  - id: "line_16"
+    line_number: 16
+    status: pending
+    parallel_group: 999999
+    description: TRGT VCF can be parsed (TRID, AL, GT)
+    indent_level: 0
+    raw_marker: 2.
+  - id: "line_17"
+    line_number: 17
+    status: pending
+    parallel_group: 999999
+    description: TRExplorer BED file can be ingested
+    indent_level: 0
+    raw_marker: 3.
+  - id: "line_18"
+    line_number: 18
+    status: pending
+    parallel_group: 999999
+    description: TRExplorer JSON file can be ingested
+    indent_level: 0
+    raw_marker: 4.
+  - id: "line_19"
+    line_number: 19
+    status: pending
+    parallel_group: 999999
+    description: TRExplorer BED and JSON can be joined into a unified catalog
+    indent_level: 0
+    raw_marker: 5.
+  - id: "line_20"
+    line_number: 20
+    status: pending
+    parallel_group: 999999
+    description: SV records can be mapped to catalog repeat loci by overlap
+    indent_level: 0
+    raw_marker: 6.
+  - id: "line_21"
+    line_number: 21
+    status: pending
+    parallel_group: 999999
+    description: TestUnit objects can be created for SVs
+    indent_level: 0
+    raw_marker: 7.
+  - id: "line_22"
+    line_number: 22
+    status: pending
+    parallel_group: 999999
+    description: TestUnit objects can be created for repeat-proxy loci
+    indent_level: 0
+    raw_marker: 8.
+  - id: "line_23"
+    line_number: 23
+    status: pending
+    parallel_group: 999999
+    description: TestUnit objects can be created for true repeats
+    indent_level: 0
+    raw_marker: 9.
+  - id: "line_24"
+    line_number: 24
+    status: pending
+    parallel_group: 999999
+    description: Resolver separates presence from allele values
+    indent_level: 0
+    raw_marker: 10.
+  - id: "line_25"
+    line_number: 25
+    status: pending
+    parallel_group: 999999
+    description: Repeat-proxy SV alleles can be grouped by locus
+    indent_level: 0
+    raw_marker: 11.
+  - id: "line_26"
+    line_number: 26
+    status: pending
+    parallel_group: 999999
+    description: Diploid repeat lengths can be reconstructed from INS and DEL alleles
+    indent_level: 0
+    raw_marker: 12.
+  - id: "line_27"
+    line_number: 27
+    status: pending
+    parallel_group: 999999
+    description: TRGT allele lengths override proxy alleles when available
+    indent_level: 0
+    raw_marker: 13.
+  - id: "line_28"
+    line_number: 28
+    status: pending
+    parallel_group: 999999
+    description: Resolved genotypes record presence source
+    indent_level: 0
+    raw_marker: 14.
+  - id: "line_29"
+    line_number: 29
+    status: pending
+    parallel_group: 999999
+    description: Resolved genotypes record allele source
+    indent_level: 0
+    raw_marker: 15.
+  - id: "line_30"
+    line_number: 30
+    status: pending
+    parallel_group: 999999
+    description: Arrow cache can be written
+    indent_level: 0
+    raw_marker: 16.
+  - id: "line_31"
+    line_number: 31
+    status: pending
+    parallel_group: 999999
+    description: Parquet cache files can be written
+    indent_level: 0
+    raw_marker: 17.
+  - id: "line_32"
+    line_number: 32
+    status: pending
+    parallel_group: 999999
+    description: Cache includes test units table
+    indent_level: 0
+    raw_marker: 18.
+  - id: "line_33"
+    line_number: 33
+    status: pending
+    parallel_group: 999999
+    description: Cache includes genotypes table
+    indent_level: 0
+    raw_marker: 19.
+  - id: "line_34"
+    line_number: 34
+    status: pending
+    parallel_group: 999999
+    description: Cache includes catalog table
+    indent_level: 0
+    raw_marker: 20.
+  - id: "line_35"
+    line_number: 35
+    status: pending
+    parallel_group: 999999
+    description: Cache includes features table
+    indent_level: 0
+    raw_marker: 21.
+  - id: "line_36"
+    line_number: 36
+    status: pending
+    parallel_group: 999999
+    description: Cache includes provenance metadata
+    indent_level: 0
+    raw_marker: 22.
+  - id: "line_37"
+    line_number: 37
+    status: pending
+    parallel_group: 999999
+    description: storm explain prints resolved genotype details
+    indent_level: 0
+    raw_marker: 23.
+  - id: "line_38"
+    line_number: 38
+    status: pending
+    parallel_group: 999999
+    description: Plan YAML can be parsed
+    indent_level: 0
+    raw_marker: 24.
+  - id: "line_39"
+    line_number: 39
+    status: pending
+    parallel_group: 999999
+    description: Plan rules deterministically select encodings
+    indent_level: 0
+    raw_marker: 25.
+  - id: "line_40"
+    line_number: 40
+    status: pending
+    parallel_group: 999999
+    description: Plan rules deterministically select models
+    indent_level: 0
+    raw_marker: 26.
+  - id: "line_41"
+    line_number: 41
+    status: pending
+    parallel_group: 999999
+    description: S encoding (L1+L2) is implemented
+    indent_level: 0
+    raw_marker: 27.
+  - id: "line_42"
+    line_number: 42
+    status: pending
+    parallel_group: 999999
+    description: M encoding (max allele) is implemented
+    indent_level: 0
+    raw_marker: 28.
+  - id: "line_43"
+    line_number: 43
+    status: pending
+    parallel_group: 999999
+    description: D encoding (|L1-L2|) is implemented
+    indent_level: 0
+    raw_marker: 29.
+  - id: "line_44"
+    line_number: 44
+    status: pending
+    parallel_group: 999999
+    description: Tail indicator encoding is implemented
+    indent_level: 0
+    raw_marker: 30.
+  - id: "line_45"
+    line_number: 45
+    status: pending
+    parallel_group: 999999
+    description: Categorical bin encoding is implemented
+    indent_level: 0
+    raw_marker: 31.
+  - id: "line_46"
+    line_number: 46
+    status: pending
+    parallel_group: 999999
+    description: Internal StormGLM backend is implemented
+    indent_level: 0
+    raw_marker: 32.
+  - id: "line_47"
+    line_number: 47
+    status: pending
+    parallel_group: 999999
+    description: Linear regression is supported
+    indent_level: 0
+    raw_marker: 33.
+  - id: "line_48"
+    line_number: 48
+    status: pending
+    parallel_group: 999999
+    description: Logistic regression is supported
+    indent_level: 0
+    raw_marker: 34.
+  - id: "line_49"
+    line_number: 49
+    status: pending
+    parallel_group: 999999
+    description: Categorical regression is supported
+    indent_level: 0
+    raw_marker: 35.
+  - id: "line_50"
+    line_number: 50
+    status: pending
+    parallel_group: 999999
+    description: BinomiRare test is supported
+    indent_level: 0
+    raw_marker: 36.
+  - id: "line_51"
+    line_number: 51
+    status: pending
+    parallel_group: 999999
+    description: Firth logistic regression is supported or feature-flagged
+    indent_level: 0
+    raw_marker: 37.
+  - id: "line_52"
+    line_number: 52
+    status: pending
+    parallel_group: 999999
+    description: Covariates including PCs are supported
+    indent_level: 0
+    raw_marker: 38.
+  - id: "line_53"
+    line_number: 53
+    status: pending
+    parallel_group: 999999
+    description: Rare-variant ladder logic is implemented
+    indent_level: 0
+    raw_marker: 39.
+  - id: "line_54"
+    line_number: 54
+    status: pending
+    parallel_group: 999999
+    description: Association results can be written to Parquet
+    indent_level: 0
+    raw_marker: 40.
+  - id: "line_55"
+    line_number: 55
+    status: pending
+    parallel_group: 999999
+    description: Results include statistics and p-values
+    indent_level: 0
+    raw_marker: 41.
+  - id: "line_56"
+    line_number: 56
+    status: pending
+    parallel_group: 999999
+    description: Results include counts and call rates
+    indent_level: 0
+    raw_marker: 42.
+  - id: "line_57"
+    line_number: 57
+    status: pending
+    parallel_group: 999999
+    description: Results include encoding and model metadata
+    indent_level: 0
+    raw_marker: 43.
+  - id: "line_58"
+    line_number: 58
+    status: pending
+    parallel_group: 999999
+    description: Python API can build cache
+    indent_level: 0
+    raw_marker: 44.
+  - id: "line_59"
+    line_number: 59
+    status: pending
+    parallel_group: 999999
+    description: Python API can load cache via Polars
+    indent_level: 0
+    raw_marker: 45.
+  - id: "line_60"
+    line_number: 60
+    status: pending
+    parallel_group: 999999
+    description: Python API can run StormGLM
+    indent_level: 0
+    raw_marker: 46.
+  - id: "line_61"
+    line_number: 61
+    status: pending
+    parallel_group: 999999
+    description: Python API can call explain
+    indent_level: 0
+    raw_marker: 47.
+  - id: "line_62"
+    line_number: 62
+    status: pending
+    parallel_group: 999999
+    description: Jupyter notebook demonstrates end-to-end run
+    indent_level: 0
+    raw_marker: 48.
+  - id: "line_63"
+    line_number: 63
+    status: pending
+    parallel_group: 999999
+    description: All tests pass
+    indent_level: 0
+    raw_marker: 49.
+  - id: "line_64"
+    line_number: 64
+    status: pending
+    parallel_group: 999999
+    description: .ralph/progress.md contains DONE
+    indent_level: 0
+    raw_marker: 50.
