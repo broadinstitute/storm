@@ -294,3 +294,18 @@ EOF
 )" → exit 0
 [22:59:27] 🟢 TOKENS: 13309 / 80000 (16%) [read:47KB write:0KB assist:1KB shell:0KB]
 [22:59:34] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[22:59:41] 🟢 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: implement SV-to-catalog mapping by genomic overlap
+
+- Create mapping module for SV-to-locus association
+- Implement map_svs_to_catalog for all SVs
+- Implement map_svs_with_overlaps for filtered results
+- Add SvMapping struct linking SVs to catalog entries
+- Add MappingStats for summary statistics
+- All 13 tests passing
+
+Criterion 6 complete
+EOF
+)" → exit 0
+[23:00:18] 🟢 TOKENS: 13348 / 80000 (16%) [read:47KB write:0KB assist:1KB shell:0KB]
+[23:00:23] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0

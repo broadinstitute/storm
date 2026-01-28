@@ -10,6 +10,7 @@ use pyo3::prelude::*;
 pub mod vcf;
 pub mod catalog;
 pub mod mapping;
+pub mod testunit;
 
 // Re-exports
 pub use vcf::sv::{parse_sv_vcf, SvRecord, SvType, SvVcfError, Genotype};
@@ -20,6 +21,7 @@ pub use catalog::{
     parse_trexplorer_json, JsonRecord, JsonError,
 };
 pub use mapping::{map_svs_to_catalog, map_svs_with_overlaps, SvMapping, MappingStats, compute_mapping_stats};
+pub use testunit::{TestUnit, TestUnitType, TestUnitBuilder, DataSource};
 
 // Example library function
 #[cfg(feature = "python")]

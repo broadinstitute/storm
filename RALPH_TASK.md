@@ -18,9 +18,9 @@ structural variants and tandem repeats using long-read data.
 4. [x] TRExplorer JSON file can be ingested
 5. [x] TRExplorer BED and JSON can be joined into a unified catalog
 6. [x] SV records can be mapped to catalog repeat loci by overlap
-7. [ ] TestUnit objects can be created for SVs
-8. [ ] TestUnit objects can be created for repeat-proxy loci
-9. [ ] TestUnit objects can be created for true repeats
+7. [x] TestUnit objects can be created for SVs
+8. [x] TestUnit objects can be created for repeat-proxy loci
+9. [x] TestUnit objects can be created for true repeats
 10. [ ] Resolver separates presence from allele values
 11. [ ] Repeat-proxy SV alleles can be grouped by locus
 12. [ ] Diploid repeat lengths can be reconstructed from INS and DEL alleles
