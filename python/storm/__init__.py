@@ -83,6 +83,9 @@ class StormCache:
     ) -> "StormCache":
         """Build a new cache from input files.
         
+        Creates a STORM cache by parsing VCF files, resolving genotypes,
+        and computing feature encodings. The cache is stored in Parquet format.
+        
         Args:
             sv_vcf: Path to integrated SV VCF file.
             trgt_vcf: Optional path to TRGT VCF file.
@@ -92,6 +95,23 @@ class StormCache:
             
         Returns:
             StormCache instance pointing to the new cache.
+        
+        Examples:
+            Build cache from SV VCF only:
+            
+            >>> cache = StormCache.build(sv_vcf="sv.vcf", output_dir="my_cache")
+            >>> print(cache._build_stats)
+            {'num_test_units': 3, 'num_samples': 100, ...}
+            
+            Build cache with TRGT and catalog:
+            
+            >>> cache = StormCache.build(
+            ...     sv_vcf="sv.vcf",
+            ...     trgt_vcf="trgt.vcf",
+            ...     catalog_bed="catalog.bed",
+            ...     catalog_json="catalog.json",
+            ...     output_dir="full_cache",
+            ... )
         """
         if HAS_RUST and py_build_cache is not None:
             # Call Rust build_cache function
@@ -166,6 +186,14 @@ def load_cache(cache_dir: str) -> StormCache:
         
     Returns:
         StormCache instance.
+    
+    Examples:
+        Load cache and access test units:
+        
+        >>> cache = storm.load_cache("my_cache")
+        >>> print(cache.test_units)  # Polars DataFrame
+        >>> print(cache.genotypes)   # Polars DataFrame
+        >>> print(cache.features)    # Polars DataFrame
     """
     return StormCache(cache_dir)
 
@@ -390,6 +418,9 @@ def explain(
 ) -> str:
     """Get detailed explanation of a test unit's genotypes.
     
+    Provides a human-readable summary of genotypes at a locus,
+    including allele sizes, carrier status, and computed encodings.
+    
     Args:
         cache: StormCache instance.
         unit_id: ID of the test unit to explain.
@@ -397,6 +428,24 @@ def explain(
         
     Returns:
         Human-readable explanation string.
+    
+    Examples:
+        Explain a locus (all samples):
+        
+        >>> cache = storm.load_cache("my_cache")
+        >>> print(storm.explain(cache, "sv_chr1_1000"))
+        === Locus Summary ===
+        Test Unit: sv_chr1_1000
+        Location: chr1:1000-1500
+        ...
+        
+        Explain a specific sample:
+        
+        >>> print(storm.explain(cache, "sv_chr1_1000", sample_id="SAMPLE1"))
+        === Genotype Explanation ===
+        Test Unit: sv_chr1_1000
+        Sample: SAMPLE1
+        ...
     """
     # Use Rust explain functions if available
     if HAS_RUST and py_explain_genotype is not None and py_explain_locus is not None:
@@ -445,11 +494,26 @@ def explain(
 def verify_cache(cache_dir: str) -> Dict[str, Any]:
     """Verify a STORM cache.
     
+    Checks that all required cache files exist and have valid structure.
+    
     Args:
         cache_dir: Path to cache directory.
         
     Returns:
-        Dictionary with validation results.
+        Dictionary with validation results including:
+            - is_valid: Whether the cache is valid
+            - num_test_units: Number of test units
+            - num_genotypes: Number of genotype records
+            - errors: List of any errors found
+    
+    Examples:
+        Verify a cache:
+        
+        >>> result = storm.verify_cache("my_cache")
+        >>> print(result["is_valid"])
+        True
+        >>> print(result["num_test_units"])
+        150
     """
     if HAS_RUST and py_verify_cache is not None:
         is_valid, num_units, num_gts, num_catalog, num_features, errors = py_verify_cache(cache_dir)
@@ -478,11 +542,26 @@ def verify_cache(cache_dir: str) -> Dict[str, Any]:
 def load_plan(path: str) -> Dict[str, Any]:
     """Load a plan YAML file.
     
+    Plans define rules for selecting models and encodings based on
+    test unit characteristics (type, motif, carrier frequency).
+    
     Args:
         path: Path to plan YAML file.
         
     Returns:
-        Dictionary with plan configuration.
+        Dictionary with plan configuration including:
+            - name: Plan name
+            - rules: List of selection rules
+            - defaults: Default model and encoding
+    
+    Examples:
+        Load and inspect a plan:
+        
+        >>> plan = storm.load_plan("my_plan.yaml")
+        >>> print(plan["name"])
+        'standard_analysis'
+        >>> print(plan["rules"][0])
+        {'match': {'unit_type': 'TrueRepeat'}, 'model': 'Linear', 'encoding': 'S'}
     """
     import json
     if HAS_RUST and py_load_plan is not None:

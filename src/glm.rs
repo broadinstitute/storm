@@ -168,8 +168,10 @@ fn residualize(y: &[f64], covariates: &[Vec<f64>]) -> Result<Vec<f64>, GlmError>
         
         if var_cov > 1e-10 {
             let beta = cov_resid / var_cov;
+            // Compute intercept to fully remove the covariate effect
+            let intercept = resid_mean - beta * cov_mean;
             for i in 0..n {
-                resid[i] -= beta * (cov[i] - cov_mean);
+                resid[i] = resid[i] - (intercept + beta * cov[i]);
             }
         }
     }
@@ -638,9 +640,10 @@ mod tests {
 
     #[test]
     fn test_linear_regression_with_covariates() {
-        // y = 2*x + 1*age + noise, where age is a covariate
+        // y = 2*x + 0.1*age + noise, where age is a covariate (uncorrelated with x)
         let x = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
-        let age = vec![30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0];
+        // Age varies independently from x (not monotonically correlated)
+        let age = vec![45.0, 30.0, 60.0, 25.0, 55.0, 35.0, 70.0, 40.0, 50.0, 65.0];
         let y: Vec<f64> = x.iter().zip(age.iter())
             .map(|(&xi, &ai)| 2.0 * xi + 0.1 * ai)
             .collect();
@@ -656,10 +659,11 @@ mod tests {
 
     #[test]
     fn test_logistic_regression_with_covariates() {
-        // Simple test with a covariate
-        let x = vec![0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0];
-        let age = vec![30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0];
-        let y = vec![0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0];
+        // Simple test with a covariate (age uncorrelated with x)
+        let x = vec![0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0];
+        let age = vec![30.0, 60.0, 35.0, 55.0, 45.0, 40.0, 65.0, 50.0, 70.0, 25.0];
+        // y has some relation to x (x=1 increases probability)
+        let y = vec![0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0];
         
         let covariates = vec![age];
         let (beta, se, _z_stat, p_value) = logistic_regression(&x, &y, Some(&covariates), 25).unwrap();
@@ -673,7 +677,8 @@ mod tests {
     #[test]
     fn test_run_association_with_covariates() {
         let x = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
-        let age = vec![30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0];
+        // Age varies independently from x (not monotonically correlated)
+        let age = vec![45.0, 30.0, 60.0, 25.0, 55.0, 35.0, 70.0, 40.0, 50.0, 65.0];
         let y: Vec<f64> = x.iter().zip(age.iter())
             .map(|(&xi, &ai)| 2.0 * xi + 0.1 * ai)
             .collect();
@@ -689,21 +694,23 @@ mod tests {
         ).unwrap();
         
         assert_eq!(result.unit_id, "test_unit");
-        assert!((result.beta - 2.0).abs() < 0.5);
+        assert!((result.beta - 2.0).abs() < 0.5, "beta={} expected ~2.0", result.beta);
         assert_eq!(result.n_samples, 10);
     }
 
     #[test]
     fn test_residualize() {
-        // Simple test: residualize y on a constant should center y
-        let y = vec![10.0, 20.0, 30.0, 40.0, 50.0];
-        let cov = vec![vec![1.0, 1.0, 1.0, 1.0, 1.0]]; // Constant covariate
+        // Test residualize: y = 2*z + noise, residualize on z should reduce variance to ~0
+        let z = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let y = vec![2.0, 4.0, 6.0, 8.0, 10.0]; // y = 2*z exactly
+        let cov = vec![z];
         
         let resid = residualize(&y, &cov).unwrap();
         
-        // After residualizing on intercept-like constant, mean should be close to 0
-        // (Note: our residualization centers on covariate mean, so this is approximate)
+        // After residualizing y on z (perfect linear relationship), variance of residuals should be ~0
+        // All residuals should be the same constant
         let mean: f64 = resid.iter().sum::<f64>() / resid.len() as f64;
-        assert!(mean.abs() < 1e-10, "mean should be ~0, got {}", mean);
+        let var: f64 = resid.iter().map(|&r| (r - mean).powi(2)).sum::<f64>() / resid.len() as f64;
+        assert!(var < 1e-10, "residual variance should be ~0, got {}", var);
     }
 }
