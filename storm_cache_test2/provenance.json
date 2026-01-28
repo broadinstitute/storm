@@ -1,0 +1,9 @@
+{
+  "created_at": "2026-01-28T22:30:11.856631+00:00",
+  "input_files": [
+    "fixtures/sv_small.vcf"
+  ],
+  "num_samples": 2,
+  "num_test_units": 3,
+  "storm_version": "0.0.23"
+}
