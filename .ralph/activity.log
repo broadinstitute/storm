@@ -276,3 +276,21 @@ EOF
 [22:58:47] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
 [22:58:51] 🟢 TOKENS: 13268 / 80000 (16%) [read:47KB write:0KB assist:1KB shell:0KB]
 [22:58:54] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[22:59:04] 🟢 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: implement TRExplorer catalog parsing and joining
+
+- Add serde and serde_json dependencies
+- Create catalog module with bed.rs and json.rs parsers
+- Parse TRExplorer BED format (9 columns)
+- Parse TRExplorer JSON format with gene/disease annotations
+- Implement Catalog struct with unified entries
+- Add from_bed, from_json, and from_bed_and_json loaders
+- Implement find_overlapping for genomic interval queries
+- Add test fixtures for BED and JSON
+- All 11 tests passing
+
+Criteria 3, 4, 5 complete
+EOF
+)" → exit 0
+[22:59:27] 🟢 TOKENS: 13309 / 80000 (16%) [read:47KB write:0KB assist:1KB shell:0KB]
+[22:59:34] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0

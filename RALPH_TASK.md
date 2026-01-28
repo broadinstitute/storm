@@ -17,7 +17,7 @@ structural variants and tandem repeats using long-read data.
 3. [x] TRExplorer BED file can be ingested
 4. [x] TRExplorer JSON file can be ingested
 5. [x] TRExplorer BED and JSON can be joined into a unified catalog
-6. [ ] SV records can be mapped to catalog repeat loci by overlap
+6. [x] SV records can be mapped to catalog repeat loci by overlap
 7. [ ] TestUnit objects can be created for SVs
 8. [ ] TestUnit objects can be created for repeat-proxy loci
 9. [ ] TestUnit objects can be created for true repeats
