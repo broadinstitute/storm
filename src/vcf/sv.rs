@@ -23,7 +23,7 @@ pub enum SvVcfError {
 }
 
 /// Structural variant types
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub enum SvType {
     Del,
     Ins,
@@ -49,7 +49,7 @@ impl SvType {
 }
 
 /// A parsed structural variant record
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SvRecord {
     /// Chromosome
     pub chrom: String,
@@ -72,7 +72,7 @@ pub struct SvRecord {
 }
 
 /// Parsed genotype
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Genotype {
     /// Allele indices (0 = ref, 1+ = alt)
     pub alleles: Vec<Option<u8>>,
