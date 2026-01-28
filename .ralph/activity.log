@@ -387,3 +387,34 @@ EOF
 [23:07:02] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -25 → exit 0
 [23:08:02] 🟢 TOKENS: 13791 / 80000 (17%) [read:48KB write:0KB assist:2KB shell:0KB]
 [23:08:10] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -25 → exit 0
+[23:08:26] 🟢 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: implement Plan YAML, encodings, and StormGLM backend
+
+Plan module:
+- Parse YAML configuration files
+- Rule-based encoding and model selection
+- Deterministic selection logic
+
+Encoding module:
+- S encoding (L1+L2)
+- M encoding (max allele)
+- D encoding (|L1-L2|)
+- Tail indicator encoding
+- Categorical bin encoding
+- Binary presence encoding
+
+GLM module (StormGLM):
+- Linear regression via OLS
+- Logistic regression via IRLS
+- Categorical regression (multinomial)
+- BinomiRare test for rare variants
+- Firth logistic regression (feature-flagged)
+- Covariate support scaffolded
+
+All 52 tests passing
+
+Criteria 24-37 complete
+EOF
+)" && git push → exit 0
+[23:09:13] 🟢 TOKENS: 13833 / 80000 (17%) [read:48KB write:0KB assist:2KB shell:0KB]
+[23:09:22] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -20 → exit 0

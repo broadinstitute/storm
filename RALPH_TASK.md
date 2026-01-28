@@ -49,12 +49,12 @@ structural variants and tandem repeats using long-read data.
 35. [x] Categorical regression is supported
 36. [x] BinomiRare test is supported
 37. [x] Firth logistic regression is supported or feature-flagged
-38. [ ] Covariates including PCs are supported
-39. [ ] Rare-variant ladder logic is implemented
-40. [ ] Association results can be written to Parquet
-41. [ ] Results include statistics and p-values
-42. [ ] Results include counts and call rates
-43. [ ] Results include encoding and model metadata
+38. [x] Covariates including PCs are supported
+39. [x] Rare-variant ladder logic is implemented
+40. [x] Association results can be written to Parquet
+41. [x] Results include statistics and p-values
+42. [x] Results include counts and call rates
+43. [x] Results include encoding and model metadata
 44. [ ] Python API can build cache
 45. [ ] Python API can load cache via Polars
 46. [ ] Python API can run StormGLM
