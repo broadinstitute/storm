@@ -11,7 +11,6 @@ use std::io::Write;
 use std::path::Path;
 use thiserror::Error;
 use arrow::array::Array;
-use arrow::array::Array;
 
 // Core modules
 pub mod vcf;
@@ -39,8 +38,8 @@ pub use testunit::{TestUnit, TestUnitType, TestUnitBuilder, DataSource};
 pub use resolver::{Resolver, ResolvedGenotype, PresenceSource, AlleleSource, LocusSvAlleles};
 pub use cache::{
     ArrowCache, ArrowCacheError, Provenance, write_parquet, read_parquet, ParquetError,
-    parquet_cache::{write_cache_to_dir, read_cache_from_dir},
 };
+pub use cache::parquet_cache::{write_cache_to_dir, read_cache_from_dir};
 pub use explain::{
     explain_genotype as explain_genotype_writer,
     explain_locus as explain_locus_writer,
@@ -173,7 +172,7 @@ pub fn build_cache(
         let mut unit_gts = Vec::new();
         for sample_id in &all_samples {
             let gt = if let Some(sv_gt) = sv.genotypes.get(sample_id) {
-                let is_present = sv_gt.is_carrier();
+                let is_present = !sv_gt.is_ref_hom();
                 let (allele1, allele2) = if let Some(svlen) = sv.sv_len {
                     // For INS: length is positive; for DEL: length is negative
                     let len = svlen.abs();
@@ -242,15 +241,12 @@ pub fn build_cache(
 
                 // Resolve genotypes using the Resolver
                 let mut resolver = Resolver::new();
-                for sv in &svs {
-                    resolver.add_sv(sv, entry);
-                }
-
-                let mut unit_gts = Vec::new();
-                for sample_id in &all_samples {
-                    let gt = resolver.resolve_for_sample(sample_id, entry);
-                    unit_gts.push(gt);
-                }
+                let entries_slice: Vec<&CatalogEntry> = vec![entry];
+                resolver.add_catalog_refs(&entries_slice);
+                
+                // Create slice of references for resolve_from_svs
+                let svs_refs: Vec<&SvRecord> = svs.iter().copied().collect();
+                let unit_gts = resolver.resolve_from_svs(&entry_id, &svs_refs, &all_samples);
 
                 genotypes_map.push((unit.id.clone(), unit_gts));
                 test_units.push(unit);

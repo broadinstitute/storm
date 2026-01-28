@@ -7,7 +7,7 @@ use clap::{Parser, Subcommand};
 
 use storm::{
     build_cache, verify_cache, explain_genotype, explain_locus,
-    cache::read_cache_from_dir,
+    read_cache_from_dir,
 };
 
 /// STORM: Structural & Tandem-Repeat Optimized Regression Models

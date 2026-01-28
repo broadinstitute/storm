@@ -113,6 +113,11 @@ impl Genotype {
         let non_missing: Vec<_> = self.alleles.iter().filter_map(|a| *a).collect();
         non_missing.len() >= 2 && non_missing.iter().all(|&a| a > 0) && non_missing[0] == non_missing[1]
     }
+
+    /// Check if carrier (has at least one alt allele)
+    pub fn is_carrier(&self) -> bool {
+        self.alleles.iter().any(|a| a.map(|v| v > 0).unwrap_or(false))
+    }
 }
 
 /// Parse an SV VCF file and return records

@@ -11,7 +11,7 @@ mod arrow_cache;
 pub mod parquet_cache;
 
 pub use arrow_cache::{ArrowCache, ArrowCacheError};
-pub use parquet_cache::{write_parquet, read_parquet, ParquetError};
+pub use parquet_cache::{write_parquet, read_parquet, ParquetError, write_cache_to_dir, read_cache_from_dir};
 
 use std::collections::HashMap;
 use std::sync::Arc;
