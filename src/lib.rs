@@ -11,7 +11,7 @@ pub mod vcf;
 
 // Re-exports
 pub use vcf::sv::{parse_sv_vcf, SvRecord, SvType, SvVcfError, Genotype};
-pub use vcf::trgt::{parse_trgt_vcf, TrgtRecord, TrgtVcfError};
+pub use vcf::trgt::{parse_trgt_vcf, TrgtRecord, TrgtGenotype, TrgtVcfError};
 
 // Example library function
 #[cfg(feature = "python")]
