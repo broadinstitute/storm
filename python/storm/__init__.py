@@ -395,6 +395,129 @@ def load_plan(path: str) -> Dict[str, Any]:
             return yaml.safe_load(f)
 
 
+def parse_sv_vcf(path: str) -> tuple:
+    """Parse an SV VCF file.
+    
+    Args:
+        path: Path to SV VCF file.
+        
+    Returns:
+        Tuple of (samples, records) where records is a list of dicts.
+    """
+    import json
+    if HAS_RUST and py_parse_sv_vcf is not None:
+        samples, records_json = py_parse_sv_vcf(path)
+        return samples, json.loads(records_json)
+    raise RuntimeError("Rust extension not available")
+
+
+def parse_trgt_vcf(path: str) -> tuple:
+    """Parse a TRGT VCF file.
+    
+    Args:
+        path: Path to TRGT VCF file.
+        
+    Returns:
+        Tuple of (samples, records) where records is a list of dicts.
+    """
+    import json
+    if HAS_RUST and py_parse_trgt_vcf is not None:
+        samples, records_json = py_parse_trgt_vcf(path)
+        return samples, json.loads(records_json)
+    raise RuntimeError("Rust extension not available")
+
+
+def catalog_from_bed(path: str) -> Dict[str, Any]:
+    """Load catalog from BED file.
+    
+    Args:
+        path: Path to TRExplorer BED file.
+        
+    Returns:
+        Dictionary with catalog data.
+    """
+    import json
+    if HAS_RUST and py_catalog_from_bed is not None:
+        return json.loads(py_catalog_from_bed(path))
+    raise RuntimeError("Rust extension not available")
+
+
+def catalog_from_json(path: str) -> Dict[str, Any]:
+    """Load catalog from JSON file.
+    
+    Args:
+        path: Path to TRExplorer JSON file.
+        
+    Returns:
+        Dictionary with catalog data.
+    """
+    import json as json_mod
+    if HAS_RUST and py_catalog_from_json is not None:
+        return json_mod.loads(py_catalog_from_json(path))
+    raise RuntimeError("Rust extension not available")
+
+
+def catalog_from_bed_and_json(bed_path: str, json_path: str) -> Dict[str, Any]:
+    """Load catalog from both BED and JSON files.
+    
+    Args:
+        bed_path: Path to TRExplorer BED file.
+        json_path: Path to TRExplorer JSON file.
+        
+    Returns:
+        Dictionary with merged catalog data.
+    """
+    import json
+    if HAS_RUST and py_catalog_from_bed_and_json is not None:
+        return json.loads(py_catalog_from_bed_and_json(bed_path, json_path))
+    raise RuntimeError("Rust extension not available")
+
+
+def read_cache_from_dir(cache_dir: str) -> Dict[str, Any]:
+    """Read cache metadata from directory.
+    
+    Args:
+        cache_dir: Path to cache directory.
+        
+    Returns:
+        Dictionary with cache metadata.
+    """
+    import json
+    if HAS_RUST and py_read_cache_from_dir is not None:
+        return json.loads(py_read_cache_from_dir(cache_dir))
+    raise RuntimeError("Rust extension not available")
+
+
+def write_cache_to_dir(cache_dir: str) -> None:
+    """Write cache to directory (placeholder).
+    
+    Args:
+        cache_dir: Path to cache directory.
+    """
+    if HAS_RUST and py_write_cache_to_dir is not None:
+        py_write_cache_to_dir(cache_dir, "{}")
+    else:
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)
+
+
+def run_association(cache_dir: str, phenotype: Dict[str, float], plan_path: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Run association testing.
+    
+    Args:
+        cache_dir: Path to cache directory.
+        phenotype: Dictionary mapping sample_id to phenotype value.
+        plan_path: Optional path to plan YAML file.
+        
+    Returns:
+        List of association results.
+    """
+    import json
+    if HAS_RUST and py_run_association is not None:
+        results_json = py_run_association(cache_dir, json.dumps(phenotype), plan_path)
+        return json.loads(results_json)
+    raise RuntimeError("Rust extension not available")
+
+
 # Convenience exports
 __all__ = [
     "version",
@@ -404,4 +527,12 @@ __all__ = [
     "explain",
     "verify_cache",
     "load_plan",
+    "parse_sv_vcf",
+    "parse_trgt_vcf",
+    "catalog_from_bed",
+    "catalog_from_json",
+    "catalog_from_bed_and_json",
+    "read_cache_from_dir",
+    "write_cache_to_dir",
+    "run_association",
 ]

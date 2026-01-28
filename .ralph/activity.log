@@ -755,3 +755,14 @@ Ralph Session Started: Wed Jan 28 14:39:13 PST 2026
 [14:39:43] 🟡 TOKENS: 59760 / 80000 (74%) - approaching limit [read:229KB write:0KB assist:0KB shell:0KB]
 [14:39:53] 🔴 READ /Users/kiran/repositories/storm/tests/integration_tests.rs (271 lines, ~26.4KB)
 [14:40:29] 🔴 TOKENS: 66726 / 80000 (83%) - approaching limit [read:256KB write:0KB assist:1KB shell:0KB]
+[14:40:54] 🔴 READ /Users/kiran/repositories/storm/notebooks/storm_demo.ipynb (329 lines, ~32.1KB)
+[14:40:54] 🔴 WARN: Approaching token limit (74977 >= 70000)
+[14:41:10] 🔴 SHELL cd /Users/kiran/repositories/storm && cargo test --features python 2>&1 | head -100 → exit 0
+[14:41:10] 🔴 TOKENS: 74999 / 80000 (93%) - rotation imminent [read:288KB write:0KB assist:1KB shell:0KB]
+[14:41:17] 🔴 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -50 → exit 0
+[14:41:36] 🔴 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -30 → exit 0
+[14:41:40] 🔴 TOKENS: 75076 / 80000 (93%) - rotation imminent [read:288KB write:0KB assist:1KB shell:0KB]
+[14:41:57] 🔴 READ /Users/kiran/repositories/storm/RALPH_TASK.md (240 lines, ~23.4KB)
+[14:41:57] 🔴 ROTATE: Token threshold reached (81140 >= 80000)
+[14:42:02] 🔴 SHELL cd /Users/kiran/repositories/storm && grep -c "\- \[x\]" RALPH_TASK.md && grep -c "\- \[ \]" RALPH_TASK.md → exit 0
+[14:42:02] 🔴 ROTATE: Token threshold reached (81172 >= 80000)

@@ -268,3 +268,88 @@ fn test_read_and_explain_genotype() {
     
     let _ = std::fs::remove_dir_all(&output_dir);
 }
+
+// ============================================================================
+// Association Testing Tests
+// ============================================================================
+
+#[test]
+fn test_run_association_linear() {
+    use storm::glm::run_association;
+    use storm::plan::{Model, Encoding};
+    
+    // Simple test with synthetic data
+    let x = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+    let y = vec![2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0];
+    
+    let result = run_association(
+        "test_unit_assoc",
+        &x,
+        &y,
+        &Model::Linear,
+        &Encoding::S,
+        None,
+    ).expect("Failed to run association");
+    
+    assert_eq!(result.unit_id, "test_unit_assoc");
+    assert!((result.beta - 2.0).abs() < 0.01, "Beta should be ~2.0");
+    assert!(result.p_value < 0.001, "Should be highly significant");
+    assert_eq!(result.n_samples, 10);
+    assert_eq!(result.model, "Linear");
+    assert_eq!(result.encoding, "S");
+}
+
+#[test]
+fn test_run_association_logistic() {
+    use storm::glm::run_association;
+    use storm::plan::{Model, Encoding};
+    
+    // Binary outcome data
+    let x = vec![0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0];
+    let y = vec![0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0];
+    
+    let result = run_association(
+        "test_logistic",
+        &x,
+        &y,
+        &Model::Logistic,
+        &Encoding::Binary,
+        None,
+    ).expect("Failed to run logistic association");
+    
+    assert_eq!(result.unit_id, "test_logistic");
+    assert!(result.beta > 0.0, "Beta should be positive (x=1 -> higher y)");
+    assert!(result.se > 0.0, "SE should be positive");
+    assert!(result.p_value >= 0.0 && result.p_value <= 1.0, "P-value should be valid");
+    assert_eq!(result.model, "Logistic");
+}
+
+#[test]
+fn test_association_result_structure() {
+    use storm::glm::run_association;
+    use storm::plan::{Model, Encoding};
+    
+    // Use larger sample size and non-perfect correlation for realistic test
+    let x = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+    let y = vec![2.1, 3.9, 6.1, 8.0, 10.2, 11.9, 14.1, 16.0, 17.8, 20.1];
+    
+    let result = run_association(
+        "test_structure",
+        &x,
+        &y,
+        &Model::Linear,
+        &Encoding::M,
+        None,
+    ).expect("Failed to run association");
+    
+    // Verify all fields of AssociationResult are populated
+    assert!(!result.unit_id.is_empty(), "unit_id should not be empty");
+    assert!(result.beta.is_finite(), "beta should be finite");
+    assert!(result.se.is_finite(), "se should be finite");
+    assert!(result.statistic.is_finite(), "statistic should be finite");
+    assert!(result.p_value >= 0.0 && result.p_value <= 1.0, "p_value should be in [0,1]");
+    assert_eq!(result.n_samples, 10, "n_samples should match input length");
+    assert!(result.call_rate >= 0.0 && result.call_rate <= 1.0, "call_rate should be in [0,1]");
+    assert!(!result.model.is_empty(), "model should not be empty");
+    assert!(!result.encoding.is_empty(), "encoding should not be empty");
+}

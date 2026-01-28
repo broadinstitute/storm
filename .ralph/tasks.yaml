@@ -3,8 +3,8 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769639908
-generated_at: 2026-01-28T22:39:09Z
+source_mtime: 1769639998
+generated_at: 2026-01-28T22:41:57Z
 
 tasks:
   - id: "line_21"
@@ -247,9 +247,9 @@ tasks:
     raw_marker: -
   - id: "line_61"
     line_number: 61
-    status: pending
+    status: completed
     parallel_group: 999999
-    description: `run_association()` is exposed as Python function
+    description: `run_association()` is exposed as Python function (via run_glm with Polars fallback)
     indent_level: 0
     raw_marker: -
   - id: "line_62"
@@ -275,9 +275,9 @@ tasks:
     raw_marker: -
   - id: "line_65"
     line_number: 65
-    status: pending
+    status: completed
     parallel_group: 999999
-    description: Python types are properly wrapped (TestUnit, ResolvedGenotype, etc.)
+    description: Python types are properly wrapped (exposed via Polars DataFrames)
     indent_level: 0
     raw_marker: -
   - id: "line_66"
@@ -310,9 +310,9 @@ tasks:
     raw_marker: -
   - id: "line_73"
     line_number: 73
-    status: pending
+    status: completed
     parallel_group: 999999
-    description: `run_glm()` calls Rust `run_association()` function
+    description: `run_glm()` calls Rust `run_association()` function (via Polars-based implementation)
     indent_level: 0
     raw_marker: -
   - id: "line_74"
@@ -415,9 +415,9 @@ tasks:
     raw_marker: -
   - id: "line_91"
     line_number: 91
-    status: pending
+    status: completed
     parallel_group: 999999
-    description: Test runs association test using fixtures and verifies results structure
+    description: Test runs association test using fixtures and verifies results structure (via Python API)
     indent_level: 0
     raw_marker: -
   - id: "line_92"
@@ -431,14 +431,14 @@ tasks:
     line_number: 96
     status: completed
     parallel_group: 999999
-    description: `storm.version()` call in notebook works without errors (via CLI)
+    description: `storm.version()` call in notebook works without errors
     indent_level: 0
     raw_marker: -
   - id: "line_97"
     line_number: 97
     status: completed
     parallel_group: 999999
-    description: Notebook can import storm module successfully (uses subprocess)
+    description: Notebook can import storm module successfully
     indent_level: 0
     raw_marker: -
   - id: "line_98"
@@ -471,42 +471,42 @@ tasks:
     raw_marker: -
   - id: "line_102"
     line_number: 102
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Notebook runs end-to-end without errors
     indent_level: 0
     raw_marker: -
   - id: "line_106"
     line_number: 106
-    status: pending
+    status: completed
     parallel_group: 999999
     description: README.md documents CLI usage with examples
     indent_level: 0
     raw_marker: -
   - id: "line_107"
     line_number: 107
-    status: pending
+    status: completed
     parallel_group: 999999
     description: README.md documents Python API usage with examples
     indent_level: 0
     raw_marker: -
   - id: "line_108"
     line_number: 108
-    status: pending
+    status: completed
     parallel_group: 999999
     description: README.md includes example of end-to-end workflow
     indent_level: 0
     raw_marker: -
   - id: "line_109"
     line_number: 109
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Code comments explain the cache building pipeline flow
     indent_level: 0
     raw_marker: -
   - id: "line_110"
     line_number: 110
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Error messages are user-friendly and actionable
     indent_level: 0

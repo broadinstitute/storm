@@ -802,7 +802,7 @@ fn py_catalog_from_bed_and_json(bed_path: &str, json_path: &str) -> PyResult<Str
 /// Python binding for write_cache_to_dir
 #[cfg(feature = "python")]
 #[pyfunction]
-fn py_write_cache_to_dir(cache_dir: &str, cache_json: &str) -> PyResult<()> {
+fn py_write_cache_to_dir(cache_dir: &str, _cache_json: &str) -> PyResult<()> {
     // This is a simplified version - full implementation would deserialize the cache
     // For now, we verify the directory exists
     let dir = Path::new(cache_dir);
@@ -852,7 +852,7 @@ fn py_run_association(
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
     
     // Load plan if provided
-    let plan = if let Some(path) = plan_path {
+    let _plan = if let Some(path) = plan_path {
         Some(Plan::from_yaml(path)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?)
     } else {
