@@ -103,11 +103,11 @@ The STORM Rust core library is complete, but the integration layer is missing. T
 
 ### G. Documentation and Polish
 
-- [ ] README.md documents CLI usage with examples
-- [ ] README.md documents Python API usage with examples
-- [ ] README.md includes example of end-to-end workflow
-- [ ] Code comments explain the cache building pipeline flow
-- [ ] Error messages are user-friendly and actionable
+- [x] README.md documents CLI usage with examples
+- [x] README.md documents Python API usage with examples
+- [x] README.md includes example of end-to-end workflow
+- [x] Code comments explain the cache building pipeline flow
+- [x] Error messages are user-friendly and actionable
 
 ---
 

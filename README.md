@@ -1,233 +1,214 @@
 # STORM: Structural & Tandem-Repeat Optimized Regression Models
 
-A high-performance Rust library with Python bindings for association testing of structural variants and tandem repeats using long-read sequencing data.
+A high-performance framework for association testing of structural variants and tandem repeats using long-read sequencing data.
 
 ## Features
 
-- **VCF Parsing**: Parse integrated SV VCFs and TRGT VCFs
-- **Catalog Integration**: Load TRExplorer BED/JSON catalogs for tandem repeat annotations
-- **Genotype Resolution**: Map SVs to repeat loci and reconstruct diploid allele lengths
-- **Multiple Encodings**: S (sum), M (max), D (diff), Tail, Binary, Categorical
-- **Association Testing**: Linear regression, logistic regression, BinomiRare, Firth regression
-- **Caching**: Arrow/Parquet-based cache for efficient data storage and access
-- **Explainability**: Detailed genotype explanations for debugging and QC
+- **SV/TRGT Integration**: Parse and integrate structural variants with TRGT repeat genotypes
+- **Genotype Resolution**: Resolve diploid allele lengths from multiple data sources
+- **Multiple Encodings**: S (sum), M (max), D (diff), Tail, Categorical, Binary
+- **Association Testing**: Linear, logistic, Firth, and BinomiRare models
+- **Arrow/Parquet Cache**: Efficient storage for large-scale analysis
+- **Plan-based Configuration**: YAML-driven analysis rules
 
 ## Installation
 
-### From Source (Rust CLI)
+### Rust Binary
 
 ```bash
-# Clone the repository
+# Clone and build
 git clone https://github.com/broadinstitute/storm.git
 cd storm
-
-# Build the release binary
 cargo build --release
 
-# The binary will be available at target/release/storm
+# The binary will be at target/release/storm
 ```
 
 ### Python Package
 
 ```bash
-# Install maturin for building Python extensions
-pip install maturin
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate
 
-# Build and install the Python package
-maturin develop --features python
+# Install with maturin
+pip install maturin
+maturin develop
 ```
 
 ## CLI Usage
 
-### Building a Cache
-
-Build a cache from input VCF files:
+### Build a Cache
 
 ```bash
 storm cache build \
-    --sv-vcf input/sv.vcf.gz \
-    --trgt-vcf input/trgt.vcf.gz \
-    --catalog-bed catalog/trexplorer.bed \
-    --catalog-json catalog/trexplorer.json \
-    --output-dir storm_cache
+    --sv-vcf integrated_sv.vcf \
+    --trgt-vcf trgt.vcf \
+    --catalog-bed trexplorer.bed \
+    --catalog-json trexplorer.json \
+    --output-dir my_cache
 ```
 
-Options:
-- `--sv-vcf`: Path to integrated SV VCF (required)
-- `--trgt-vcf`: Path to TRGT VCF (optional)
-- `--catalog-bed`: Path to TRExplorer BED file (optional)
-- `--catalog-json`: Path to TRExplorer JSON file (optional)
-- `--output-dir`: Output directory for cache (default: `storm_cache`)
-
-### Verifying a Cache
-
-Validate that a cache has the correct schema and data:
+### Verify a Cache
 
 ```bash
-storm cache verify --cache-dir storm_cache
+storm cache verify --cache-dir my_cache
 ```
 
-### Explaining Genotypes
-
-Get detailed information about genotypes at a locus:
+### Explain Genotypes
 
 ```bash
-# Explain all genotypes at a locus
-storm explain sv_sv1 --cache-dir storm_cache
+# Explain all samples at a locus
+storm explain TR_123 --cache-dir my_cache
 
 # Explain a specific sample
-storm explain sv_sv1 --cache-dir storm_cache --sample SAMPLE1
+storm explain TR_123 --cache-dir my_cache --sample SAMPLE1
 ```
 
 ## Python API
 
-### Building a Cache
+### Build Cache
 
 ```python
 import storm
 
-# Build cache using the Rust backend
+# Build cache from input files
 cache = storm.StormCache.build(
-    sv_vcf="input/sv.vcf.gz",
-    trgt_vcf="input/trgt.vcf.gz",
-    catalog_bed="catalog/trexplorer.bed",
-    catalog_json="catalog/trexplorer.json",
-    output_dir="storm_cache"
+    sv_vcf="integrated_sv.vcf",
+    trgt_vcf="trgt.vcf",
+    catalog_bed="trexplorer.bed",
+    catalog_json="trexplorer.json",
+    output_dir="my_cache",
 )
+
+print(f"Test units: {cache._build_stats['num_test_units']}")
+print(f"Samples: {cache._build_stats['num_samples']}")
 ```
 
-### Loading and Exploring a Cache
+### Load and Explore Cache
+
+```python
+# Load existing cache
+cache = storm.load_cache("my_cache")
+
+# Access tables as Polars DataFrames
+print(cache.test_units)
+print(cache.genotypes)
+print(cache.features)
+print(cache.catalog)
+```
+
+### Explain Genotypes
+
+```python
+# Explain all samples at a locus
+explanation = storm.explain(cache, "TR_123")
+print(explanation)
+
+# Explain a specific sample
+explanation = storm.explain(cache, "TR_123", sample_id="SAMPLE1")
+print(explanation)
+```
+
+### Run Association Testing
+
+```python
+import polars as pl
+
+# Create phenotype series (sample order matches cache)
+phenotype = pl.Series("phenotype", [0.5, 1.2, 0.8, ...])
+
+# Run GLM analysis
+results = storm.run_glm(
+    cache=cache,
+    phenotype=phenotype,
+)
+
+# Filter significant results
+significant = results.filter(pl.col("p_value") < 5e-8)
+print(significant)
+```
+
+### Verify Cache
+
+```python
+result = storm.verify_cache("my_cache")
+print(f"Valid: {result['is_valid']}")
+print(f"Test units: {result['num_test_units']}")
+print(f"Genotypes: {result['num_genotypes']}")
+```
+
+### Load Plan Configuration
+
+```python
+# Load plan YAML
+plan = storm.load_plan("analysis_plan.yaml")
+print(plan)
+```
+
+## End-to-End Workflow
 
 ```python
 import storm
 import polars as pl
 
-# Load existing cache
-cache = storm.load_cache("storm_cache")
-
-# Access tables as Polars DataFrames
-print(cache.test_units)
-print(cache.genotypes)
-print(cache.catalog)
-print(cache.features)
-```
-
-### Running Association Tests
-
-```python
-import storm
-
-# Run GLM association testing
-results = storm.run_glm(
-    cache=cache,
-    phenotype=phenotype_series,
-    plan="plan.yaml",
-    covariates=covariates_df,
-    output="results.parquet"
+# 1. Build cache from input files
+cache = storm.StormCache.build(
+    sv_vcf="data/sv.vcf",
+    trgt_vcf="data/trgt.vcf",
+    catalog_bed="data/catalog.bed",
+    catalog_json="data/catalog.json",
+    output_dir="analysis_cache",
 )
 
-print(results.sort("p_value").head(10))
+# 2. Verify cache integrity
+result = storm.verify_cache("analysis_cache")
+assert result["is_valid"]
+
+# 3. Load phenotype data
+phenotype = pl.read_csv("phenotypes.csv")["trait"]
+
+# 4. Run association testing
+results = storm.run_glm(cache, phenotype)
+
+# 5. Save results
+results.write_parquet("association_results.parquet")
+
+# 6. Investigate top hits
+top_hits = results.sort("p_value").head(10)
+for unit_id in top_hits["unit_id"]:
+    print(storm.explain(cache, unit_id))
 ```
 
-### Explaining Genotypes
+## Cache Structure
 
-```python
-import storm
-
-# Explain all genotypes at a locus
-explanation = storm.explain(cache, "repeat_TR001")
-print(explanation)
-
-# Explain for a specific sample
-explanation = storm.explain(cache, "repeat_TR001", sample_id="SAMPLE1")
-print(explanation)
-```
-
-## Plan Configuration
-
-STORM uses YAML plan files to configure analysis:
-
-```yaml
-name: my_analysis
-default_encoding: s
-default_model: linear
-
-rules:
-  - name: rare_binary
-    condition:
-      max_carriers: 10
-    encoding: binary
-    model: binomirare
-    
-  - name: cag_repeats  
-    condition:
-      motif_pattern: CAG
-    encoding: m
-    model: logistic
-
-covariates:
-  - age
-  - sex
-  
-num_pcs: 10
-```
-
-## Cache Format
-
-The cache consists of Parquet files:
+The cache directory contains Parquet files:
 
 | File | Description |
 |------|-------------|
-| `test_units.parquet` | Test unit definitions (SV, RepeatProxy, TrueRepeat) |
-| `genotypes.parquet` | Resolved genotypes per sample |
-| `catalog.parquet` | TRExplorer catalog entries |
-| `features.parquet` | Computed features (S, M, D, binary) |
-| `provenance.parquet` | Build metadata |
+| `test_units.parquet` | Test unit definitions (id, chrom, start, end, type, motif) |
+| `genotypes.parquet` | Resolved genotypes (unit_id, sample_id, allele1, allele2) |
+| `catalog.parquet` | Catalog entries (id, chrom, start, end, motif, metadata) |
+| `features.parquet` | Computed features (unit_id, sample_id, S, M, D, binary) |
+| `provenance.parquet` | Build provenance metadata |
 | `provenance.json` | Human-readable provenance |
 
-## Encodings
+## Requirements
 
-STORM supports multiple genotype encodings:
+- Rust 1.70+ (for building)
+- Python 3.8+ (for Python bindings)
+- Polars (for DataFrame operations)
 
-| Encoding | Description | Formula |
-|----------|-------------|---------|
-| S (Sum) | Sum of allele lengths | L1 + L2 |
-| M (Max) | Maximum allele length | max(L1, L2) |
-| D (Diff) | Absolute difference | \|L1 - L2\| |
-| Tail | Threshold indicator | 1 if max(L1,L2) > threshold |
-| Binary | Carrier status | 1 if has non-ref allele |
-| Categorical | Binned categories | Bin by length ranges |
-
-## Development
-
-### Running Tests
+## Running Tests
 
 ```bash
-# Run all tests
+# Rust tests
 cargo test
 
-# Run with Python feature
+# All tests including integration
 cargo test --features python
-
-# Run integration tests only
-cargo test --test integration_tests
-```
-
-### Building Documentation
-
-```bash
-cd docs
-make html
 ```
 
 ## License
 
 MIT License - see LICENSE file for details.
-
-## Citation
-
-If you use STORM in your research, please cite:
-
-```
-[Citation information]
-```
