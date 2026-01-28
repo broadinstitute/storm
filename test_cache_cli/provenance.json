@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-01-28T22:32:44.941911+00:00",
+  "input_files": [
+    "fixtures/sv_small.vcf",
+    "fixtures/trgt_small.vcf",
+    "fixtures/trexplorer.bed",
+    "fixtures/trexplorer.json"
+  ],
+  "num_samples": 2,
+  "num_test_units": 6,
+  "storm_version": "0.0.23"
+}

@@ -3,188 +3,188 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769638916
-generated_at: 2026-01-28T22:26:07Z
+source_mtime: 1769639443
+generated_at: 2026-01-28T22:35:29Z
 
 tasks:
   - id: "line_21"
     line_number: 21
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `storm --version` prints version from Cargo.toml
     indent_level: 0
     raw_marker: -
   - id: "line_22"
     line_number: 22
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `storm cache build` command exists with proper argument parsing
     indent_level: 0
     raw_marker: -
   - id: "line_23"
     line_number: 23
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `storm cache build` accepts: `--sv-vcf`, `--trgt-vcf`, `--catalog-bed`, `--catalog-json`, `--output-dir`
     indent_level: 0
     raw_marker: -
   - id: "line_24"
     line_number: 24
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `storm cache build` calls the end-to-end pipeline and writes cache files
     indent_level: 0
     raw_marker: -
   - id: "line_25"
     line_number: 25
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `storm cache verify` command exists and validates cache schema
     indent_level: 0
     raw_marker: -
   - id: "line_26"
     line_number: 26
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `storm cache verify` checks that all required Parquet files exist
     indent_level: 0
     raw_marker: -
   - id: "line_27"
     line_number: 27
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `storm cache verify` validates row counts match between tables
     indent_level: 0
     raw_marker: -
   - id: "line_28"
     line_number: 28
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `storm explain <test_unit_id>` command exists
     indent_level: 0
     raw_marker: -
   - id: "line_29"
     line_number: 29
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `storm explain` accepts optional `--sample <sample_id>` flag
     indent_level: 0
     raw_marker: -
   - id: "line_30"
     line_number: 30
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `storm explain` loads cache and prints resolved genotype details
     indent_level: 0
     raw_marker: -
   - id: "line_31"
     line_number: 31
-    status: pending
+    status: completed
     parallel_group: 999999
     description: CLI uses clap or similar for argument parsing
     indent_level: 0
     raw_marker: -
   - id: "line_32"
     line_number: 32
-    status: pending
+    status: completed
     parallel_group: 999999
     description: CLI provides helpful error messages and usage text
     indent_level: 0
     raw_marker: -
   - id: "line_36"
     line_number: 36
-    status: pending
+    status: completed
     parallel_group: 999999
     description: `build_cache()` function exists in Rust (or similar unified entry point)
     indent_level: 0
     raw_marker: -
   - id: "line_37"
     line_number: 37
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline parses SV VCF using `parse_sv_vcf()`
     indent_level: 0
     raw_marker: -
   - id: "line_38"
     line_number: 38
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline parses TRGT VCF using `parse_trgt_vcf()` (if provided)
     indent_level: 0
     raw_marker: -
   - id: "line_39"
     line_number: 39
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline loads catalog using `Catalog::from_bed()` and `Catalog::from_json()`
     indent_level: 0
     raw_marker: -
   - id: "line_40"
     line_number: 40
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline maps SVs to catalog loci using `map_svs_to_catalog()`
     indent_level: 0
     raw_marker: -
   - id: "line_41"
     line_number: 41
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline constructs TestUnits using `TestUnitBuilder`
     indent_level: 0
     raw_marker: -
   - id: "line_42"
     line_number: 42
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline creates Resolver and resolves genotypes from SV data
     indent_level: 0
     raw_marker: -
   - id: "line_43"
     line_number: 43
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline applies TRGT overlay using `Resolver::resolve_from_trgt()`
     indent_level: 0
     raw_marker: -
   - id: "line_44"
     line_number: 44
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline merges resolved genotypes using `Resolver::resolve_merged()`
     indent_level: 0
     raw_marker: -
   - id: "line_45"
     line_number: 45
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline computes features for each TestUnit
     indent_level: 0
     raw_marker: -
   - id: "line_46"
     line_number: 46
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline builds ArrowCache with all tables
     indent_level: 0
     raw_marker: -
   - id: "line_47"
     line_number: 47
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline writes cache using `write_cache_to_dir()`
     indent_level: 0
     raw_marker: -
   - id: "line_48"
     line_number: 48
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline records provenance metadata (input file hashes, git commit, timestamp)
     indent_level: 0
     raw_marker: -
   - id: "line_49"
     line_number: 49
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Pipeline handles missing optional inputs gracefully (TRGT, catalog)
     indent_level: 0

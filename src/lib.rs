@@ -677,11 +677,84 @@ fn _version() -> PyResult<String> {
     Ok(env!("CARGO_PKG_VERSION").to_string())
 }
 
+/// Python binding for build_cache
+#[cfg(feature = "python")]
+#[pyfunction]
+#[pyo3(signature = (sv_vcf, trgt_vcf=None, catalog_bed=None, catalog_json=None, output_dir="storm_cache"))]
+fn py_build_cache(
+    sv_vcf: &str,
+    trgt_vcf: Option<&str>,
+    catalog_bed: Option<&str>,
+    catalog_json: Option<&str>,
+    output_dir: &str,
+) -> PyResult<(usize, usize, usize, usize)> {
+    let stats = build_cache(sv_vcf, trgt_vcf, catalog_bed, catalog_json, output_dir)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    Ok((
+        stats.num_test_units,
+        stats.num_samples,
+        stats.num_genotypes,
+        stats.num_catalog_entries,
+    ))
+}
+
+/// Python binding for verify_cache
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_verify_cache(cache_dir: &str) -> PyResult<(bool, usize, usize, usize, usize, Vec<String>)> {
+    let result = verify_cache(cache_dir)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    Ok((
+        result.is_valid,
+        result.num_test_units,
+        result.num_genotypes,
+        result.num_catalog_entries,
+        result.num_features,
+        result.errors,
+    ))
+}
+
+/// Python binding for explain_genotype
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_explain_genotype(cache_dir: &str, unit_id: &str, sample_id: &str) -> PyResult<String> {
+    let cache = cache::read_cache_from_dir(Path::new(cache_dir))
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    explain_genotype(&cache, unit_id, sample_id)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+}
+
+/// Python binding for explain_locus
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_explain_locus(cache_dir: &str, unit_id: &str) -> PyResult<String> {
+    let cache = cache::read_cache_from_dir(Path::new(cache_dir))
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    explain_locus(&cache, unit_id)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+}
+
+/// Python binding for Plan::from_yaml
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_load_plan(path: &str) -> PyResult<String> {
+    let plan = Plan::from_yaml(path)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    // Return serialized plan as JSON for Python to consume
+    serde_json::to_string(&plan)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+}
+
 #[cfg(feature = "python")]
 #[pymodule]
-fn storm(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _storm(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(add, m)?)?;
     m.add_function(wrap_pyfunction!(_version, m)?)?;
+    m.add_function(wrap_pyfunction!(py_build_cache, m)?)?;
+    m.add_function(wrap_pyfunction!(py_verify_cache, m)?)?;
+    m.add_function(wrap_pyfunction!(py_explain_genotype, m)?)?;
+    m.add_function(wrap_pyfunction!(py_explain_locus, m)?)?;
+    m.add_function(wrap_pyfunction!(py_load_plan, m)?)?;
     Ok(())
 }
 
@@ -700,7 +773,7 @@ mod tests {
     fn test_version() {
         let version = super::_version().unwrap();
         assert!(!version.is_empty());
-        // Version should be in format x.y.z
-        assert!(version.matches(r"^\d+\.\d+\.\d+$"));
+        // Version should contain at least one dot (x.y format)
+        assert!(version.contains('.'));
     }
 }

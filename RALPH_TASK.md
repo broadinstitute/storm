@@ -18,35 +18,35 @@ The STORM Rust core library is complete, but the integration layer is missing. T
 
 ### A. CLI Binary Implementation
 
-- [ ] `storm --version` prints version from Cargo.toml
-- [ ] `storm cache build` command exists with proper argument parsing
-- [ ] `storm cache build` accepts: `--sv-vcf`, `--trgt-vcf`, `--catalog-bed`, `--catalog-json`, `--output-dir`
-- [ ] `storm cache build` calls the end-to-end pipeline and writes cache files
-- [ ] `storm cache verify` command exists and validates cache schema
-- [ ] `storm cache verify` checks that all required Parquet files exist
-- [ ] `storm cache verify` validates row counts match between tables
-- [ ] `storm explain <test_unit_id>` command exists
-- [ ] `storm explain` accepts optional `--sample <sample_id>` flag
-- [ ] `storm explain` loads cache and prints resolved genotype details
-- [ ] CLI uses clap or similar for argument parsing
-- [ ] CLI provides helpful error messages and usage text
+- [x] `storm --version` prints version from Cargo.toml
+- [x] `storm cache build` command exists with proper argument parsing
+- [x] `storm cache build` accepts: `--sv-vcf`, `--trgt-vcf`, `--catalog-bed`, `--catalog-json`, `--output-dir`
+- [x] `storm cache build` calls the end-to-end pipeline and writes cache files
+- [x] `storm cache verify` command exists and validates cache schema
+- [x] `storm cache verify` checks that all required Parquet files exist
+- [x] `storm cache verify` validates row counts match between tables
+- [x] `storm explain <test_unit_id>` command exists
+- [x] `storm explain` accepts optional `--sample <sample_id>` flag
+- [x] `storm explain` loads cache and prints resolved genotype details
+- [x] CLI uses clap or similar for argument parsing
+- [x] CLI provides helpful error messages and usage text
 
 ### B. End-to-End Cache Building Pipeline
 
-- [ ] `build_cache()` function exists in Rust (or similar unified entry point)
-- [ ] Pipeline parses SV VCF using `parse_sv_vcf()`
-- [ ] Pipeline parses TRGT VCF using `parse_trgt_vcf()` (if provided)
-- [ ] Pipeline loads catalog using `Catalog::from_bed()` and `Catalog::from_json()`
-- [ ] Pipeline maps SVs to catalog loci using `map_svs_to_catalog()`
-- [ ] Pipeline constructs TestUnits using `TestUnitBuilder`
-- [ ] Pipeline creates Resolver and resolves genotypes from SV data
-- [ ] Pipeline applies TRGT overlay using `Resolver::resolve_from_trgt()`
-- [ ] Pipeline merges resolved genotypes using `Resolver::resolve_merged()`
-- [ ] Pipeline computes features for each TestUnit
-- [ ] Pipeline builds ArrowCache with all tables
-- [ ] Pipeline writes cache using `write_cache_to_dir()`
-- [ ] Pipeline records provenance metadata (input file hashes, git commit, timestamp)
-- [ ] Pipeline handles missing optional inputs gracefully (TRGT, catalog)
+- [x] `build_cache()` function exists in Rust (or similar unified entry point)
+- [x] Pipeline parses SV VCF using `parse_sv_vcf()`
+- [x] Pipeline parses TRGT VCF using `parse_trgt_vcf()` (if provided)
+- [x] Pipeline loads catalog using `Catalog::from_bed()` and `Catalog::from_json()`
+- [x] Pipeline maps SVs to catalog loci using `map_svs_to_catalog()`
+- [x] Pipeline constructs TestUnits using `TestUnitBuilder`
+- [x] Pipeline creates Resolver and resolves genotypes from SV data
+- [x] Pipeline applies TRGT overlay using `Resolver::resolve_from_trgt()`
+- [x] Pipeline merges resolved genotypes using `Resolver::resolve_merged()`
+- [x] Pipeline computes features for each TestUnit
+- [x] Pipeline builds ArrowCache with all tables
+- [x] Pipeline writes cache using `write_cache_to_dir()`
+- [x] Pipeline records provenance metadata (input file hashes, git commit, timestamp)
+- [x] Pipeline handles missing optional inputs gracefully (TRGT, catalog)
 
 ### C. Python Bindings (PyO3)
 

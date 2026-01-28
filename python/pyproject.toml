@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "storm"
-requires-python = ">=3.7"
-dependencies = ["cffi"]
+requires-python = ">=3.8"
+dependencies = []
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -14,7 +14,8 @@ classifiers = [
 [tool.maturin]
 features = ["python"]
 python-source = "python"
-dependencies = ["cffi"]
+bindings = "pyo3"
+module-name = "storm._storm"
 
 [tool.black]
 line-length = 88
