@@ -459,6 +459,29 @@ class TestAssociationWithRealData:
         assert len(results) > 0
         assert "unit_id" in results.columns
         assert "p_value" in results.columns
+    
+    def test_run_association_with_covariates(self, cache):
+        """Test run_association function with covariates dict."""
+        # Get sample IDs
+        sample_ids = cache.genotypes["sample_id"].unique().to_list()
+        n_samples = len(sample_ids)
+        
+        # Create phenotype dict
+        phenotype = {sid: float(i % 2) for i, sid in enumerate(sample_ids)}
+        
+        # Create covariates dict in expected format: {"cov_name": {"sample_id": value, ...}}
+        covariates = {
+            "age": {sid: float(25 + i) for i, sid in enumerate(sample_ids)},
+            "sex": {sid: float(i % 2) for i, sid in enumerate(sample_ids)},
+        }
+        
+        # Run with covariates
+        results = storm.run_association(str(cache.cache_dir), phenotype, covariates=covariates)
+        
+        assert isinstance(results, list)
+        if len(results) > 0:
+            result = results[0]
+            assert "unit_id" in result
 
 
 if __name__ == "__main__":

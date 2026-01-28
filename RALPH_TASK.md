@@ -34,7 +34,7 @@ The STORM integration layer is complete, but there are several bugs and incomple
 - [x] `py_run_association()` applies plan rules to select encoding/model
 - [x] `py_run_association()` runs association test for each test unit
 - [x] `py_run_association()` returns real statistics (beta, SE, p-value, etc.)
-- [ ] `py_run_association()` handles covariates if provided
+- [x] `py_run_association()` handles covariates if provided
 - [x] `py_run_association()` respects plan configuration (rare-variant ladder, etc.)
 - [x] Results include proper metadata (encoding, model, rule_id, etc.)
 
@@ -46,7 +46,7 @@ The STORM integration layer is complete, but there are several bugs and incomple
 - [x] Add test for error cases (invalid phenotype format, missing cache, etc.)
 - [x] Add test for association testing with real data
 - [x] Add test for plan-based model selection
-- [ ] Add test for covariates handling
+- [x] Add test for covariates handling
 - [x] CI runs Python tests automatically (check `.github/workflows/ci.yml`)
 
 ### D. Error Handling and Robustness

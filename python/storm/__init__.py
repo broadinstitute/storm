@@ -190,7 +190,8 @@ def run_glm(
             - list/array: Values matched to samples by position
         plan: Optional path to plan YAML file for model/encoding selection.
             If not provided, uses default linear regression with S encoding.
-        covariates: Optional DataFrame with covariate columns (not yet implemented).
+        covariates: Optional DataFrame with 'sample_id' column and covariate columns.
+            Values will be used to adjust for confounders in the association test.
         output: Optional path to write results Parquet.
         
     Returns:
@@ -220,6 +221,20 @@ def run_glm(
         With plan for model selection:
         
         >>> results = storm.run_glm(cache, phenotype, plan="plan.yaml")
+        
+        With covariates (age and sex adjustment):
+        
+        >>> sample_ids = cache.genotypes["sample_id"].unique().to_list()
+        >>> covariates = pl.DataFrame({
+        ...     "sample_id": sample_ids,
+        ...     "age": [45.0, 32.0, 58.0, 41.0, 55.0],
+        ...     "sex": [0.0, 1.0, 1.0, 0.0, 1.0],
+        ... })
+        >>> results = storm.run_glm(cache, phenotype, covariates=covariates)
+        
+        Save results to Parquet file:
+        
+        >>> results = storm.run_glm(cache, phenotype, output="results.parquet")
     
     Raises:
         ImportError: If Polars is not installed.
@@ -273,26 +288,35 @@ def run_glm(
             
             phenotype_json = json.dumps(pheno_dict)
             
-            # Convert covariates to JSON if provided
+            # Convert covariates DataFrame to JSON if provided
+            # Expected format: {"covariate_name": {"sample_id": value, ...}, ...}
             covariates_json = None
-            if covariates is not None and HAS_POLARS:
-                # Covariates should be a DataFrame with sample_id column
+            if covariates is not None:
+                if not isinstance(covariates, pl.DataFrame):
+                    raise ValueError(
+                        f"Covariates must be a Polars DataFrame with 'sample_id' column, "
+                        f"got {type(covariates)}"
+                    )
+                if "sample_id" not in covariates.columns:
+                    raise ValueError(
+                        "Covariates DataFrame must have 'sample_id' column"
+                    )
+                
+                # Get sample IDs from covariates
+                cov_sample_ids = covariates["sample_id"].to_list()
+                
+                # Build covariates dict: {covariate_name: {sample_id: value, ...}}
                 cov_dict = {}
-                if "sample_id" in covariates.columns:
-                    sample_ids = covariates["sample_id"].to_list()
-                    for col in covariates.columns:
-                        if col != "sample_id":
-                            values = covariates[col].to_list()
-                            cov_dict[col] = {sid: float(v) for sid, v in zip(sample_ids, values)}
-                else:
-                    # Assume rows align with genotypes sample order
-                    if cache.genotypes is not None:
-                        sample_ids = cache.genotypes["sample_id"].unique().to_list()
-                        for col in covariates.columns:
-                            values = covariates[col].to_list()
-                            cov_dict[col] = {sid: float(values[i]) for i, sid in enumerate(sample_ids) if i < len(values)}
-                if cov_dict:
-                    covariates_json = json.dumps(cov_dict)
+                for col in covariates.columns:
+                    if col == "sample_id":
+                        continue
+                    col_values = covariates[col].to_list()
+                    cov_dict[col] = {
+                        str(sid): float(val) 
+                        for sid, val in zip(cov_sample_ids, col_values)
+                    }
+                
+                covariates_json = json.dumps(cov_dict)
             
             # Call Rust run_association
             results_json = py_run_association(
@@ -577,20 +601,52 @@ def write_cache_to_dir(cache_dir: str) -> None:
         Path(cache_dir).mkdir(parents=True, exist_ok=True)
 
 
-def run_association(cache_dir: str, phenotype: Dict[str, float], plan_path: Optional[str] = None) -> List[Dict[str, Any]]:
+def run_association(
+    cache_dir: str,
+    phenotype: Dict[str, float],
+    plan_path: Optional[str] = None,
+    covariates: Optional[Dict[str, Dict[str, float]]] = None,
+) -> List[Dict[str, Any]]:
     """Run association testing.
+    
+    Runs association tests between genotype encodings and a phenotype,
+    optionally controlling for covariates.
     
     Args:
         cache_dir: Path to cache directory.
         phenotype: Dictionary mapping sample_id to phenotype value.
         plan_path: Optional path to plan YAML file.
+        covariates: Optional dict of covariates.
+            Format: {"covariate_name": {"sample_id": value, ...}, ...}
         
     Returns:
-        List of association results.
+        List of association results, each containing:
+            - unit_id: Test unit identifier
+            - beta: Effect size estimate
+            - se: Standard error
+            - p_value: Association p-value
+            - n_samples: Number of samples used
+            - model: Model used
+            - encoding: Encoding used
+    
+    Examples:
+        Basic usage:
+        
+        >>> phenotype = {"SAMPLE1": 0.5, "SAMPLE2": 1.2, "SAMPLE3": 0.8}
+        >>> results = storm.run_association("cache_dir", phenotype)
+        
+        With covariates:
+        
+        >>> covariates = {
+        ...     "age": {"SAMPLE1": 45, "SAMPLE2": 32, "SAMPLE3": 58},
+        ...     "sex": {"SAMPLE1": 0, "SAMPLE2": 1, "SAMPLE3": 0},
+        ... }
+        >>> results = storm.run_association("cache_dir", phenotype, covariates=covariates)
     """
     import json
     if HAS_RUST and py_run_association is not None:
-        results_json = py_run_association(cache_dir, json.dumps(phenotype), plan_path)
+        covariates_json = json.dumps(covariates) if covariates else None
+        results_json = py_run_association(cache_dir, json.dumps(phenotype), plan_path, covariates_json)
         return json.loads(results_json)
     raise RuntimeError("Rust extension not available")
 

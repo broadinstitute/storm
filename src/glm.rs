@@ -635,4 +635,75 @@ mod tests {
         let result = firth_logistic_regression(&x, &y, None, 25);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_linear_regression_with_covariates() {
+        // y = 2*x + 1*age + noise, where age is a covariate
+        let x = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+        let age = vec![30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0];
+        let y: Vec<f64> = x.iter().zip(age.iter())
+            .map(|(&xi, &ai)| 2.0 * xi + 0.1 * ai)
+            .collect();
+        
+        let covariates = vec![age];
+        let (beta, se, _t_stat, p_value) = linear_regression(&x, &y, Some(&covariates)).unwrap();
+        
+        // Beta for x should still be close to 2.0 after controlling for age
+        assert!((beta - 2.0).abs() < 0.5, "beta={} expected ~2.0", beta);
+        assert!(se > 0.0);
+        assert!(p_value < 0.05);
+    }
+
+    #[test]
+    fn test_logistic_regression_with_covariates() {
+        // Simple test with a covariate
+        let x = vec![0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0];
+        let age = vec![30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0];
+        let y = vec![0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0];
+        
+        let covariates = vec![age];
+        let (beta, se, _z_stat, p_value) = logistic_regression(&x, &y, Some(&covariates), 25).unwrap();
+        
+        // Beta should still be positive (x=1 increases probability of y=1)
+        assert!(beta > 0.0, "beta should be positive, got {}", beta);
+        assert!(se > 0.0);
+        assert!(p_value < 1.0);
+    }
+
+    #[test]
+    fn test_run_association_with_covariates() {
+        let x = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0];
+        let age = vec![30.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 75.0];
+        let y: Vec<f64> = x.iter().zip(age.iter())
+            .map(|(&xi, &ai)| 2.0 * xi + 0.1 * ai)
+            .collect();
+        
+        let covariates = vec![age];
+        let result = run_association(
+            "test_unit",
+            &x,
+            &y,
+            &crate::plan::Model::Linear,
+            &crate::plan::Encoding::S,
+            Some(&covariates),
+        ).unwrap();
+        
+        assert_eq!(result.unit_id, "test_unit");
+        assert!((result.beta - 2.0).abs() < 0.5);
+        assert_eq!(result.n_samples, 10);
+    }
+
+    #[test]
+    fn test_residualize() {
+        // Simple test: residualize y on a constant should center y
+        let y = vec![10.0, 20.0, 30.0, 40.0, 50.0];
+        let cov = vec![vec![1.0, 1.0, 1.0, 1.0, 1.0]]; // Constant covariate
+        
+        let resid = residualize(&y, &cov).unwrap();
+        
+        // After residualizing on intercept-like constant, mean should be close to 0
+        // (Note: our residualization centers on covariate mean, so this is approximate)
+        let mean: f64 = resid.iter().sum::<f64>() / resid.len() as f64;
+        assert!(mean.abs() < 1e-10, "mean should be ~0, got {}", mean);
+    }
 }

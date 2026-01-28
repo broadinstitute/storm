@@ -855,23 +855,12 @@ fn py_run_association(
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
     
     // Parse covariates from JSON if provided
-    let covariates: Option<results::Covariates> = if let Some(cov_json) = covariates_json {
+    // Expected format: {"covariate_name": {"sample_id": value, ...}, ...}
+    // Store as HashMap for per-sample lookup (we'll build aligned vectors per unit)
+    let covariates_data: Option<HashMap<String, HashMap<String, f64>>> = if let Some(cov_json) = covariates_json {
         let cov_data: HashMap<String, HashMap<String, f64>> = serde_json::from_str(cov_json)
             .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Invalid covariates JSON: {}", e)))?;
-        
-        // Convert to Covariates struct
-        // Expected format: {"covariate_name": {"sample_id": value, ...}, ...}
-        let mut cov = results::Covariates::default();
-        let sample_ids: Vec<String> = phenotype.keys().cloned().collect();
-        cov.sample_ids = sample_ids.clone();
-        
-        for (cov_name, cov_values) in cov_data {
-            let values: Vec<f64> = sample_ids.iter()
-                .map(|sid| *cov_values.get(sid).unwrap_or(&0.0))
-                .collect();
-            cov.values.insert(cov_name, values);
-        }
-        Some(cov)
+        if cov_data.is_empty() { None } else { Some(cov_data) }
     } else {
         None
     };
@@ -994,9 +983,10 @@ fn py_run_association(
             }
         };
         
-        // Build predictor (x) and outcome (y) arrays
+        // Build predictor (x), outcome (y) arrays, and track sample IDs for covariate alignment
         let mut x: Vec<f64> = Vec::new();
         let mut y: Vec<f64> = Vec::new();
+        let mut samples_used: Vec<String> = Vec::new();
         
         for &idx in &sample_indices {
             let sample_id = feat_sample_id_col.value(idx);
@@ -1007,6 +997,7 @@ fn py_run_association(
                 if predictor_value.is_finite() {
                     x.push(predictor_value);
                     y.push(pheno_value);
+                    samples_used.push(sample_id.to_string());
                 }
             }
         }
@@ -1029,8 +1020,22 @@ fn py_run_association(
             continue;
         }
         
+        // Build covariate vectors aligned with x/y samples (per-unit)
+        let unit_covariates: Option<Vec<Vec<f64>>> = if let Some(ref cov_data) = covariates_data {
+            let mut cov_vecs: Vec<Vec<f64>> = Vec::new();
+            for (_cov_name, cov_values) in cov_data {
+                let values: Vec<f64> = samples_used.iter()
+                    .map(|sid| *cov_values.get(sid).unwrap_or(&0.0))
+                    .collect();
+                cov_vecs.push(values);
+            }
+            if cov_vecs.is_empty() { None } else { Some(cov_vecs) }
+        } else {
+            None
+        };
+        
         // Run association test
-        match glm::run_association(unit_id, &x, &y, &model, &encoding, covariates.as_ref()) {
+        match glm::run_association(unit_id, &x, &y, &model, &encoding, unit_covariates.as_deref()) {
             Ok(result) => {
                 results.push(serde_json::json!({
                     "unit_id": result.unit_id,
