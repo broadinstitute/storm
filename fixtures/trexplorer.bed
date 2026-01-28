@@ -1,0 +1,4 @@
+chr1	10000	10050	TR001	CAG	16	+	simple	polymorphic
+chr1	50000	50100	TR002	AT	50	+	simple	polymorphic
+chr2	20000	20030	TR003	GGC	10	-	simple	polymorphic
+chr3	30000	30060	TR004	AAAT	15	+	complex	polymorphic

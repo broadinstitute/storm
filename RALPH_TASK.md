@@ -14,9 +14,9 @@ structural variants and tandem repeats using long-read data.
 
 1. [x] Integrated SV VCF can be parsed (SVTYPE, SVLEN, GT)
 2. [x] TRGT VCF can be parsed (TRID, AL, GT)
-3. [ ] TRExplorer BED file can be ingested
-4. [ ] TRExplorer JSON file can be ingested
-5. [ ] TRExplorer BED and JSON can be joined into a unified catalog
+3. [x] TRExplorer BED file can be ingested
+4. [x] TRExplorer JSON file can be ingested
+5. [x] TRExplorer BED and JSON can be joined into a unified catalog
 6. [ ] SV records can be mapped to catalog repeat loci by overlap
 7. [ ] TestUnit objects can be created for SVs
 8. [ ] TestUnit objects can be created for repeat-proxy loci

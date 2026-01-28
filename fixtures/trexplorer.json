@@ -1,0 +1,62 @@
+[
+  {
+    "id": "TR001",
+    "chrom": "chr1",
+    "start": 10000,
+    "end": 10050,
+    "motif": "CAG",
+    "repeat_count": 16,
+    "strand": "+",
+    "repeat_type": "simple",
+    "pathogenicity": "polymorphic",
+    "gene": "HTT",
+    "disease": null,
+    "normal_max": 26,
+    "pathogenic_min": 36
+  },
+  {
+    "id": "TR002",
+    "chrom": "chr1",
+    "start": 50000,
+    "end": 50100,
+    "motif": "AT",
+    "repeat_count": 50,
+    "strand": "+",
+    "repeat_type": "simple",
+    "pathogenicity": "polymorphic",
+    "gene": null,
+    "disease": null,
+    "normal_max": null,
+    "pathogenic_min": null
+  },
+  {
+    "id": "TR003",
+    "chrom": "chr2",
+    "start": 20000,
+    "end": 20030,
+    "motif": "GGC",
+    "repeat_count": 10,
+    "strand": "-",
+    "repeat_type": "simple",
+    "pathogenicity": "polymorphic",
+    "gene": "FMR1",
+    "disease": "Fragile X",
+    "normal_max": 44,
+    "pathogenic_min": 200
+  },
+  {
+    "id": "TR004",
+    "chrom": "chr3",
+    "start": 30000,
+    "end": 30060,
+    "motif": "AAAT",
+    "repeat_count": 15,
+    "strand": "+",
+    "repeat_type": "complex",
+    "pathogenicity": "polymorphic",
+    "gene": null,
+    "disease": null,
+    "normal_max": null,
+    "pathogenic_min": null
+  }
+]

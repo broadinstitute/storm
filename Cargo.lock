@@ -676,6 +676,8 @@ dependencies = [
  "indexmap",
  "noodles",
  "pyo3",
+ "serde",
+ "serde_json",
  "thiserror",
 ]
 

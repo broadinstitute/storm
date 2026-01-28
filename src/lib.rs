@@ -8,10 +8,16 @@ use pyo3::prelude::*;
 
 // Core modules
 pub mod vcf;
+pub mod catalog;
 
 // Re-exports
 pub use vcf::sv::{parse_sv_vcf, SvRecord, SvType, SvVcfError, Genotype};
 pub use vcf::trgt::{parse_trgt_vcf, TrgtRecord, TrgtGenotype, TrgtVcfError};
+pub use catalog::{
+    Catalog, CatalogEntry, CatalogError,
+    parse_trexplorer_bed, BedRecord, BedError,
+    parse_trexplorer_json, JsonRecord, JsonError,
+};
 
 // Example library function
 #[cfg(feature = "python")]

@@ -258,3 +258,21 @@ EOF
 [22:56:44] 🟢 TOKENS: 13234 / 80000 (16%) [read:47KB write:0KB assist:0KB shell:0KB]
 [22:57:18] 🟢 TOKENS: 13234 / 80000 (16%) [read:47KB write:0KB assist:0KB shell:0KB]
 [22:57:26] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[22:57:34] 🟢 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: implement TRGT VCF parser with TRID, AL, GT support
+
+- Parse TRGT VCF format for tandem repeat genotypes
+- Extract TRID from INFO field
+- Parse AL (allele lengths) from FORMAT fields
+- Extract motifs and structure information
+- Add test fixture trgt_small.vcf
+- All 5 tests passing
+
+Criterion 2 complete
+EOF
+)" → exit 0
+[22:57:48] 🟢 TOKENS: 13268 / 80000 (16%) [read:47KB write:0KB assist:1KB shell:0KB]
+[22:58:21] 🟢 TOKENS: 13268 / 80000 (16%) [read:47KB write:0KB assist:1KB shell:0KB]
+[22:58:47] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[22:58:51] 🟢 TOKENS: 13268 / 80000 (16%) [read:47KB write:0KB assist:1KB shell:0KB]
+[22:58:54] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
