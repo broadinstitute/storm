@@ -837,11 +837,12 @@ fn py_read_cache_from_dir(cache_dir: &str) -> PyResult<String> {
 /// Python binding for run_association
 #[cfg(feature = "python")]
 #[pyfunction]
-#[pyo3(signature = (cache_dir, phenotype_json, plan_path=None))]
+#[pyo3(signature = (cache_dir, phenotype_json, plan_path=None, covariates_json=None))]
 fn py_run_association(
     cache_dir: &str,
     phenotype_json: &str,
     plan_path: Option<&str>,
+    covariates_json: Option<&str>,
 ) -> PyResult<String> {
     use arrow::array::{StringArray, Float64Array};
     
@@ -852,6 +853,28 @@ fn py_run_association(
     // Parse phenotype from JSON (sample_id -> value)
     let phenotype: HashMap<String, f64> = serde_json::from_str(phenotype_json)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    
+    // Parse covariates from JSON if provided
+    let covariates: Option<results::Covariates> = if let Some(cov_json) = covariates_json {
+        let cov_data: HashMap<String, HashMap<String, f64>> = serde_json::from_str(cov_json)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(format!("Invalid covariates JSON: {}", e)))?;
+        
+        // Convert to Covariates struct
+        // Expected format: {"covariate_name": {"sample_id": value, ...}, ...}
+        let mut cov = results::Covariates::default();
+        let sample_ids: Vec<String> = phenotype.keys().cloned().collect();
+        cov.sample_ids = sample_ids.clone();
+        
+        for (cov_name, cov_values) in cov_data {
+            let values: Vec<f64> = sample_ids.iter()
+                .map(|sid| *cov_values.get(sid).unwrap_or(&0.0))
+                .collect();
+            cov.values.insert(cov_name, values);
+        }
+        Some(cov)
+    } else {
+        None
+    };
     
     // Load plan if provided, otherwise use default
     let plan = if let Some(path) = plan_path {
@@ -1007,7 +1030,7 @@ fn py_run_association(
         }
         
         // Run association test
-        match glm::run_association(unit_id, &x, &y, &model, &encoding, None) {
+        match glm::run_association(unit_id, &x, &y, &model, &encoding, covariates.as_ref()) {
             Ok(result) => {
                 results.push(serde_json::json!({
                     "unit_id": result.unit_id,

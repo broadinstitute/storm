@@ -43,7 +43,7 @@ The STORM integration layer is complete, but there are several bugs and incomple
 - [x] Add `pytest` to `dev-requirements.txt` or `python/pyproject.toml`
 - [x] Add `polars` to test dependencies (if not already present)
 - [x] All Python tests pass with `pytest -W error` (no warnings)
-- [ ] Add test for error cases (invalid phenotype format, missing cache, etc.)
+- [x] Add test for error cases (invalid phenotype format, missing cache, etc.)
 - [x] Add test for association testing with real data
 - [x] Add test for plan-based model selection
 - [ ] Add test for covariates handling
@@ -64,7 +64,7 @@ The STORM integration layer is complete, but there are several bugs and incomple
 - [x] Remove placeholder comments in `py_run_association()` (line 862-863)
 - [x] Add docstrings explaining phenotype format requirements
 - [x] Add docstrings explaining plan-based model selection
-- [ ] Add examples in docstrings for common use cases
+- [x] Add examples in docstrings for common use cases
 - [x] Update README with association testing examples
 - [x] Document expected phenotype formats (Polars Series, dict, list)
 - [x] Code follows consistent style (run formatters if needed)
@@ -73,7 +73,7 @@ The STORM integration layer is complete, but there are several bugs and incomple
 
 - [x] Run full test suite: `cargo test --features python && cd python && python -m pytest -W error`
 - [x] Verify Python extension builds correctly with `maturin develop`
-- [ ] Verify notebook runs without warnings
+- [x] Verify notebook runs without warnings
 - [x] Verify CLI commands work end-to-end
 - [x] Verify association results are reasonable (not all zeros/ones)
 - [x] Verify plan-based model selection works correctly

@@ -3,8 +3,8 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769642597
-generated_at: 2026-01-28T23:23:43Z
+source_mtime: 1769642672
+generated_at: 2026-01-28T23:24:46Z
 
 tasks:
   - id: "line_21"
@@ -142,7 +142,7 @@ tasks:
     raw_marker: -
   - id: "line_46"
     line_number: 46
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Add test for error cases (invalid phenotype format, missing cache, etc.)
     indent_level: 0
@@ -247,7 +247,7 @@ tasks:
     raw_marker: -
   - id: "line_67"
     line_number: 67
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Add examples in docstrings for common use cases
     indent_level: 0
@@ -289,7 +289,7 @@ tasks:
     raw_marker: -
   - id: "line_76"
     line_number: 76
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Verify notebook runs without warnings
     indent_level: 0

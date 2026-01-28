@@ -51,10 +51,14 @@ pub struct AssociationResult {
 }
 
 /// Simple linear regression using OLS
+///
+/// When covariates are provided, performs multiple regression where the effect of x
+/// is estimated after controlling for covariates. Uses residualization: regress y on
+/// covariates, regress x on covariates, then regress residuals.
 pub fn linear_regression(
     x: &[f64],        // Predictor (encoded genotype)
     y: &[f64],        // Outcome (phenotype)
-    _covariates: Option<&[Vec<f64>]>, // Optional covariates (TODO: implement)
+    covariates: Option<&[Vec<f64>]>, // Optional covariates (each Vec is one covariate)
 ) -> Result<(f64, f64, f64, f64), GlmError> {
     if x.len() != y.len() {
         return Err(GlmError::InvalidInput("x and y must have same length".to_string()));
@@ -65,19 +69,44 @@ pub fn linear_regression(
         return Err(GlmError::InsufficientData("Need at least 3 samples".to_string()));
     }
 
-    // Simple OLS: y = a + b*x
+    // If covariates provided, residualize x and y
+    let (x_adj, y_adj) = if let Some(covs) = covariates {
+        if !covs.is_empty() {
+            // Validate covariate lengths
+            for cov in covs {
+                if cov.len() != n {
+                    return Err(GlmError::InvalidInput(
+                        "Covariate length must match sample size".to_string()
+                    ));
+                }
+            }
+            
+            // Residualize y on covariates
+            let y_resid = residualize(y, covs)?;
+            // Residualize x on covariates  
+            let x_resid = residualize(x, covs)?;
+            
+            (x_resid, y_resid)
+        } else {
+            (x.to_vec(), y.to_vec())
+        }
+    } else {
+        (x.to_vec(), y.to_vec())
+    };
+
+    // Simple OLS on (possibly residualized) data: y = a + b*x
     // b = cov(x,y) / var(x)
     // a = mean(y) - b * mean(x)
     
-    let x_mean: f64 = x.iter().sum::<f64>() / n as f64;
-    let y_mean: f64 = y.iter().sum::<f64>() / n as f64;
+    let x_mean: f64 = x_adj.iter().sum::<f64>() / n as f64;
+    let y_mean: f64 = y_adj.iter().sum::<f64>() / n as f64;
     
     let mut cov_xy = 0.0;
     let mut var_x = 0.0;
     
     for i in 0..n {
-        let dx = x[i] - x_mean;
-        let dy = y[i] - y_mean;
+        let dx = x_adj[i] - x_mean;
+        let dy = y_adj[i] - y_mean;
         cov_xy += dx * dy;
         var_x += dx * dx;
     }
@@ -91,13 +120,17 @@ pub fn linear_regression(
     // Residual sum of squares
     let mut rss = 0.0;
     for i in 0..n {
-        let predicted = y_mean + beta * (x[i] - x_mean);
-        let residual = y[i] - predicted;
+        let predicted = y_mean + beta * (x_adj[i] - x_mean);
+        let residual = y_adj[i] - predicted;
         rss += residual * residual;
     }
     
+    // Degrees of freedom: n - 2 for simple regression, minus covariates
+    let df = n as i32 - 2 - covariates.map(|c| c.len()).unwrap_or(0) as i32;
+    let df = df.max(1) as f64;
+    
     // Standard error of beta
-    let mse = rss / (n - 2) as f64;
+    let mse = rss / df;
     let se = (mse / var_x).sqrt();
     
     // T-statistic
@@ -107,6 +140,41 @@ pub fn linear_regression(
     let p_value = 2.0 * (1.0 - normal_cdf(t_stat.abs()));
     
     Ok((beta, se, t_stat, p_value))
+}
+
+/// Residualize a vector by regressing it on covariates and returning residuals
+fn residualize(y: &[f64], covariates: &[Vec<f64>]) -> Result<Vec<f64>, GlmError> {
+    let n = y.len();
+    if covariates.is_empty() {
+        return Ok(y.to_vec());
+    }
+    
+    // Simple approach: sequentially regress out each covariate
+    let mut resid = y.to_vec();
+    
+    for cov in covariates {
+        let cov_mean: f64 = cov.iter().sum::<f64>() / n as f64;
+        let resid_mean: f64 = resid.iter().sum::<f64>() / n as f64;
+        
+        let mut cov_resid = 0.0;
+        let mut var_cov = 0.0;
+        
+        for i in 0..n {
+            let dc = cov[i] - cov_mean;
+            let dr = resid[i] - resid_mean;
+            cov_resid += dc * dr;
+            var_cov += dc * dc;
+        }
+        
+        if var_cov > 1e-10 {
+            let beta = cov_resid / var_cov;
+            for i in 0..n {
+                resid[i] -= beta * (cov[i] - cov_mean);
+            }
+        }
+    }
+    
+    Ok(resid)
 }
 
 /// Logistic regression using iteratively reweighted least squares (IRLS)

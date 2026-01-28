@@ -179,15 +179,51 @@ def run_glm(
 ) -> "pl.DataFrame":
     """Run StormGLM association testing.
     
+    Performs association testing between genotype encodings and a phenotype.
+    Supports multiple phenotype formats and plan-based model selection.
+    
     Args:
         cache: StormCache instance with loaded data.
-        phenotype: Polars Series with phenotype values.
-        plan: Optional path to plan YAML file.
-        covariates: Optional DataFrame with covariate columns.
+        phenotype: Phenotype values. Accepts:
+            - Polars Series: Values matched to samples by position
+            - dict: {sample_id: value} mapping
+            - list/array: Values matched to samples by position
+        plan: Optional path to plan YAML file for model/encoding selection.
+            If not provided, uses default linear regression with S encoding.
+        covariates: Optional DataFrame with covariate columns (not yet implemented).
         output: Optional path to write results Parquet.
         
     Returns:
-        DataFrame with association results.
+        DataFrame with association results including:
+            - unit_id: Test unit identifier
+            - beta: Effect size estimate
+            - se: Standard error
+            - p_value: Association p-value
+            - n_samples: Number of samples used
+            - n_carriers: Number of carriers
+            - model: Model used (Linear, Logistic, etc.)
+            - encoding: Encoding used (S, M, D, binary)
+    
+    Examples:
+        Basic usage with Polars Series:
+        
+        >>> import polars as pl
+        >>> cache = storm.load_cache("my_cache")
+        >>> phenotype = pl.Series([0, 1, 0, 1, 0])
+        >>> results = storm.run_glm(cache, phenotype)
+        
+        With dict phenotype (keyed by sample ID):
+        
+        >>> phenotype = {"SAMPLE1": 0.5, "SAMPLE2": 1.2, "SAMPLE3": 0.8}
+        >>> results = storm.run_glm(cache, phenotype)
+        
+        With plan for model selection:
+        
+        >>> results = storm.run_glm(cache, phenotype, plan="plan.yaml")
+    
+    Raises:
+        ImportError: If Polars is not installed.
+        ValueError: If cache is missing required tables or phenotype format is invalid.
     """
     import json
     
