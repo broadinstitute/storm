@@ -3,357 +3,511 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769584288
-generated_at: 2026-01-28T07:12:01Z
+source_mtime: 1769638916
+generated_at: 2026-01-28T22:26:07Z
 
 tasks:
-  - id: "line_15"
-    line_number: 15
-    status: completed
-    parallel_group: 999999
-    description: Integrated SV VCF can be parsed (SVTYPE, SVLEN, GT)
-    indent_level: 0
-    raw_marker: 1.
-  - id: "line_16"
-    line_number: 16
-    status: completed
-    parallel_group: 999999
-    description: TRGT VCF can be parsed (TRID, AL, GT)
-    indent_level: 0
-    raw_marker: 2.
-  - id: "line_17"
-    line_number: 17
-    status: completed
-    parallel_group: 999999
-    description: TRExplorer BED file can be ingested
-    indent_level: 0
-    raw_marker: 3.
-  - id: "line_18"
-    line_number: 18
-    status: completed
-    parallel_group: 999999
-    description: TRExplorer JSON file can be ingested
-    indent_level: 0
-    raw_marker: 4.
-  - id: "line_19"
-    line_number: 19
-    status: completed
-    parallel_group: 999999
-    description: TRExplorer BED and JSON can be joined into a unified catalog
-    indent_level: 0
-    raw_marker: 5.
-  - id: "line_20"
-    line_number: 20
-    status: completed
-    parallel_group: 999999
-    description: SV records can be mapped to catalog repeat loci by overlap
-    indent_level: 0
-    raw_marker: 6.
   - id: "line_21"
     line_number: 21
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: TestUnit objects can be created for SVs
+    description: `storm --version` prints version from Cargo.toml
     indent_level: 0
-    raw_marker: 7.
+    raw_marker: -
   - id: "line_22"
     line_number: 22
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: TestUnit objects can be created for repeat-proxy loci
+    description: `storm cache build` command exists with proper argument parsing
     indent_level: 0
-    raw_marker: 8.
+    raw_marker: -
   - id: "line_23"
     line_number: 23
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: TestUnit objects can be created for true repeats
+    description: `storm cache build` accepts: `--sv-vcf`, `--trgt-vcf`, `--catalog-bed`, `--catalog-json`, `--output-dir`
     indent_level: 0
-    raw_marker: 9.
+    raw_marker: -
   - id: "line_24"
     line_number: 24
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Resolver separates presence from allele values
+    description: `storm cache build` calls the end-to-end pipeline and writes cache files
     indent_level: 0
-    raw_marker: 10.
+    raw_marker: -
   - id: "line_25"
     line_number: 25
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Repeat-proxy SV alleles can be grouped by locus
+    description: `storm cache verify` command exists and validates cache schema
     indent_level: 0
-    raw_marker: 11.
+    raw_marker: -
   - id: "line_26"
     line_number: 26
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Diploid repeat lengths can be reconstructed from INS and DEL alleles
+    description: `storm cache verify` checks that all required Parquet files exist
     indent_level: 0
-    raw_marker: 12.
+    raw_marker: -
   - id: "line_27"
     line_number: 27
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: TRGT allele lengths override proxy alleles when available
+    description: `storm cache verify` validates row counts match between tables
     indent_level: 0
-    raw_marker: 13.
+    raw_marker: -
   - id: "line_28"
     line_number: 28
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Resolved genotypes record presence source
+    description: `storm explain <test_unit_id>` command exists
     indent_level: 0
-    raw_marker: 14.
+    raw_marker: -
   - id: "line_29"
     line_number: 29
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Resolved genotypes record allele source
+    description: `storm explain` accepts optional `--sample <sample_id>` flag
     indent_level: 0
-    raw_marker: 15.
+    raw_marker: -
   - id: "line_30"
     line_number: 30
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Arrow cache can be written
+    description: `storm explain` loads cache and prints resolved genotype details
     indent_level: 0
-    raw_marker: 16.
+    raw_marker: -
   - id: "line_31"
     line_number: 31
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Parquet cache files can be written
+    description: CLI uses clap or similar for argument parsing
     indent_level: 0
-    raw_marker: 17.
+    raw_marker: -
   - id: "line_32"
     line_number: 32
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Cache includes test units table
+    description: CLI provides helpful error messages and usage text
     indent_level: 0
-    raw_marker: 18.
-  - id: "line_33"
-    line_number: 33
-    status: completed
-    parallel_group: 999999
-    description: Cache includes genotypes table
-    indent_level: 0
-    raw_marker: 19.
-  - id: "line_34"
-    line_number: 34
-    status: completed
-    parallel_group: 999999
-    description: Cache includes catalog table
-    indent_level: 0
-    raw_marker: 20.
-  - id: "line_35"
-    line_number: 35
-    status: completed
-    parallel_group: 999999
-    description: Cache includes features table
-    indent_level: 0
-    raw_marker: 21.
+    raw_marker: -
   - id: "line_36"
     line_number: 36
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Cache includes provenance metadata
+    description: `build_cache()` function exists in Rust (or similar unified entry point)
     indent_level: 0
-    raw_marker: 22.
+    raw_marker: -
   - id: "line_37"
     line_number: 37
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: storm explain prints resolved genotype details
+    description: Pipeline parses SV VCF using `parse_sv_vcf()`
     indent_level: 0
-    raw_marker: 23.
+    raw_marker: -
   - id: "line_38"
     line_number: 38
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Plan YAML can be parsed
+    description: Pipeline parses TRGT VCF using `parse_trgt_vcf()` (if provided)
     indent_level: 0
-    raw_marker: 24.
+    raw_marker: -
   - id: "line_39"
     line_number: 39
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Plan rules deterministically select encodings
+    description: Pipeline loads catalog using `Catalog::from_bed()` and `Catalog::from_json()`
     indent_level: 0
-    raw_marker: 25.
+    raw_marker: -
   - id: "line_40"
     line_number: 40
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Plan rules deterministically select models
+    description: Pipeline maps SVs to catalog loci using `map_svs_to_catalog()`
     indent_level: 0
-    raw_marker: 26.
+    raw_marker: -
   - id: "line_41"
     line_number: 41
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: S encoding (L1+L2) is implemented
+    description: Pipeline constructs TestUnits using `TestUnitBuilder`
     indent_level: 0
-    raw_marker: 27.
+    raw_marker: -
   - id: "line_42"
     line_number: 42
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: M encoding (max allele) is implemented
+    description: Pipeline creates Resolver and resolves genotypes from SV data
     indent_level: 0
-    raw_marker: 28.
+    raw_marker: -
   - id: "line_43"
     line_number: 43
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: D encoding (|L1-L2|) is implemented
+    description: Pipeline applies TRGT overlay using `Resolver::resolve_from_trgt()`
     indent_level: 0
-    raw_marker: 29.
+    raw_marker: -
   - id: "line_44"
     line_number: 44
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Tail indicator encoding is implemented
+    description: Pipeline merges resolved genotypes using `Resolver::resolve_merged()`
     indent_level: 0
-    raw_marker: 30.
+    raw_marker: -
   - id: "line_45"
     line_number: 45
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Categorical bin encoding is implemented
+    description: Pipeline computes features for each TestUnit
     indent_level: 0
-    raw_marker: 31.
+    raw_marker: -
   - id: "line_46"
     line_number: 46
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Internal StormGLM backend is implemented
+    description: Pipeline builds ArrowCache with all tables
     indent_level: 0
-    raw_marker: 32.
+    raw_marker: -
   - id: "line_47"
     line_number: 47
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Linear regression is supported
+    description: Pipeline writes cache using `write_cache_to_dir()`
     indent_level: 0
-    raw_marker: 33.
+    raw_marker: -
   - id: "line_48"
     line_number: 48
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Logistic regression is supported
+    description: Pipeline records provenance metadata (input file hashes, git commit, timestamp)
     indent_level: 0
-    raw_marker: 34.
+    raw_marker: -
   - id: "line_49"
     line_number: 49
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Categorical regression is supported
+    description: Pipeline handles missing optional inputs gracefully (TRGT, catalog)
     indent_level: 0
-    raw_marker: 35.
-  - id: "line_50"
-    line_number: 50
-    status: completed
-    parallel_group: 999999
-    description: BinomiRare test is supported
-    indent_level: 0
-    raw_marker: 36.
-  - id: "line_51"
-    line_number: 51
-    status: completed
-    parallel_group: 999999
-    description: Firth logistic regression is supported or feature-flagged
-    indent_level: 0
-    raw_marker: 37.
-  - id: "line_52"
-    line_number: 52
-    status: completed
-    parallel_group: 999999
-    description: Covariates including PCs are supported
-    indent_level: 0
-    raw_marker: 38.
+    raw_marker: -
   - id: "line_53"
     line_number: 53
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Rare-variant ladder logic is implemented
+    description: `storm.version()` works correctly (fix import/export issue)
     indent_level: 0
-    raw_marker: 39.
+    raw_marker: -
   - id: "line_54"
     line_number: 54
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Association results can be written to Parquet
+    description: `parse_sv_vcf()` is exposed as Python function
     indent_level: 0
-    raw_marker: 40.
+    raw_marker: -
   - id: "line_55"
     line_number: 55
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Results include statistics and p-values
+    description: `parse_trgt_vcf()` is exposed as Python function
     indent_level: 0
-    raw_marker: 41.
+    raw_marker: -
   - id: "line_56"
     line_number: 56
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Results include counts and call rates
+    description: `Catalog::from_bed()` is exposed as Python method
     indent_level: 0
-    raw_marker: 42.
+    raw_marker: -
   - id: "line_57"
     line_number: 57
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Results include encoding and model metadata
+    description: `Catalog::from_json()` is exposed as Python method
     indent_level: 0
-    raw_marker: 43.
+    raw_marker: -
   - id: "line_58"
     line_number: 58
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Python API can build cache
+    description: `Catalog::from_bed_and_json()` is exposed as Python method
     indent_level: 0
-    raw_marker: 44.
+    raw_marker: -
   - id: "line_59"
     line_number: 59
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Python API can load cache via Polars
+    description: `write_cache_to_dir()` is exposed as Python function
     indent_level: 0
-    raw_marker: 45.
+    raw_marker: -
   - id: "line_60"
     line_number: 60
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Python API can run StormGLM
+    description: `read_cache_from_dir()` is exposed as Python function
     indent_level: 0
-    raw_marker: 46.
+    raw_marker: -
   - id: "line_61"
     line_number: 61
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Python API can call explain
+    description: `run_association()` is exposed as Python function
     indent_level: 0
-    raw_marker: 47.
+    raw_marker: -
   - id: "line_62"
     line_number: 62
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Jupyter notebook demonstrates end-to-end run
+    description: `explain_genotype()` is exposed as Python function
     indent_level: 0
-    raw_marker: 48.
+    raw_marker: -
   - id: "line_63"
     line_number: 63
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: All tests pass
+    description: `explain_locus()` is exposed as Python function
     indent_level: 0
-    raw_marker: 49.
+    raw_marker: -
   - id: "line_64"
     line_number: 64
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: .ralph/progress.md contains DONE
+    description: `Plan::from_yaml()` is exposed as Python function
     indent_level: 0
-    raw_marker: 50.
+    raw_marker: -
+  - id: "line_65"
+    line_number: 65
+    status: pending
+    parallel_group: 999999
+    description: Python types are properly wrapped (TestUnit, ResolvedGenotype, etc.)
+    indent_level: 0
+    raw_marker: -
+  - id: "line_66"
+    line_number: 66
+    status: pending
+    parallel_group: 999999
+    description: Python bindings handle errors and convert to Python exceptions
+    indent_level: 0
+    raw_marker: -
+  - id: "line_70"
+    line_number: 70
+    status: pending
+    parallel_group: 999999
+    description: `StormCache.build()` calls Rust `build_cache()` function (not TODO)
+    indent_level: 0
+    raw_marker: -
+  - id: "line_71"
+    line_number: 71
+    status: pending
+    parallel_group: 999999
+    description: `StormCache.build()` accepts all required parameters
+    indent_level: 0
+    raw_marker: -
+  - id: "line_72"
+    line_number: 72
+    status: pending
+    parallel_group: 999999
+    description: `StormCache.build()` returns a StormCache instance pointing to built cache
+    indent_level: 0
+    raw_marker: -
+  - id: "line_73"
+    line_number: 73
+    status: pending
+    parallel_group: 999999
+    description: `run_glm()` calls Rust `run_association()` function
+    indent_level: 0
+    raw_marker: -
+  - id: "line_74"
+    line_number: 74
+    status: pending
+    parallel_group: 999999
+    description: `run_glm()` accepts cache, phenotype, plan, covariates, output parameters
+    indent_level: 0
+    raw_marker: -
+  - id: "line_75"
+    line_number: 75
+    status: pending
+    parallel_group: 999999
+    description: `run_glm()` returns Polars DataFrame with results
+    indent_level: 0
+    raw_marker: -
+  - id: "line_76"
+    line_number: 76
+    status: pending
+    parallel_group: 999999
+    description: `explain()` calls Rust `explain_genotype()` or `explain_locus()`
+    indent_level: 0
+    raw_marker: -
+  - id: "line_77"
+    line_number: 77
+    status: pending
+    parallel_group: 999999
+    description: `explain()` returns formatted string with genotype details
+    indent_level: 0
+    raw_marker: -
+  - id: "line_78"
+    line_number: 78
+    status: pending
+    parallel_group: 999999
+    description: All Python API functions have proper error handling
+    indent_level: 0
+    raw_marker: -
+  - id: "line_82"
+    line_number: 82
+    status: pending
+    parallel_group: 999999
+    description: Integration test file exists at `tests/integration_tests.rs`
+    indent_level: 0
+    raw_marker: -
+  - id: "line_83"
+    line_number: 83
+    status: pending
+    parallel_group: 999999
+    description: Test builds cache from fixtures (`fixtures/sv_small.vcf`, `fixtures/trgt_small.vcf`, etc.)
+    indent_level: 0
+    raw_marker: -
+  - id: "line_84"
+    line_number: 84
+    status: pending
+    parallel_group: 999999
+    description: Test verifies cache files are created with correct names
+    indent_level: 0
+    raw_marker: -
+  - id: "line_85"
+    line_number: 85
+    status: pending
+    parallel_group: 999999
+    description: Test verifies test_units.parquet has expected schema and row count
+    indent_level: 0
+    raw_marker: -
+  - id: "line_86"
+    line_number: 86
+    status: pending
+    parallel_group: 999999
+    description: Test verifies genotypes.parquet has expected schema and row count
+    indent_level: 0
+    raw_marker: -
+  - id: "line_87"
+    line_number: 87
+    status: pending
+    parallel_group: 999999
+    description: Test verifies catalog.parquet has expected schema and row count
+    indent_level: 0
+    raw_marker: -
+  - id: "line_88"
+    line_number: 88
+    status: pending
+    parallel_group: 999999
+    description: Test verifies features.parquet has expected schema and row count
+    indent_level: 0
+    raw_marker: -
+  - id: "line_89"
+    line_number: 89
+    status: pending
+    parallel_group: 999999
+    description: Test verifies provenance.json exists and contains expected metadata
+    indent_level: 0
+    raw_marker: -
+  - id: "line_90"
+    line_number: 90
+    status: pending
+    parallel_group: 999999
+    description: Test runs `storm explain` on a test unit and checks output format
+    indent_level: 0
+    raw_marker: -
+  - id: "line_91"
+    line_number: 91
+    status: pending
+    parallel_group: 999999
+    description: Test runs association test using fixtures and verifies results structure
+    indent_level: 0
+    raw_marker: -
+  - id: "line_92"
+    line_number: 92
+    status: pending
+    parallel_group: 999999
+    description: All integration tests pass with `cargo test --features python`
+    indent_level: 0
+    raw_marker: -
+  - id: "line_96"
+    line_number: 96
+    status: pending
+    parallel_group: 999999
+    description: `storm.version()` call in notebook works without errors
+    indent_level: 0
+    raw_marker: -
+  - id: "line_97"
+    line_number: 97
+    status: pending
+    parallel_group: 999999
+    description: Notebook can import storm module successfully
+    indent_level: 0
+    raw_marker: -
+  - id: "line_98"
+    line_number: 98
+    status: pending
+    parallel_group: 999999
+    description: Notebook demonstrates cache building (uncomment and make functional)
+    indent_level: 0
+    raw_marker: -
+  - id: "line_99"
+    line_number: 99
+    status: pending
+    parallel_group: 999999
+    description: Notebook demonstrates cache loading (uncomment and make functional)
+    indent_level: 0
+    raw_marker: -
+  - id: "line_100"
+    line_number: 100
+    status: pending
+    parallel_group: 999999
+    description: Notebook demonstrates GLM analysis (uncomment and make functional)
+    indent_level: 0
+    raw_marker: -
+  - id: "line_101"
+    line_number: 101
+    status: pending
+    parallel_group: 999999
+    description: Notebook demonstrates explain functionality (uncomment and make functional)
+    indent_level: 0
+    raw_marker: -
+  - id: "line_102"
+    line_number: 102
+    status: pending
+    parallel_group: 999999
+    description: Notebook runs end-to-end without errors
+    indent_level: 0
+    raw_marker: -
+  - id: "line_106"
+    line_number: 106
+    status: pending
+    parallel_group: 999999
+    description: README.md documents CLI usage with examples
+    indent_level: 0
+    raw_marker: -
+  - id: "line_107"
+    line_number: 107
+    status: pending
+    parallel_group: 999999
+    description: README.md documents Python API usage with examples
+    indent_level: 0
+    raw_marker: -
+  - id: "line_108"
+    line_number: 108
+    status: pending
+    parallel_group: 999999
+    description: README.md includes example of end-to-end workflow
+    indent_level: 0
+    raw_marker: -
+  - id: "line_109"
+    line_number: 109
+    status: pending
+    parallel_group: 999999
+    description: Code comments explain the cache building pipeline flow
+    indent_level: 0
+    raw_marker: -
+  - id: "line_110"
+    line_number: 110
+    status: pending
+    parallel_group: 999999
+    description: Error messages are user-friendly and actionable
+    indent_level: 0
+    raw_marker: -

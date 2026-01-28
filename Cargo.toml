@@ -22,6 +22,9 @@ serde_yaml = "0.9"
 arrow = { version = "54" }
 parquet = { version = "54", features = ["arrow"] }
 chrono = "0.4"
+clap = { version = "4", features = ["derive"] }
+sha2 = "0.10"
+hex = "0.4"
 
 [features]
 default = []
