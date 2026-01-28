@@ -666,3 +666,5 @@ except Exception as e:
 " → exit 0
 [14:36:54] 🟢 SHELL cd /Users/kiran/repositories/storm && python --version && which python → exit 0
 [14:36:55] 🟢 SHELL cd /Users/kiran/repositories/storm && maturin --version 2>&1 || echo "maturin not installed" → exit 0
+[14:37:01] 🟢 SHELL cd /Users/kiran/repositories/storm && maturin develop --features python 2>&1 → exit 0
+[14:37:04] 🟢 TOKENS: 45313 / 80000 (56%) [read:172KB write:0KB assist:1KB shell:0KB]

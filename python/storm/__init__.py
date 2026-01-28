@@ -329,8 +329,8 @@ def load_plan(path: str) -> Dict[str, Any]:
         Dictionary with plan configuration.
     """
     import json
-    if HAS_RUST:
-        plan_json = _storm.py_load_plan(path)
+    if HAS_RUST and py_load_plan is not None:
+        plan_json = py_load_plan(path)
         return json.loads(plan_json)
     else:
         import yaml
