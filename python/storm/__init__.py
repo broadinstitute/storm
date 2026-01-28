@@ -364,8 +364,11 @@ def run_glm(
             
             return results
             
+        except (ValueError, TypeError) as e:
+            # Re-raise validation errors - don't fall back for invalid inputs
+            raise
         except Exception as e:
-            # Fall back to Python implementation on error
+            # Fall back to Python implementation on other errors (e.g., Rust errors)
             import warnings
             warnings.warn(f"Rust run_association failed, using Python fallback: {e}")
     
