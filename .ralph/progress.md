@@ -4,12 +4,52 @@
 
 ## Summary
 
-- Iterations completed: 1
-- Current status: **DONE**
+- Iterations completed: 2
+- Current status: **IN PROGRESS**
 
-## Completed Criteria: 50/50
+## Completed Criteria: 69/71
 
-All success criteria have been implemented and tested.
+Almost all success criteria have been implemented and tested.
+
+### Remaining:
+- [ ] Test runs association test using fixtures and verifies results structure
+- [ ] Notebook runs end-to-end without errors
+
+### What Was Done This Session:
+1. Implemented full CLI with clap:
+   - `storm --version` 
+   - `storm cache build` with all options
+   - `storm cache verify`
+   - `storm explain`
+
+2. Implemented `build_cache()` end-to-end pipeline
+   - Parses SV VCF and TRGT VCF
+   - Loads catalog from BED/JSON
+   - Maps SVs to catalog loci
+   - Creates TestUnits (SV, RepeatProxy, TrueRepeat)
+   - Resolves genotypes
+   - Computes features
+   - Writes cache with provenance
+
+3. Added PyO3 bindings:
+   - py_build_cache
+   - py_verify_cache
+   - py_explain_genotype
+   - py_explain_locus
+   - py_load_plan
+
+4. Updated Python API:
+   - StormCache.build() calls Rust backend
+   - explain() uses Rust functions
+   - Added verify_cache() and load_plan()
+
+5. Fixed read_parquet to handle empty files
+
+6. Added comprehensive integration tests (12 tests)
+
+7. Updated notebook to use CLI
+
+8. Updated README with full documentation
 
 ## How This Works
 
