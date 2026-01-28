@@ -1,227 +1,246 @@
-# STORM v0.2: Integrated-callset–first SV/TR association framework
+---
+task: Build STORM v0.2 (Integrated-callset-first + overlays + backends)
+---
 
-## One-liner
-Build STORM as a Rust crate with a Python (Jupyter-friendly) front-end that:
-1) uses an integrated long-read SV callset as the default authority for variant presence/zygosity,
-2) supports ordered overlay datasets (TRGT; later HLA/KIR) that refine or override allele values in specific regions/loci,
-3) materializes an internal Arrow/Parquet cache,
-4) runs association tests via pluggable backends, including a minimal internal GLM backend.
+## Goal (one sentence)
+Build STORM as a Rust crate with a Python (Jupyter-friendly) front-end that ingests an integrated LR SV VCF as default genotype authority, supports ordered overlays (TRGT now; HLA/KIR later), materializes an Arrow/Parquet cache, and runs association via pluggable backends including an internal StormGLM (no mixed models).
 
-STORM = Structural & Tandem-Repeat Optimized Regression Models.
+## Non-goals (this milestone)
+Do NOT implement mixed-model association (no SAIGE/REGENIE execution).
+Do NOT implement Hail integration beyond export-friendly formats.
+Do NOT optimize for full biobank-scale throughput yet (correctness > speed).
+
+## Core invariants (must be explicit in code)
+Separate “presence/zygosity” (primary) from “allele value” (overlays can refine).
+All model/encoding/backend selection is plan-driven and deterministic.
+Every resolved genotype has provenance: presence_source, allele_source, QC gating.
+No silent assumptions for missing genotypes (missing must be handled explicitly).
 
 ---
 
-## Non-goals (for this milestone)
-- No mixed models (SAIGE/REGENIE execution not required yet).
-- No Hail integration beyond export-friendly formats.
-- No full genome-wide scan optimizations; correctness > speed.
+# A. Rust CLI skeleton + project structure
+[ ] Add/confirm CLI entrypoint(s) for:
+  [ ] `storm cache build`
+  [ ] `storm cache verify`
+  [ ] `storm explain`
+  [ ] `storm assoc run`
+  [ ] `storm assoc export` (export-only stubs)
+[ ] Establish Rust module layout (suggested):
+  [ ] `vcf/` (parsing)
+  [ ] `catalog/` (TRExplorer ingest + interval index)
+  [ ] `test_units/` (construction/grouping)
+  [ ] `resolver/` (primary+overlay resolution)
+  [ ] `encoding/` (S/M/D/G/T/Bins)
+  [ ] `plan/` (YAML schema + rule engine)
+  [ ] `assoc/` (backend trait + StormGLM)
+  [ ] `io/` (Arrow/Parquet)
+  [ ] `provenance/`
+[ ] Add `.ralph/progress.md` and `.ralph/guardrails.md` (if not present).
 
 ---
 
-## Core concepts (must be explicit in code)
-- **Primary genotype authority**: integrated SV callset (presence/zygosity).
-- **Overlay datasets**: refine allele values (e.g., TRGT lengths; HLA/KIR alleles).
-- **TestUnit**: the atomic unit of association (SV, repeat locus/cluster, HLA gene, etc.).
-- **Resolver**: deterministic engine that combines primary + overlays into a final analysis genotype with provenance.
-- **Plan-driven**: encoding, model, and backend are chosen by a pre-specified plan, never ad hoc.
+# B. VCF ingestion (primary: integrated callset)
+[ ] Implement integrated SV VCF parser:
+  [ ] Parse CHROM, POS, ID, REF, ALT, FILTER.
+  [ ] Parse INFO fields (at least SVTYPE, SVLEN, END if present).
+  [ ] Parse per-sample GT (and optionally GQ/DP if present).
+  [ ] Emit normalized `SvRecord` table + per-sample genotype table.
+[ ] Define stable `sv_id` semantics:
+  [ ] Prefer VCF ID when present; else derive stable hash from (chrom,pos,ref,alt).
+[ ] Ensure missing GT handling is explicit (no “absent = 0/0” assumptions).
 
 ---
 
-## Deliverables
-
-### A. Rust core (`storm` crate)
-
-#### A1. VCF ingestion — integrated callset (primary)
-- Parse site fields: CHROM, POS, ID, REF, ALT, FILTER.
-- Parse INFO: SVTYPE, SVLEN, END (if present).
-- Parse per-sample FORMAT: GT (plus optional GQ/DP).
-- Emit normalized `SvRecord` + per-sample genotype table.
-- Treat missing GTs as invalid (no silent assumptions).
-
-#### A2. VCF ingestion — TRGT overlay
-- Parse site fields: TRID, END, MOTIFS/STRUC.
-- Parse per-sample fields: GT, AL (allele lengths, e.g. "39,47").
-- Gate overlay usage on simple QC (configurable).
-- Map TRGT calls to TRExplorer loci by interval overlap + motif.
-
-#### A3. Catalog ingestion — TRExplorer
-- Read BED (interval backbone) and EH JSON (annotations).
-- Build interval index for overlap queries.
-- Use JSON `LocusId` as stable `catalog_locus_id`.
-- Expose motif length and reference repeat count.
+# C. TRExplorer catalog ingestion (BED + EH JSON)
+[ ] Implement catalog ingest:
+  [ ] Read BED intervals (chr,start,end,motif).
+  [ ] Read EH JSON annotations (ReferenceRegion, LocusId, Motif, CanonicalMotif, NumRepeatsInReference, etc.).
+  [ ] Join BED+JSON into internal `CatalogLocus` objects keyed by JSON `LocusId`.
+  [ ] Build interval index for overlap queries.
+[ ] Expose catalog helpers:
+  [ ] motif length (bp)
+  [ ] reference repeat count (NumRepeatsInReference)
+  [ ] reference tract length (repeat units and/or bp)
 
 ---
 
-### B. TestUnit construction
-
-- VariantKind:
-  - `SV` (standard biallelic / CN SVs)
-  - `RepeatProxySV` (SV alleles overlapping a TRExplorer locus/cluster)
-  - `Repeat` (true repeat genotypes from TRGT)
-  - (placeholders for `HLA`, `KIR`)
-
-- Group SV records overlapping the same `catalog_locus_id` (or cluster) into one RepeatProxy TestUnit.
-- Keep explicit links to contributing SV IDs.
-
----
-
-### C. Resolver (primary + overlays)
-
-- Deterministic, ordered overlay application.
-- Separate layers:
-  - **Presence layer** (default: integrated callset).
-  - **Allele layer** (TRGT preferred; SV-proxy fallback).
-- Record provenance:
-  - presence_source
-  - allele_source
-  - overlay rule applied
-  - QC gating decisions.
-
-#### C1. RepeatProxySV reconstruction
-- For each TestUnit with multiple INS/DEL alleles:
-  - Baseline = reference repeat length (from catalog).
-  - Apply deltas per allele row using GT:
-    - INS → +SVLEN bp
-    - DEL → −abs(SVLEN) bp
-  - Convert bp → repeat units iff divisible by motif length.
-  - Reconstruct diploid (L1, L2):
-    - 0/1 on different alleles ⇒ compound heterozygote.
-  - If ambiguous (>2 non-ref alleles), flag sample as invalid for this TestUnit.
+# D. TestUnit construction (SV + RepeatProxySV + Repeat)
+[ ] Define internal `VariantKind`:
+  [ ] `SV`
+  [ ] `RepeatProxySV` (derived from SV alleles overlapping catalog loci/clusters)
+  [ ] `Repeat` (TRGT-derived true allele lengths)
+  [ ] placeholders for `HLA`, `KIR`
+[ ] Implement SV→RepeatProxySV mapping:
+  [ ] For each SV record, overlap with catalog loci.
+  [ ] If overlaps: tag with `catalog_locus_id` (and `cluster_id` if supported).
+[ ] Group SV records into RepeatProxy TestUnits:
+  [ ] `test_unit_id = catalog_locus_id` (or cluster-based id later)
+  [ ] maintain list of contributing `sv_id`s.
 
 ---
 
-### D. Arrow / Parquet cache
-
-- `storm cache build` writes:
-  - `test_units.parquet`
-  - `genotypes.parquet`
-    - test_unit_id, sample_id
-    - presence, zygosity
-    - L1, L2 (or null)
-    - qc flags
-    - presence_source, allele_source
-  - `catalog.parquet`
-  - `features.parquet` (phenotype-agnostic features)
-  - `provenance.json` (input hashes, git commit, timestamps)
-
-- `storm cache verify` validates schema + row counts.
+# E. TRGT overlay ingestion (VCF)
+[ ] Implement TRGT VCF parser:
+  [ ] Parse site fields: TRID, END, MOTIFS/STRUC where available.
+  [ ] Parse per-sample fields: GT and AL (e.g., "39,47").
+  [ ] Parse minimal QC fields (configurable; do not overfit).
+[ ] Map TRGT calls to catalog loci:
+  [ ] Use interval overlap tolerance + motif match where possible.
+  [ ] Record mapping confidence / ambiguity.
+[ ] Represent TRGT allele lengths in repeat units (preferred) and/or bp.
 
 ---
 
-### E. Feature computation (phenotype-agnostic)
-For each TestUnit:
-- call rate
-- carrier count
-- allele spectrum summaries
-- tail metrics (for derived indicators)
-- multimodality flags (simple heuristic)
+# F. Resolver (primary + ordered overlays)
+[ ] Implement resolver core:
+  [ ] Input: primary SV genotypes + 0..N overlays (ordered).
+  [ ] Output: resolved genotype record per (test_unit_id, sample_id) with provenance.
+[ ] Presence layer default:
+  [ ] from integrated callset for SV and RepeatProxySV.
+[ ] Allele layer for repeat-like units:
+  [ ] Prefer TRGT AL if QC-pass.
+  [ ] Else fallback to RepeatProxySV reconstruction (if valid).
+  [ ] Else fallback to carrier-only (presence) with allele fields null.
+[ ] Record provenance fields:
+  [ ] `presence_source`
+  [ ] `allele_source`
+  [ ] QC flags / override reasons.
 
 ---
 
-### F. Plan + rule engine (“executable pre-registration”)
-
-- YAML schema specifying ordered rules:
-  - match on VariantKind + features + catalog tags
-  - choose:
-    - encoding (S, M, tail indicator, categorical bins, etc.)
-    - model (linear, logistic, binomirare, firth, factor)
-    - backend preference
-- Implement rare-event ladder:
-  - <20 carriers → BinomiRare
-  - 20–200 → Firth
-  - >200 → logistic
-- First-match-wins, deterministic.
-- Must emit rule_id used.
-
----
-
-### G. Association backends
-
-#### G1. Backend interface
-Define a trait like:
-- `run(test_unit, predictor, phenotype, covariates, mask) -> ResultRow`
-
-#### G2. Internal backend: StormGLM
-Support:
-- Linear regression (quantitative traits).
-- Logistic regression (binary traits).
-- Categorical (factor) regression with multi-df LRT.
-- BinomiRare exact test for rare binary predictors.
-- Firth logistic (feature-flagged but strongly recommended).
-- Covariates (incl. PCs).
-- Optional ancestry-stratified runs + fixed-effect meta-analysis.
-
-No mixed models.
-
-#### G3. External backend stubs (export-only)
-- Export inputs for SAIGE / REGENIE:
-  - phenotype file
-  - covariates
-  - predictor matrices (continuous, binary, dummy-coded)
-- No execution required yet.
+# G. RepeatProxySV diploid reconstruction (multi-allelic reversal)
+[ ] Implement grouping of allele rows per catalog locus:
+  [ ] INS and DEL rows included.
+  [ ] Use SVLEN sign rule: INS +SVLEN bp; DEL −abs(SVLEN) bp.
+[ ] Implement diploid inference per sample:
+  [ ] Start from baseline (reference tract length from catalog).
+  [ ] Apply deltas based on GT per allele row:
+    [ ] 0/0: none
+    [ ] 0/1: one haplotype
+    [ ] 1/1: both haplotypes
+  [ ] Handle compound het: two different 0/1 alleles → one on each haplotype.
+  [ ] If >2 distinct non-ref alleles present → mark sample ambiguous and drop for that TestUnit.
+[ ] Canonicality check:
+  [ ] If delta bp divisible by motif length → convert to repeat units.
+  [ ] Else mark non-canonical; configurable behavior (exclude from repeat-proxy vs keep bp).
 
 ---
 
-### H. Results schema (backend-agnostic)
-Write results to Parquet with:
-- identifiers: test_unit_id, variant_kind, catalog_locus_id
-- model metadata: encoding, model, backend, rule_id, plan_hash
-- statistics: beta/OR, SE, CI, p, df
-- counts: N, carriers, call_rate
-- provenance: presence_source, allele_source, flags
+# H. Feature computation (phenotype-agnostic)
+[ ] Compute per-TestUnit features from resolved genotypes:
+  [ ] call rate
+  [ ] carrier count
+  [ ] allele spectrum summaries (min/median/max)
+  [ ] tail metrics for max allele
+  [ ] multimodality heuristic (simple v0.2)
+[ ] Write features to `features.parquet`.
 
 ---
 
-### I. Explainability
-- `storm explain <test_unit_id> [--sample id]`
-- Must print:
-  - contributing SV records
-  - overlays applied (TRGT, etc.)
-  - final resolved genotype
-  - encoding, model, backend, rule_id
-  - provenance + QC notes
+# I. Arrow/Parquet cache
+[ ] Implement `storm cache build`:
+  [ ] Write `test_units.parquet`
+  [ ] Write `genotypes.parquet` (long form: test_unit_id, sample_id, presence/zyg, L1,L2, qc, sources)
+  [ ] Write `catalog.parquet` (or compact form)
+  [ ] Write `features.parquet`
+  [ ] Write `provenance.json` (input hashes, versions, git commit)
+[ ] Implement `storm cache verify`:
+  [ ] Validate schemas and expected row counts.
 
 ---
 
-### J. Python front-end
-- Python package to:
-  - build/read cache
-  - run association via StormGLM
-  - load results into pandas/polars
-- Include a small Jupyter demo notebook.
+# J. Plan (YAML) + rule engine (“executable pre-registration”)
+[ ] Implement plan schema + parser:
+  [ ] ordered rules
+  [ ] match predicates on VariantKind + features + catalog tags
+  [ ] action chooses encoding + model + backend preference
+[ ] Implement rare-event ladder:
+  [ ] <20 carriers → BinomiRare
+  [ ] 20–200 → Firth
+  [ ] >200 → logistic
+[ ] Record chosen `rule_id`, encoding, model, backend for every test result.
 
 ---
 
-## Acceptance Criteria
-- Unit tests for:
-  - VCF parsing (integrated + TRGT).
-  - Catalog ingestion (BED + JSON).
-  - RepeatProxy grouping + diploid reconstruction.
-  - Overlay precedence (TRGT overrides allele, not presence).
-  - Each StormGLM model on tiny synthetic matrices.
-- End-to-end run on fixtures:
-  - build cache
-  - run association
-  - deterministic `explain` output.
-- Stable Parquet schemas + provenance recorded.
+# K. Encodings (predictor builders)
+[ ] Implement encoders:
+  [ ] S = L1 + L2
+  [ ] M = max(L1, L2)
+  [ ] D = |L1 − L2|
+  [ ] G = tail indicator (q=0.995 on M; cohort or stratum-specific)
+  [ ] T = RINT(S) (VNTR option)
+  [ ] Bins(S) / categorical bins (narrow-window option)
+[ ] Ensure encoders produce:
+  [ ] predictor vector X
+  [ ] sample mask (valid samples)
+  [ ] encoding metadata (thresholds/bins used)
 
 ---
 
-## Plan of attack (PR-sized steps)
-1) CLI skeleton + integrated VCF parser.
-2) TRExplorer catalog ingestion + overlap mapping.
-3) TestUnit construction + RepeatProxy reconstruction.
-4) TRGT overlay ingestion + resolver precedence.
-5) Arrow/Parquet cache writer + verifier.
-6) Plan/rule engine.
-7) StormGLM backend + results writer.
-8) Explain command + Python demo.
+# L. Association backends
+[ ] Define backend trait:
+  [ ] `run(test_unit_id, X, phenotype, covariates, mask, model_spec) -> ResultRow`
+[ ] Implement internal backend `StormGLM` (no mixed models):
+  [ ] Linear regression (quantitative)
+  [ ] Logistic regression (binary)
+  [ ] Factor regression (multi-df LRT) for categorical predictors
+  [ ] BinomiRare for rare binary predictors
+  [ ] Firth logistic (feature-flagged OK if needed; but implement if possible)
+  [ ] Covariates matrix (incl PCs)
+[ ] Population stratification support (internal):
+  [ ] accept PCs as covariates
+  [ ] optional ancestry-stratified runs + fixed-effect meta-analysis
+[ ] External backend export stubs:
+  [ ] Export SAIGE inputs (phenotype/covariates/predictors)
+  [ ] Export REGENIE inputs (phenotype/covariates/predictors)
+  [ ] No execution required; export-only.
 
 ---
 
-## Completion condition
-When:
-- cache builds from fixtures,
-- StormGLM runs at least one association,
-- `storm explain` shows SV vs TRGT resolution clearly,
-write **DONE** in `.ralph/progress.md` and stop.
+# M. Results writing (backend-agnostic)
+[ ] Write results to Parquet with stable schema:
+  [ ] ids: test_unit_id, variant_kind, catalog_locus_id, contributing_sv_ids
+  [ ] model meta: encoding, model, backend, rule_id, plan_hash
+  [ ] stats: beta/OR, SE, CI, p, df, convergence flags
+  [ ] counts: N, carriers, call_rate
+  [ ] provenance: presence_source, allele_source, qc flags
+
+---
+
+# N. Explainability
+[ ] Implement `storm explain <test_unit_id> [--sample <id>]`:
+  [ ] contributing SV records (IDs, SVTYPE/SVLEN)
+  [ ] overlay TRGT record(s) used (if any)
+  [ ] final resolved genotype (presence, L1,L2)
+  [ ] chosen encoding/model/backend/rule_id
+  [ ] provenance + QC flags
+
+---
+
+# O. Python front-end (Jupyter)
+[ ] Provide Python package:
+  [ ] build cache (shell out or bindings)
+  [ ] load cache Parquet into pandas/polars
+  [ ] run association (StormGLM) and load results
+  [ ] `explain()` wrapper
+[ ] Add a small notebook showing:
+  [ ] load VCFs + catalog
+  [ ] build cache
+  [ ] run one association
+  [ ] explain one repeat locus
+
+---
+
+# Acceptance criteria
+[ ] Unit tests exist for:
+  [ ] integrated VCF parsing
+  [ ] TRGT VCF parsing (AL parsing)
+  [ ] catalog BED+JSON ingest + locus ID mapping
+  [ ] RepeatProxy grouping + diploid reconstruction (incl compound het and ambiguity)
+  [ ] overlay precedence (TRGT overrides allele; presence from integrated)
+  [ ] StormGLM models on tiny synthetic matrices
+[ ] End-to-end run on minimal inputs produces:
+  [ ] cache Parquet outputs with stable schema
+  [ ] results Parquet output with stable schema
+  [ ] deterministic `storm explain` output
+[ ] When complete, write `DONE` in `.ralph/progress.md`.
