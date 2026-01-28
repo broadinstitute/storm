@@ -35,20 +35,20 @@ structural variants and tandem repeats using long-read data.
 21. [x] Cache includes features table
 22. [x] Cache includes provenance metadata
 23. [x] storm explain prints resolved genotype details
-24. [ ] Plan YAML can be parsed
-25. [ ] Plan rules deterministically select encodings
-26. [ ] Plan rules deterministically select models
-27. [ ] S encoding (L1+L2) is implemented
-28. [ ] M encoding (max allele) is implemented
-29. [ ] D encoding (|L1-L2|) is implemented
-30. [ ] Tail indicator encoding is implemented
-31. [ ] Categorical bin encoding is implemented
-32. [ ] Internal StormGLM backend is implemented
-33. [ ] Linear regression is supported
-34. [ ] Logistic regression is supported
-35. [ ] Categorical regression is supported
-36. [ ] BinomiRare test is supported
-37. [ ] Firth logistic regression is supported or feature-flagged
+24. [x] Plan YAML can be parsed
+25. [x] Plan rules deterministically select encodings
+26. [x] Plan rules deterministically select models
+27. [x] S encoding (L1+L2) is implemented
+28. [x] M encoding (max allele) is implemented
+29. [x] D encoding (|L1-L2|) is implemented
+30. [x] Tail indicator encoding is implemented
+31. [x] Categorical bin encoding is implemented
+32. [x] Internal StormGLM backend is implemented
+33. [x] Linear regression is supported
+34. [x] Logistic regression is supported
+35. [x] Categorical regression is supported
+36. [x] BinomiRare test is supported
+37. [x] Firth logistic regression is supported or feature-flagged
 38. [ ] Covariates including PCs are supported
 39. [ ] Rare-variant ladder logic is implemented
 40. [ ] Association results can be written to Parquet

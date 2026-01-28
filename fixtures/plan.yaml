@@ -1,0 +1,31 @@
+name: storm_default
+version: "1.0"
+default_encoding: s
+default_model: linear
+
+rules:
+  - name: rare_binary
+    condition:
+      max_carriers: 10
+    encoding: binary
+    model: binomirare
+  
+  - name: pathogenic_cag
+    condition:
+      motif_pattern: CAG
+      min_carriers: 20
+    encoding: m
+    model: logistic
+  
+  - name: common_repeats
+    condition:
+      min_carriers: 50
+      min_call_rate: 0.95
+    encoding: s
+    model: linear
+
+covariates:
+  - age
+  - sex
+
+num_pcs: 10

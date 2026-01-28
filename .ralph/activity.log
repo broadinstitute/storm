@@ -369,3 +369,21 @@ EOF
 )" && git push → exit 0
 [23:05:25] 🟢 TOKENS: 13753 / 80000 (17%) [read:48KB write:0KB assist:1KB shell:0KB]
 [23:05:33] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -20 → exit 0
+[23:05:42] 🟢 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: implement storm explain for genotype details
+
+- Create explain module for human-readable output
+- Add explain_genotype for single sample details
+- Add explain_locus for multi-sample summary
+- Show computed encodings (S, M, D)
+- Add format_genotype_compact for compact output
+- All 35 tests passing
+
+Criterion 23 complete
+EOF
+)" → exit 0
+[23:06:22] 🟢 TOKENS: 13772 / 80000 (17%) [read:48KB write:0KB assist:2KB shell:0KB]
+[23:06:52] 🟢 TOKENS: 13772 / 80000 (17%) [read:48KB write:0KB assist:2KB shell:0KB]
+[23:07:02] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -25 → exit 0
+[23:08:02] 🟢 TOKENS: 13791 / 80000 (17%) [read:48KB write:0KB assist:2KB shell:0KB]
+[23:08:10] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -25 → exit 0

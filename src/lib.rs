@@ -14,6 +14,9 @@ pub mod testunit;
 pub mod resolver;
 pub mod cache;
 pub mod explain;
+pub mod plan;
+pub mod encoding;
+pub mod glm;
 
 // Re-exports
 pub use vcf::sv::{parse_sv_vcf, SvRecord, SvType, SvVcfError, Genotype};
@@ -31,6 +34,9 @@ pub use cache::{
     parquet_cache::{write_cache_to_dir, read_cache_from_dir},
 };
 pub use explain::{explain_genotype, explain_locus, format_genotype_compact};
+pub use plan::{Plan, PlanError, Rule, RuleCondition, Encoding, Model};
+pub use encoding::{encode_s, encode_m, encode_d, encode_tail, encode_categorical, encode_binary, CategoricalBin, apply_encoding};
+pub use glm::{GlmError, AssociationResult, linear_regression, logistic_regression, binomi_rare_test, firth_logistic_regression, categorical_regression, run_association};
 
 // Example library function
 #[cfg(feature = "python")]
