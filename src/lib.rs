@@ -1,5 +1,17 @@
+//! STORM: Structural & Tandem-Repeat Optimized Regression Models
+//!
+//! A Rust crate with Python front-end for association testing of
+//! structural variants and tandem repeats using long-read data.
+
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
+
+// Core modules
+pub mod vcf;
+
+// Re-exports
+pub use vcf::sv::{parse_sv_vcf, SvRecord, SvType, SvVcfError, Genotype};
+pub use vcf::trgt::{parse_trgt_vcf, TrgtRecord, TrgtVcfError};
 
 // Example library function
 #[cfg(feature = "python")]
@@ -27,20 +39,18 @@ fn storm(_py: Python, m: &PyModule) -> PyResult<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     #[cfg(feature = "python")]
     fn test_add() {
-        assert_eq!(add(2, 2), 4);
-        assert_eq!(add(-1, 1), 0);
-        assert_eq!(add(0, 0), 0);
+        assert_eq!(super::add(2, 2), 4);
+        assert_eq!(super::add(-1, 1), 0);
+        assert_eq!(super::add(0, 0), 0);
     }
 
     #[test]
     #[cfg(feature = "python")]
     fn test_version() {
-        let version = _version().unwrap();
+        let version = super::_version().unwrap();
         assert!(!version.is_empty());
         // Version should be in format x.y.z
         assert!(version.matches(r"^\d+\.\d+\.\d+$"));

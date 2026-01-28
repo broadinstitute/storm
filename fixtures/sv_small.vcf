@@ -1,0 +1,9 @@
+##fileformat=VCFv4.2
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">
+##INFO=<ID=SVLEN,Number=.,Type=Integer,Description="Difference in length between REF and ALT alleles">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the variant">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE1	SAMPLE2
+chr1	1000	sv1	N	<DEL>	.	PASS	SVTYPE=DEL;SVLEN=-500;END=1500	GT	0/1	1/1
+chr1	2000	sv2	N	<INS>	.	PASS	SVTYPE=INS;SVLEN=200	GT	1/0	0/0
+chr2	5000	sv3	N	<DUP>	.	PASS	SVTYPE=DUP;SVLEN=1000;END=6000	GT	0/0	0/1

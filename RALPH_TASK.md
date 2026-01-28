@@ -12,7 +12,7 @@ structural variants and tandem repeats using long-read data.
 
 ## Success Criteria
 
-1. [ ] Integrated SV VCF can be parsed (SVTYPE, SVLEN, GT)
+1. [x] Integrated SV VCF can be parsed (SVTYPE, SVLEN, GT)
 2. [ ] TRGT VCF can be parsed (TRID, AL, GT)
 3. [ ] TRExplorer BED file can be ingested
 4. [ ] TRExplorer JSON file can be ingested
