@@ -203,20 +203,37 @@ def run_glm(
         try:
             # Convert phenotype to dict for JSON serialization
             # Phenotype should be indexed by sample_id
-            if hasattr(phenotype, 'to_dict'):
-                # If it's a Polars Series with proper index, convert
-                pheno_dict = {}
+            pheno_dict = {}
+            
+            # Handle Polars Series (has to_list method)
+            if HAS_POLARS and isinstance(phenotype, pl.Series):
                 if cache.genotypes is not None:
                     sample_ids = cache.genotypes["sample_id"].unique().to_list()
-                    pheno_values = phenotype.to_list() if hasattr(phenotype, 'to_list') else list(phenotype)
+                    pheno_values = phenotype.to_list()
                     for i, sample_id in enumerate(sample_ids):
                         if i < len(pheno_values):
                             pheno_dict[sample_id] = float(pheno_values[i])
                 else:
-                    # Fallback: assume phenotype is a dict-like
-                    pheno_dict = {f"sample_{i}": float(v) for i, v in enumerate(phenotype)}
+                    pheno_values = phenotype.to_list()
+                    pheno_dict = {f"sample_{i}": float(v) for i, v in enumerate(pheno_values)}
+            # Handle dict-like objects (already indexed by sample_id)
+            elif isinstance(phenotype, dict):
+                pheno_dict = {str(k): float(v) for k, v in phenotype.items()}
+            # Handle list/array phenotypes
+            elif hasattr(phenotype, '__iter__'):
+                pheno_values = list(phenotype)
+                if cache.genotypes is not None:
+                    sample_ids = cache.genotypes["sample_id"].unique().to_list()
+                    for i, sample_id in enumerate(sample_ids):
+                        if i < len(pheno_values):
+                            pheno_dict[sample_id] = float(pheno_values[i])
+                else:
+                    pheno_dict = {f"sample_{i}": float(v) for i, v in enumerate(pheno_values)}
             else:
-                pheno_dict = dict(phenotype)
+                raise ValueError(
+                    f"Invalid phenotype format: {type(phenotype)}. "
+                    "Expected Polars Series, dict, or list/array."
+                )
             
             phenotype_json = json.dumps(pheno_dict)
             
