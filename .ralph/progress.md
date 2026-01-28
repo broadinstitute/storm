@@ -437,5 +437,14 @@ This is how Ralph maintains continuity across iterations.
 ### 2026-01-28 15:25:24
 **Session 7 started** (model: opus-4.5-thinking)
 
+### 2026-01-28 15:29:00
+**Session 7 completed** - Implemented covariate handling in run_glm():
+- Updated run_glm() to convert Polars DataFrame covariates to JSON and pass to py_run_association()
+- Fixed test_residualize test to check variance instead of sum of squares
+- All 60 Rust tests pass
+- All 24 Python tests pass including covariate handling tests
+
+**DONE** - All criteria complete
+
 ### 2026-01-28 15:27:15
 **Session 7 ended** - ✅ TASK COMPLETE
