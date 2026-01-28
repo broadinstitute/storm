@@ -10,6 +10,8 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::path::Path;
 use thiserror::Error;
+use arrow::array::Array;
+use arrow::array::Array;
 
 // Core modules
 pub mod vcf;
@@ -107,20 +109,16 @@ pub fn build_cache(
     output_dir: &str,
 ) -> Result<CacheBuildStats, BuildCacheError> {
     // 1. Parse SV VCF
-    let sv_records = parse_sv_vcf(sv_vcf_path)?;
+    let (sv_samples, sv_records) = parse_sv_vcf(sv_vcf_path)?;
     
     // Collect all sample IDs from SV records
-    let mut all_samples: Vec<String> = sv_records
-        .iter()
-        .flat_map(|r| r.genotypes.keys().cloned())
-        .collect::<std::collections::HashSet<_>>()
-        .into_iter()
-        .collect();
+    let mut all_samples: Vec<String> = sv_samples.clone();
     all_samples.sort();
 
     // 2. Optionally parse TRGT VCF
     let trgt_records = if let Some(path) = trgt_vcf_path {
-        Some(parse_trgt_vcf(path)?)
+        let (_samples, records) = parse_trgt_vcf(path)?;
+        Some(records)
     } else {
         None
     };
@@ -263,13 +261,14 @@ pub fn build_cache(
     // If we have TRGT data, create TrueRepeat units
     if let Some(ref trgt) = trgt_records {
         for rec in trgt {
+            let motif = rec.motifs.first().map(|s| s.as_str()).unwrap_or("N");
             let unit = TestUnit::from_true_repeat(
-                &rec.locus_id,
+                &rec.trid,
                 &rec.chrom,
                 rec.pos,
                 rec.end,
-                &rec.motif,
-                &rec.locus_id,
+                motif,
+                &rec.trid,
             );
 
             let mut unit_gts = Vec::new();
@@ -278,11 +277,11 @@ pub fn build_cache(
                     let is_present = trgt_gt.allele_lengths.iter().any(|&l| l > 0);
                     let (allele1, allele2) = if trgt_gt.allele_lengths.len() >= 2 {
                         (
-                            Some(trgt_gt.allele_lengths[0] as i64),
-                            Some(trgt_gt.allele_lengths[1] as i64),
+                            Some(trgt_gt.allele_lengths[0]),
+                            Some(trgt_gt.allele_lengths[1]),
                         )
                     } else if trgt_gt.allele_lengths.len() == 1 {
-                        (Some(trgt_gt.allele_lengths[0] as i64), None)
+                        (Some(trgt_gt.allele_lengths[0]), None)
                     } else {
                         (None, None)
                     };
@@ -556,7 +555,6 @@ pub fn explain_genotype(cache: &ArrowCache, unit_id: &str, sample_id: &str) -> R
         }
     }
 
-    use std::io::Write;
     Ok(String::from_utf8(output).unwrap_or_default())
 }
 
@@ -664,7 +662,6 @@ pub fn explain_locus(cache: &ArrowCache, unit_id: &str) -> Result<String, BuildC
         writeln!(output, "{:<15} {:>8} {:>10} {:>10} {:>12}", sample_id, present_str, a1_str, a2_str, source).ok();
     }
 
-    use std::io::Write;
     Ok(String::from_utf8(output).unwrap_or_default())
 }
 

@@ -310,3 +310,9 @@ This is how Ralph maintains continuity across iterations.
 
 ### 2026-01-28 14:26:18
 **Session 3 started** (model: opus-4.5-thinking)
+
+### 2026-01-28 14:27:52
+**Session 3 ended** - 🔄 Context rotation (token limit reached)
+
+### 2026-01-28 14:27:54
+**Session 4 started** (model: opus-4.5-thinking)
