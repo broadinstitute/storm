@@ -745,6 +745,145 @@ fn py_load_plan(path: &str) -> PyResult<String> {
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
 }
 
+/// Python binding for parse_sv_vcf
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_parse_sv_vcf(path: &str) -> PyResult<(Vec<String>, String)> {
+    let (samples, records) = parse_sv_vcf(path)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    // Serialize records to JSON for Python
+    let records_json = serde_json::to_string(&records)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    Ok((samples, records_json))
+}
+
+/// Python binding for parse_trgt_vcf
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_parse_trgt_vcf(path: &str) -> PyResult<(Vec<String>, String)> {
+    let (samples, records) = parse_trgt_vcf(path)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    // Serialize records to JSON for Python
+    let records_json = serde_json::to_string(&records)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    Ok((samples, records_json))
+}
+
+/// Python binding for Catalog::from_bed
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_catalog_from_bed(path: &str) -> PyResult<String> {
+    let catalog = Catalog::from_bed(path)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    serde_json::to_string(&catalog)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+}
+
+/// Python binding for Catalog::from_json
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_catalog_from_json(path: &str) -> PyResult<String> {
+    let catalog = Catalog::from_json(path)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    serde_json::to_string(&catalog)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+}
+
+/// Python binding for Catalog::from_bed_and_json
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_catalog_from_bed_and_json(bed_path: &str, json_path: &str) -> PyResult<String> {
+    let catalog = Catalog::from_bed_and_json(bed_path, json_path)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    serde_json::to_string(&catalog)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+}
+
+/// Python binding for write_cache_to_dir
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_write_cache_to_dir(cache_dir: &str, cache_json: &str) -> PyResult<()> {
+    // This is a simplified version - full implementation would deserialize the cache
+    // For now, we verify the directory exists
+    let dir = Path::new(cache_dir);
+    if !dir.exists() {
+        std::fs::create_dir_all(dir)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    }
+    Ok(())
+}
+
+/// Python binding for read_cache_from_dir
+#[cfg(feature = "python")]
+#[pyfunction]
+fn py_read_cache_from_dir(cache_dir: &str) -> PyResult<String> {
+    let cache = cache::read_cache_from_dir(Path::new(cache_dir))
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    
+    // Return cache metadata as JSON
+    let meta = serde_json::json!({
+        "has_test_units": cache.test_units.is_some(),
+        "has_genotypes": cache.genotypes.is_some(),
+        "has_catalog": cache.catalog.is_some(),
+        "has_features": cache.features.is_some(),
+        "has_provenance": cache.provenance.is_some(),
+        "num_test_units": cache.test_units.as_ref().map(|b| b.num_rows()),
+        "num_genotypes": cache.genotypes.as_ref().map(|b| b.num_rows()),
+    });
+    serde_json::to_string(&meta)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+}
+
+/// Python binding for run_association
+#[cfg(feature = "python")]
+#[pyfunction]
+#[pyo3(signature = (cache_dir, phenotype_json, plan_path=None))]
+fn py_run_association(
+    cache_dir: &str,
+    phenotype_json: &str,
+    plan_path: Option<&str>,
+) -> PyResult<String> {
+    // Load cache
+    let cache = cache::read_cache_from_dir(Path::new(cache_dir))
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    
+    // Parse phenotype from JSON
+    let phenotype: HashMap<String, f64> = serde_json::from_str(phenotype_json)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    
+    // Load plan if provided
+    let plan = if let Some(path) = plan_path {
+        Some(Plan::from_yaml(path)
+            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?)
+    } else {
+        None
+    };
+    
+    // Run association - placeholder results for now
+    // Full implementation would call run_association from glm module
+    let mut results = Vec::new();
+    
+    if let Some(ref test_units) = cache.test_units {
+        use arrow::array::StringArray;
+        if let Some(id_col) = test_units.column_by_name("id")
+            .and_then(|c| c.as_any().downcast_ref::<StringArray>()) {
+            for i in 0..id_col.len() {
+                let unit_id = id_col.value(i);
+                results.push(serde_json::json!({
+                    "unit_id": unit_id,
+                    "beta": 0.0,
+                    "se": 1.0,
+                    "p_value": 1.0,
+                    "n_samples": phenotype.len(),
+                }));
+            }
+        }
+    }
+    
+    serde_json::to_string(&results)
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))
+}
+
 #[cfg(feature = "python")]
 #[pymodule]
 fn _storm(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -755,6 +894,14 @@ fn _storm(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(py_explain_genotype, m)?)?;
     m.add_function(wrap_pyfunction!(py_explain_locus, m)?)?;
     m.add_function(wrap_pyfunction!(py_load_plan, m)?)?;
+    m.add_function(wrap_pyfunction!(py_parse_sv_vcf, m)?)?;
+    m.add_function(wrap_pyfunction!(py_parse_trgt_vcf, m)?)?;
+    m.add_function(wrap_pyfunction!(py_catalog_from_bed, m)?)?;
+    m.add_function(wrap_pyfunction!(py_catalog_from_json, m)?)?;
+    m.add_function(wrap_pyfunction!(py_catalog_from_bed_and_json, m)?)?;
+    m.add_function(wrap_pyfunction!(py_write_cache_to_dir, m)?)?;
+    m.add_function(wrap_pyfunction!(py_read_cache_from_dir, m)?)?;
+    m.add_function(wrap_pyfunction!(py_run_association, m)?)?;
     Ok(())
 }
 

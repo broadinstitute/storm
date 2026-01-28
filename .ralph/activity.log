@@ -732,3 +732,15 @@ print('First row:', results.row(0, named=True) if len(results) > 0 else 'empty')
 [14:38:04] 🟡 TOKENS: 54241 / 80000 (67%) [read:207KB write:0KB assist:1KB shell:0KB]
 [14:38:12] 🔴 READ /Users/kiran/repositories/storm/src/lib.rs (780 lines, ~76.1KB)
 [14:38:12] 🔴 WARN: Approaching token limit (73773 >= 70000)
+[14:38:39] 🔴 TOKENS: 73794 / 80000 (92%) - rotation imminent [read:283KB write:0KB assist:2KB shell:0KB]
+[14:38:50] 🔴 SHELL cd /Users/kiran/repositories/storm && unset VIRTUAL_ENV && maturin develop --features python 2>&1 | tail -20 → exit 0
+[14:38:58] 🔴 SHELL cd /Users/kiran/repositories/storm && unset VIRTUAL_ENV && cargo build --features python 2>&1 | grep -A2 "error\[" | head -50 → exit 0
+[14:39:09] 🔴 TOKENS: 73844 / 80000 (92%) - rotation imminent [read:283KB write:0KB assist:2KB shell:0KB]
+[14:39:09] 🔴 READ /Users/kiran/repositories/storm/src/vcf/sv.rs (288 lines, ~28.1KB)
+[14:39:09] 🔴 ROTATE: Token threshold reached (81044 >= 80000)
+[14:39:10] 🔴 READ /Users/kiran/repositories/storm/src/vcf/trgt.rs (259 lines, ~25.2KB)
+[14:39:10] 🔴 ROTATE: Token threshold reached (87519 >= 80000)
+
+═══════════════════════════════════════════════════════════════
+Ralph Session Started: Wed Jan 28 14:39:13 PST 2026
+═══════════════════════════════════════════════════════════════
