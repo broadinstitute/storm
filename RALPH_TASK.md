@@ -34,7 +34,7 @@ structural variants and tandem repeats using long-read data.
 20. [x] Cache includes catalog table
 21. [x] Cache includes features table
 22. [x] Cache includes provenance metadata
-23. [ ] storm explain prints resolved genotype details
+23. [x] storm explain prints resolved genotype details
 24. [ ] Plan YAML can be parsed
 25. [ ] Plan rules deterministically select encodings
 26. [ ] Plan rules deterministically select models

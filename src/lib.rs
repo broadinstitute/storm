@@ -13,6 +13,7 @@ pub mod mapping;
 pub mod testunit;
 pub mod resolver;
 pub mod cache;
+pub mod explain;
 
 // Re-exports
 pub use vcf::sv::{parse_sv_vcf, SvRecord, SvType, SvVcfError, Genotype};
@@ -29,6 +30,7 @@ pub use cache::{
     ArrowCache, ArrowCacheError, Provenance, write_parquet, read_parquet, ParquetError,
     parquet_cache::{write_cache_to_dir, read_cache_from_dir},
 };
+pub use explain::{explain_genotype, explain_locus, format_genotype_compact};
 
 // Example library function
 #[cfg(feature = "python")]

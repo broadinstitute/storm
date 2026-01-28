@@ -350,3 +350,22 @@ EOF
 [23:04:24] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
 [23:04:34] 🟢 TOKENS: 13735 / 80000 (17%) [read:48KB write:0KB assist:1KB shell:0KB]
 [23:04:42] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -20 → exit 0
+[23:04:51] 🟢 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: implement Arrow/Parquet caching system
+
+- Add arrow, parquet, chrono dependencies
+- Create cache module with Arrow in-memory storage
+- Implement Parquet file I/O for persistence
+- Add test_units table with 8 columns
+- Add genotypes table with 7 columns
+- Add catalog table with 10 columns
+- Add features table with dynamic columns
+- Add provenance metadata table
+- Implement write_cache_to_dir and read_cache_from_dir
+- All 32 tests passing
+
+Criteria 16, 17, 18, 19, 20, 21, 22 complete
+EOF
+)" && git push → exit 0
+[23:05:25] 🟢 TOKENS: 13753 / 80000 (17%) [read:48KB write:0KB assist:1KB shell:0KB]
+[23:05:33] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -20 → exit 0
