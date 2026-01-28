@@ -432,8 +432,10 @@ This is how Ralph maintains continuity across iterations.
 - Added test_run_association_with_covariates test
 - Added Examples sections to docstrings (StormCache.build, load_cache, explain, verify_cache, load_plan, run_association)
 - Fixed notebook to suppress expected warning with 2-sample demo data
-- All 24 Python tests pass with -W error
+- All 30 Python tests pass with -W error
 - All 15 Rust tests pass
+
+**DONE** - All 44 criteria in RALPH_TASK.md are complete.
 
 ### 2026-01-28 15:24:48
 **Session 5 ended** - 🔄 Context rotation (token limit reached)
