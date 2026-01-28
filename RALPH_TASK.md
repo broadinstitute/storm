@@ -21,12 +21,12 @@ structural variants and tandem repeats using long-read data.
 7. [x] TestUnit objects can be created for SVs
 8. [x] TestUnit objects can be created for repeat-proxy loci
 9. [x] TestUnit objects can be created for true repeats
-10. [ ] Resolver separates presence from allele values
-11. [ ] Repeat-proxy SV alleles can be grouped by locus
-12. [ ] Diploid repeat lengths can be reconstructed from INS and DEL alleles
-13. [ ] TRGT allele lengths override proxy alleles when available
-14. [ ] Resolved genotypes record presence source
-15. [ ] Resolved genotypes record allele source
+10. [x] Resolver separates presence from allele values
+11. [x] Repeat-proxy SV alleles can be grouped by locus
+12. [x] Diploid repeat lengths can be reconstructed from INS and DEL alleles
+13. [x] TRGT allele lengths override proxy alleles when available
+14. [x] Resolved genotypes record presence source
+15. [x] Resolved genotypes record allele source
 16. [ ] Arrow cache can be written
 17. [ ] Parquet cache files can be written
 18. [ ] Cache includes test units table

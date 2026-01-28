@@ -11,6 +11,7 @@ pub mod vcf;
 pub mod catalog;
 pub mod mapping;
 pub mod testunit;
+pub mod resolver;
 
 // Re-exports
 pub use vcf::sv::{parse_sv_vcf, SvRecord, SvType, SvVcfError, Genotype};
@@ -22,6 +23,7 @@ pub use catalog::{
 };
 pub use mapping::{map_svs_to_catalog, map_svs_with_overlaps, SvMapping, MappingStats, compute_mapping_stats};
 pub use testunit::{TestUnit, TestUnitType, TestUnitBuilder, DataSource};
+pub use resolver::{Resolver, ResolvedGenotype, PresenceSource, AlleleSource, LocusSvAlleles};
 
 // Example library function
 #[cfg(feature = "python")]
