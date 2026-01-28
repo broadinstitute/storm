@@ -4,19 +4,22 @@
 
 ## Summary
 
-- Iterations completed: 5
+- Iterations completed: 7
 - Current status: **DONE**
 
 ## Completed Criteria: 72/72
 
 All success criteria have been implemented and tested.
 
-### Completed This Session:
-- Fixed empty parquet file handling in read_cache_from_dir()
+### Completed This Session (Iteration 7):
+- Verified all 72 criteria are marked complete in RALPH_TASK.md
+- Confirmed py_run_association is exposed and integrated with Python run_glm()
+- Added 3 new integration tests for association testing (run_association_linear, run_association_logistic, association_result_structure)
+- Fixed test sample sizes for reliable results
 - All 56 Rust unit tests pass
-- All 12 integration tests pass  
+- All 15 integration tests pass (increased from 12)
 - Python API fully functional (version, build, explain, run_glm, verify)
-- Notebook updated with Python API examples
+- Notebook runs end-to-end without errors
 - README.md updated with CLI and Python API documentation
 
 ### What Was Done This Session:
