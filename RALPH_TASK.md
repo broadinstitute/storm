@@ -1,77 +1,239 @@
 ---
-task: Build STORM (Structural & Tandem-Repeat Optimized Regression Models)
-test_command: "cargo test"
+task: Complete STORM CLI, Python Integration, and End-to-End Pipeline
+test_command: "cargo test --features python && cd python && python -m pytest"
 ---
 
-# Task: STORM
+# Task: Complete STORM Integration Layer
 
-Build STORM, a Rust crate with a Python front-end for association testing of
-structural variants and tandem repeats using long-read data.
+The STORM Rust core library is complete, but the integration layer is missing. This task focuses on:
+1. Building a functional CLI binary
+2. Creating an end-to-end cache building pipeline
+3. Exposing Rust functions via Python bindings
+4. Writing integration tests
+5. Fixing immediate issues (version() method)
 
 ---
 
 ## Success Criteria
 
-1. [x] Integrated SV VCF can be parsed (SVTYPE, SVLEN, GT)
-2. [x] TRGT VCF can be parsed (TRID, AL, GT)
-3. [x] TRExplorer BED file can be ingested
-4. [x] TRExplorer JSON file can be ingested
-5. [x] TRExplorer BED and JSON can be joined into a unified catalog
-6. [x] SV records can be mapped to catalog repeat loci by overlap
-7. [x] TestUnit objects can be created for SVs
-8. [x] TestUnit objects can be created for repeat-proxy loci
-9. [x] TestUnit objects can be created for true repeats
-10. [x] Resolver separates presence from allele values
-11. [x] Repeat-proxy SV alleles can be grouped by locus
-12. [x] Diploid repeat lengths can be reconstructed from INS and DEL alleles
-13. [x] TRGT allele lengths override proxy alleles when available
-14. [x] Resolved genotypes record presence source
-15. [x] Resolved genotypes record allele source
-16. [x] Arrow cache can be written
-17. [x] Parquet cache files can be written
-18. [x] Cache includes test units table
-19. [x] Cache includes genotypes table
-20. [x] Cache includes catalog table
-21. [x] Cache includes features table
-22. [x] Cache includes provenance metadata
-23. [x] storm explain prints resolved genotype details
-24. [x] Plan YAML can be parsed
-25. [x] Plan rules deterministically select encodings
-26. [x] Plan rules deterministically select models
-27. [x] S encoding (L1+L2) is implemented
-28. [x] M encoding (max allele) is implemented
-29. [x] D encoding (|L1-L2|) is implemented
-30. [x] Tail indicator encoding is implemented
-31. [x] Categorical bin encoding is implemented
-32. [x] Internal StormGLM backend is implemented
-33. [x] Linear regression is supported
-34. [x] Logistic regression is supported
-35. [x] Categorical regression is supported
-36. [x] BinomiRare test is supported
-37. [x] Firth logistic regression is supported or feature-flagged
-38. [x] Covariates including PCs are supported
-39. [x] Rare-variant ladder logic is implemented
-40. [x] Association results can be written to Parquet
-41. [x] Results include statistics and p-values
-42. [x] Results include counts and call rates
-43. [x] Results include encoding and model metadata
-44. [x] Python API can build cache
-45. [x] Python API can load cache via Polars
-46. [x] Python API can run StormGLM
-47. [x] Python API can call explain
-48. [x] Jupyter notebook demonstrates end-to-end run
-49. [x] All tests pass
-50. [x] .ralph/progress.md contains DONE
+### A. CLI Binary Implementation
+
+- [ ] `storm --version` prints version from Cargo.toml
+- [ ] `storm cache build` command exists with proper argument parsing
+- [ ] `storm cache build` accepts: `--sv-vcf`, `--trgt-vcf`, `--catalog-bed`, `--catalog-json`, `--output-dir`
+- [ ] `storm cache build` calls the end-to-end pipeline and writes cache files
+- [ ] `storm cache verify` command exists and validates cache schema
+- [ ] `storm cache verify` checks that all required Parquet files exist
+- [ ] `storm cache verify` validates row counts match between tables
+- [ ] `storm explain <test_unit_id>` command exists
+- [ ] `storm explain` accepts optional `--sample <sample_id>` flag
+- [ ] `storm explain` loads cache and prints resolved genotype details
+- [ ] CLI uses clap or similar for argument parsing
+- [ ] CLI provides helpful error messages and usage text
+
+### B. End-to-End Cache Building Pipeline
+
+- [ ] `build_cache()` function exists in Rust (or similar unified entry point)
+- [ ] Pipeline parses SV VCF using `parse_sv_vcf()`
+- [ ] Pipeline parses TRGT VCF using `parse_trgt_vcf()` (if provided)
+- [ ] Pipeline loads catalog using `Catalog::from_bed()` and `Catalog::from_json()`
+- [ ] Pipeline maps SVs to catalog loci using `map_svs_to_catalog()`
+- [ ] Pipeline constructs TestUnits using `TestUnitBuilder`
+- [ ] Pipeline creates Resolver and resolves genotypes from SV data
+- [ ] Pipeline applies TRGT overlay using `Resolver::resolve_from_trgt()`
+- [ ] Pipeline merges resolved genotypes using `Resolver::resolve_merged()`
+- [ ] Pipeline computes features for each TestUnit
+- [ ] Pipeline builds ArrowCache with all tables
+- [ ] Pipeline writes cache using `write_cache_to_dir()`
+- [ ] Pipeline records provenance metadata (input file hashes, git commit, timestamp)
+- [ ] Pipeline handles missing optional inputs gracefully (TRGT, catalog)
+
+### C. Python Bindings (PyO3)
+
+- [ ] `storm.version()` works correctly (fix import/export issue)
+- [ ] `parse_sv_vcf()` is exposed as Python function
+- [ ] `parse_trgt_vcf()` is exposed as Python function
+- [ ] `Catalog::from_bed()` is exposed as Python method
+- [ ] `Catalog::from_json()` is exposed as Python method
+- [ ] `Catalog::from_bed_and_json()` is exposed as Python method
+- [ ] `write_cache_to_dir()` is exposed as Python function
+- [ ] `read_cache_from_dir()` is exposed as Python function
+- [ ] `run_association()` is exposed as Python function
+- [ ] `explain_genotype()` is exposed as Python function
+- [ ] `explain_locus()` is exposed as Python function
+- [ ] `Plan::from_yaml()` is exposed as Python function
+- [ ] Python types are properly wrapped (TestUnit, ResolvedGenotype, etc.)
+- [ ] Python bindings handle errors and convert to Python exceptions
+
+### D. Python API Implementation
+
+- [ ] `StormCache.build()` calls Rust `build_cache()` function (not TODO)
+- [ ] `StormCache.build()` accepts all required parameters
+- [ ] `StormCache.build()` returns a StormCache instance pointing to built cache
+- [ ] `run_glm()` calls Rust `run_association()` function
+- [ ] `run_glm()` accepts cache, phenotype, plan, covariates, output parameters
+- [ ] `run_glm()` returns Polars DataFrame with results
+- [ ] `explain()` calls Rust `explain_genotype()` or `explain_locus()`
+- [ ] `explain()` returns formatted string with genotype details
+- [ ] All Python API functions have proper error handling
+
+### E. Integration Tests
+
+- [ ] Integration test file exists at `tests/integration_tests.rs`
+- [ ] Test builds cache from fixtures (`fixtures/sv_small.vcf`, `fixtures/trgt_small.vcf`, etc.)
+- [ ] Test verifies cache files are created with correct names
+- [ ] Test verifies test_units.parquet has expected schema and row count
+- [ ] Test verifies genotypes.parquet has expected schema and row count
+- [ ] Test verifies catalog.parquet has expected schema and row count
+- [ ] Test verifies features.parquet has expected schema and row count
+- [ ] Test verifies provenance.json exists and contains expected metadata
+- [ ] Test runs `storm explain` on a test unit and checks output format
+- [ ] Test runs association test using fixtures and verifies results structure
+- [ ] All integration tests pass with `cargo test --features python`
+
+### F. Notebook Fixes
+
+- [ ] `storm.version()` call in notebook works without errors
+- [ ] Notebook can import storm module successfully
+- [ ] Notebook demonstrates cache building (uncomment and make functional)
+- [ ] Notebook demonstrates cache loading (uncomment and make functional)
+- [ ] Notebook demonstrates GLM analysis (uncomment and make functional)
+- [ ] Notebook demonstrates explain functionality (uncomment and make functional)
+- [ ] Notebook runs end-to-end without errors
+
+### G. Documentation and Polish
+
+- [ ] README.md documents CLI usage with examples
+- [ ] README.md documents Python API usage with examples
+- [ ] README.md includes example of end-to-end workflow
+- [ ] Code comments explain the cache building pipeline flow
+- [ ] Error messages are user-friendly and actionable
 
 ---
 
 ## Context
 
-- Primary input is an integrated long-read SV VCF
-- Overlay input is a TRGT VCF for repeat allele lengths
-- Repeat catalog is TRExplorer BED plus JSON
-- Storage and interchange use Arrow and Parquet
-- Rust core prioritizes correctness
-- Python layer uses Polars for interactivity
-- Mixed models are explicitly out of scope
-- Design must allow future HLA and KIR overlays
+### What's Already Built (Rust Core)
+
+The following Rust modules are complete and functional:
+- `src/vcf/sv.rs` - SV VCF parsing
+- `src/vcf/trgt.rs` - TRGT VCF parsing  
+- `src/catalog/` - TRExplorer catalog ingestion
+- `src/mapping.rs` - SV to catalog locus mapping
+- `src/testunit.rs` - TestUnit construction
+- `src/resolver.rs` - Genotype resolution with overlays
+- `src/cache/` - Arrow/Parquet cache structures
+- `src/plan.rs` - Plan YAML parsing and rule engine
+- `src/encoding.rs` - Genotype encodings (S, M, D, Tail, Categorical)
+- `src/glm.rs` - StormGLM association backends
+- `src/results.rs` - Results schema and Parquet writing
+- `src/explain.rs` - Explainability functions
+
+### What's Missing
+
+1. **CLI Binary** (`src/main.rs` is just `println!("2 + 2 = {}", 2 + 2)`)
+2. **End-to-End Pipeline** - Components exist but aren't wired together
+3. **Python Bindings** - Only `add()` and `_version()` are exposed, not the core functions
+4. **Python API** - `StormCache.build()` and `run_glm()` are stubs with TODOs
+5. **Integration Tests** - `tests/integration_tests.rs` is empty
+6. **Version Issue** - `storm.version()` fails because Rust extension may not be imported correctly
+
+### Key Files to Modify
+
+- `src/main.rs` - Implement CLI with clap
+- `src/lib.rs` - Add `build_cache()` function and expose via PyO3
+- `python/storm/__init__.py` - Implement actual functions (remove TODOs)
+- `tests/integration_tests.rs` - Write end-to-end tests
+- `notebooks/storm_demo.ipynb` - Fix version() and uncomment working examples
+
+### Fixtures Available
+
+- `fixtures/sv_small.vcf` - Small SV VCF for testing
+- `fixtures/trgt_small.vcf` - Small TRGT VCF for testing
+- `fixtures/trexplorer.bed` - TRExplorer BED catalog
+- `fixtures/trexplorer.json` - TRExplorer JSON catalog
+- `fixtures/plan.yaml` - Example plan configuration
+
+### Design Principles
+
+- Rust core prioritizes correctness over speed
+- Python layer uses Polars for dataframes
+- Cache format is Arrow/Parquet for interoperability
+- CLI should be intuitive and provide helpful errors
+- Python API should feel natural to Python users
+- All functions should handle missing optional inputs gracefully
+
+---
+
+## Implementation Notes
+
+### CLI Structure
+
+Use clap for argument parsing. Suggested structure:
+
+```rust
+storm cache build --sv-vcf <path> [--trgt-vcf <path>] [--catalog-bed <path>] [--catalog-json <path>] --output-dir <path>
+storm cache verify --cache-dir <path>
+storm explain <test_unit_id> [--cache-dir <path>] [--sample <sample_id>]
+```
+
+### Cache Building Pipeline Flow
+
+1. Parse inputs (SV VCF, optional TRGT VCF, optional catalog)
+2. Load and merge catalog if provided
+3. Map SVs to catalog loci
+4. Build TestUnits (SV, RepeatProxySV, Repeat)
+5. Create Resolver and resolve genotypes from SV data
+6. Apply TRGT overlay if provided
+7. Merge resolved genotypes
+8. Compute features (call rate, carriers, etc.)
+9. Build ArrowCache with all tables
+10. Write Parquet files to output directory
+11. Write provenance.json
+
+### Python Bindings Priority
+
+Focus on exposing functions needed for the Python API:
+1. `build_cache()` - for `StormCache.build()`
+2. `read_cache_from_dir()` - for cache loading
+3. `run_association()` - for `run_glm()`
+4. `explain_genotype()` / `explain_locus()` - for `explain()`
+5. `Plan::from_yaml()` - for plan loading
+
+### Testing Strategy
+
+- Unit tests: Test individual pipeline steps
+- Integration tests: Test full cache build from fixtures
+- Python tests: Test Python API functions
+- Notebook: Manual end-to-end validation
+
+---
+
+## Acceptance Criteria
+
+When complete:
+- `cargo build --release` produces a working `storm` binary
+- `storm cache build` successfully builds cache from fixtures
+- `storm cache verify` validates the built cache
+- `storm explain` prints readable genotype explanations
+- Python `storm.version()` works
+- Python `StormCache.build()` successfully builds cache
+- Python `run_glm()` runs association tests
+- All integration tests pass
+- Notebook runs end-to-end without errors
+- README documents usage
+
+---
+
+## Completion Condition
+
+When:
+- All checkboxes above are checked
+- `cargo test --features python` passes
+- `storm cache build` works with fixtures
+- `storm explain` works with built cache
+- Python API functions are implemented (not stubs)
+- Notebook runs successfully
+- Integration tests pass
+
+Write **DONE** in `.ralph/progress.md` and stop.
