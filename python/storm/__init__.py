@@ -81,9 +81,9 @@ class StormCache:
         Returns:
             StormCache instance pointing to the new cache.
         """
-        if HAS_RUST:
+        if HAS_RUST and py_build_cache is not None:
             # Call Rust build_cache function
-            num_units, num_samples, num_gts, num_catalog = _storm.py_build_cache(
+            num_units, num_samples, num_gts, num_catalog = py_build_cache(
                 sv_vcf, trgt_vcf, catalog_bed, catalog_json, output_dir
             )
             cache = cls(output_dir)
@@ -243,12 +243,12 @@ def explain(
         Human-readable explanation string.
     """
     # Use Rust explain functions if available
-    if HAS_RUST:
+    if HAS_RUST and py_explain_genotype is not None and py_explain_locus is not None:
         try:
             if sample_id:
-                return _storm.py_explain_genotype(str(cache.cache_dir), unit_id, sample_id)
+                return py_explain_genotype(str(cache.cache_dir), unit_id, sample_id)
             else:
-                return _storm.py_explain_locus(str(cache.cache_dir), unit_id)
+                return py_explain_locus(str(cache.cache_dir), unit_id)
         except Exception:
             pass  # Fall back to Python implementation
     
@@ -295,8 +295,8 @@ def verify_cache(cache_dir: str) -> Dict[str, Any]:
     Returns:
         Dictionary with validation results.
     """
-    if HAS_RUST:
-        is_valid, num_units, num_gts, num_catalog, num_features, errors = _storm.py_verify_cache(cache_dir)
+    if HAS_RUST and py_verify_cache is not None:
+        is_valid, num_units, num_gts, num_catalog, num_features, errors = py_verify_cache(cache_dir)
         return {
             "is_valid": is_valid,
             "num_test_units": num_units,

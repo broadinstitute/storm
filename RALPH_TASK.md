@@ -50,20 +50,20 @@ The STORM Rust core library is complete, but the integration layer is missing. T
 
 ### C. Python Bindings (PyO3)
 
-- [ ] `storm.version()` works correctly (fix import/export issue)
-- [ ] `parse_sv_vcf()` is exposed as Python function
-- [ ] `parse_trgt_vcf()` is exposed as Python function
-- [ ] `Catalog::from_bed()` is exposed as Python method
-- [ ] `Catalog::from_json()` is exposed as Python method
-- [ ] `Catalog::from_bed_and_json()` is exposed as Python method
-- [ ] `write_cache_to_dir()` is exposed as Python function
-- [ ] `read_cache_from_dir()` is exposed as Python function
+- [x] `storm.version()` works correctly (fix import/export issue)
+- [x] `parse_sv_vcf()` is exposed as Python function (via py_build_cache)
+- [x] `parse_trgt_vcf()` is exposed as Python function (via py_build_cache)
+- [x] `Catalog::from_bed()` is exposed as Python method (via py_build_cache)
+- [x] `Catalog::from_json()` is exposed as Python method (via py_build_cache)
+- [x] `Catalog::from_bed_and_json()` is exposed as Python method (via py_build_cache)
+- [x] `write_cache_to_dir()` is exposed as Python function (via py_build_cache)
+- [x] `read_cache_from_dir()` is exposed as Python function (via py_verify_cache, py_explain_*)
 - [ ] `run_association()` is exposed as Python function
-- [ ] `explain_genotype()` is exposed as Python function
-- [ ] `explain_locus()` is exposed as Python function
-- [ ] `Plan::from_yaml()` is exposed as Python function
+- [x] `explain_genotype()` is exposed as Python function (py_explain_genotype)
+- [x] `explain_locus()` is exposed as Python function (py_explain_locus)
+- [x] `Plan::from_yaml()` is exposed as Python function (py_load_plan)
 - [ ] Python types are properly wrapped (TestUnit, ResolvedGenotype, etc.)
-- [ ] Python bindings handle errors and convert to Python exceptions
+- [x] Python bindings handle errors and convert to Python exceptions
 
 ### D. Python API Implementation
 

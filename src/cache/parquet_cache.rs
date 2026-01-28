@@ -39,17 +39,17 @@ pub fn write_parquet<P: AsRef<Path>>(
 
 /// Read a RecordBatch from a Parquet file
 pub fn read_parquet<P: AsRef<Path>>(path: P) -> Result<RecordBatch, ParquetError> {
-    let file = File::open(path)?;
+    let file = File::open(path.as_ref())?;
     let builder = ParquetRecordBatchReaderBuilder::try_new(file)?;
+    let schema = builder.schema().clone();
     let mut reader = builder.build()?;
     
     // Read all batches and concatenate (for simplicity, assume one batch)
     if let Some(batch) = reader.next() {
         Ok(batch?)
     } else {
-        Err(ParquetError::Arrow(arrow::error::ArrowError::InvalidArgumentError(
-            "Empty parquet file".to_string(),
-        )))
+        // Return an empty batch with the correct schema
+        Ok(RecordBatch::new_empty(schema))
     }
 }
 
