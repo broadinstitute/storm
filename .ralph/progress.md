@@ -425,6 +425,16 @@ This is how Ralph maintains continuity across iterations.
 ### 2026-01-28 15:23:46
 **Session 5 started** (model: opus-4.5-thinking)
 
+### 2026-01-28
+**Session 5 continued** - Completed remaining criteria:
+- Verified covariates handling already implemented in py_run_association
+- Rebuilt maturin extension to include covariates_json parameter
+- Added test_run_association_with_covariates test
+- Added Examples sections to docstrings (StormCache.build, load_cache, explain, verify_cache, load_plan, run_association)
+- Fixed notebook to suppress expected warning with 2-sample demo data
+- All 24 Python tests pass with -W error
+- All 15 Rust tests pass
+
 ### 2026-01-28 15:24:48
 **Session 5 ended** - 🔄 Context rotation (token limit reached)
 
