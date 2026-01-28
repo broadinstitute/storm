@@ -14,6 +14,10 @@ try:
     from storm._storm import py_build_cache, py_verify_cache
     from storm._storm import py_explain_genotype, py_explain_locus
     from storm._storm import py_load_plan
+    from storm._storm import py_run_association
+    from storm._storm import py_parse_sv_vcf, py_parse_trgt_vcf
+    from storm._storm import py_catalog_from_bed, py_catalog_from_json, py_catalog_from_bed_and_json
+    from storm._storm import py_read_cache_from_dir, py_write_cache_to_dir
     HAS_RUST = True
 except ImportError:
     HAS_RUST = False
@@ -24,6 +28,14 @@ except ImportError:
     py_explain_genotype = None
     py_explain_locus = None
     py_load_plan = None
+    py_run_association = None
+    py_parse_sv_vcf = None
+    py_parse_trgt_vcf = None
+    py_catalog_from_bed = None
+    py_catalog_from_json = None
+    py_catalog_from_bed_and_json = None
+    py_read_cache_from_dir = None
+    py_write_cache_to_dir = None
 
 try:
     import polars as pl
@@ -177,6 +189,8 @@ def run_glm(
     Returns:
         DataFrame with association results.
     """
+    import json
+    
     if not HAS_POLARS:
         raise ImportError("Polars is required for run_glm")
     
@@ -184,8 +198,51 @@ def run_glm(
     if cache.test_units is None or cache.features is None:
         raise ValueError("Cache must have test_units and features loaded")
     
-    # For now, implement a simple linear regression on features
-    # Full implementation would call Rust run_association
+    # Try to use Rust run_association if available
+    if HAS_RUST and py_run_association is not None:
+        try:
+            # Convert phenotype to dict for JSON serialization
+            # Phenotype should be indexed by sample_id
+            if hasattr(phenotype, 'to_dict'):
+                # If it's a Polars Series with proper index, convert
+                pheno_dict = {}
+                if cache.genotypes is not None:
+                    sample_ids = cache.genotypes["sample_id"].unique().to_list()
+                    pheno_values = phenotype.to_list() if hasattr(phenotype, 'to_list') else list(phenotype)
+                    for i, sample_id in enumerate(sample_ids):
+                        if i < len(pheno_values):
+                            pheno_dict[sample_id] = float(pheno_values[i])
+                else:
+                    # Fallback: assume phenotype is a dict-like
+                    pheno_dict = {f"sample_{i}": float(v) for i, v in enumerate(phenotype)}
+            else:
+                pheno_dict = dict(phenotype)
+            
+            phenotype_json = json.dumps(pheno_dict)
+            
+            # Call Rust run_association
+            results_json = py_run_association(
+                str(cache.cache_dir),
+                phenotype_json,
+                plan,
+            )
+            
+            results_list = json.loads(results_json)
+            
+            # Convert to Polars DataFrame
+            results = pl.DataFrame(results_list)
+            
+            if output:
+                results.write_parquet(output)
+            
+            return results
+            
+        except Exception as e:
+            # Fall back to Python implementation on error
+            import warnings
+            warnings.warn(f"Rust run_association failed, using Python fallback: {e}")
+    
+    # Python fallback implementation
     results_data = {
         "unit_id": [],
         "beta": [],
