@@ -123,6 +123,7 @@ fn run_cache_build(
     sv_vcf: PathBuf,
     mut trgt_vcf: Vec<PathBuf>,
     trgt_dir: Option<PathBuf>,
+    trgt_list: Option<PathBuf>,
     catalog_bed: Option<PathBuf>,
     catalog_json: Option<PathBuf>,
     output_dir: PathBuf,
@@ -144,6 +145,20 @@ fn run_cache_build(
                         trgt_vcf.push(path);
                     }
                 }
+            }
+        }
+    }
+    
+    // Read paths from trgt_list file
+    if let Some(list_path) = trgt_list {
+        if !list_path.exists() {
+            return Err(format!("TRGT list file not found: {}", list_path.display()).into());
+        }
+        let contents = std::fs::read_to_string(&list_path)?;
+        for line in contents.lines() {
+            let line = line.trim();
+            if !line.is_empty() && !line.starts_with('#') {
+                trgt_vcf.push(PathBuf::from(line));
             }
         }
     }

@@ -5,7 +5,7 @@ association testing of structural variants and tandem repeats.
 """
 
 from pathlib import Path
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Union
 
 # Import Rust extension
 try:
