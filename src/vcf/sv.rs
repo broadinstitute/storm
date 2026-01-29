@@ -1,13 +1,20 @@
 //! Structural Variant VCF parser
 //!
-//! Parses integrated SV VCF files extracting SVTYPE, SVLEN, and GT fields.
+//! Parses integrated SV VCF/BCF files extracting SVTYPE, SVLEN, and GT fields.
+//! Supports both plain VCF and binary BCF formats.
 
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
 use serde::Serialize;
 use thiserror::Error;
+use noodles::bcf;
+use noodles::vcf::{self as noodles_vcf, variant::RecordBuf};
+use noodles::vcf::variant::record_buf::info::field::Value as InfoValue;
+use noodles::vcf::variant::record_buf::samples::sample::Value as SampleValue;
+use noodles::vcf::variant::record::samples::series::value::Genotype as GenotypeIter;
+use noodles::vcf::variant::record::samples::series::value::genotype::Phasing;
 
 /// Errors that can occur during SV VCF parsing
 #[derive(Error, Debug)]
@@ -121,8 +128,168 @@ impl Genotype {
     }
 }
 
-/// Parse an SV VCF file and return records
+/// Detect if a file is BCF format based on extension or magic bytes
+fn is_bcf_file<P: AsRef<Path>>(path: P) -> Result<bool, SvVcfError> {
+    let path = path.as_ref();
+    
+    // Check extension first
+    if let Some(ext) = path.extension() {
+        if ext == "bcf" {
+            return Ok(true);
+        }
+    }
+    
+    // Check magic bytes: BCF starts with "BCF"
+    let mut file = File::open(path)?;
+    let mut magic = [0u8; 3];
+    if file.read_exact(&mut magic).is_ok() && &magic == b"BCF" {
+        return Ok(true);
+    }
+    
+    Ok(false)
+}
+
+/// Parse an SV VCF or BCF file and return records
+/// Automatically detects format based on extension or magic bytes
 pub fn parse_sv_vcf<P: AsRef<Path>>(path: P) -> Result<(Vec<String>, Vec<SvRecord>), SvVcfError> {
+    if is_bcf_file(&path)? {
+        parse_sv_bcf(path)
+    } else {
+        parse_sv_vcf_text(path)
+    }
+}
+
+/// Parse an SV BCF file using noodles
+fn parse_sv_bcf<P: AsRef<Path>>(path: P) -> Result<(Vec<String>, Vec<SvRecord>), SvVcfError> {
+    let mut reader = File::open(&path)
+        .map(bcf::io::Reader::new)
+        .map_err(|e| SvVcfError::Io(e))?;
+    
+    let header = reader.read_header()
+        .map_err(|e| SvVcfError::ParseError(format!("Failed to read BCF header: {}", e)))?;
+    
+    // Extract sample names from header
+    let sample_names: Vec<String> = header.sample_names()
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    
+    let mut records: Vec<SvRecord> = Vec::new();
+    
+    for result in reader.record_bufs(&header) {
+        let record = result
+            .map_err(|e| SvVcfError::ParseError(format!("Failed to read BCF record: {}", e)))?;
+        
+        if let Some(sv_record) = parse_noodles_record(&record, &sample_names, &header)? {
+            records.push(sv_record);
+        }
+    }
+    
+    Ok((sample_names, records))
+}
+
+/// Parse a noodles RecordBuf into an SvRecord
+fn parse_noodles_record(
+    record: &RecordBuf,
+    sample_names: &[String],
+    _header: &noodles_vcf::Header,
+) -> Result<Option<SvRecord>, SvVcfError> {
+    let chrom = record.reference_sequence_name().to_string();
+    let pos = record.variant_start()
+        .map(|p| p.get() as u64)
+        .unwrap_or(0);
+    
+    // IDs - as_ref() to get the slice of ids
+    let id = record.ids()
+        .as_ref()
+        .first()
+        .map(|id| id.to_string())
+        .unwrap_or_else(|| ".".to_string());
+    
+    let ref_allele = record.reference_bases().to_string();
+    
+    // Alt alleles - as_ref() to get the slice
+    let alt_allele = record.alternate_bases()
+        .as_ref()
+        .first()
+        .map(|a| a.to_string())
+        .unwrap_or_else(|| ".".to_string());
+    
+    // Parse INFO fields - use get() with string key
+    let info = record.info();
+    
+    // Get SVTYPE
+    let sv_type = match info.get("SVTYPE") {
+        Some(Some(InfoValue::String(s))) => SvType::from_str(s),
+        _ => return Err(SvVcfError::MissingInfoField("SVTYPE".to_string())),
+    };
+    
+    // Get SVLEN
+    let sv_len: Option<i64> = match info.get("SVLEN") {
+        Some(Some(InfoValue::Integer(n))) => Some(*n as i64),
+        Some(Some(InfoValue::Array(arr))) => {
+            use noodles::vcf::variant::record_buf::info::field::value::Array;
+            match arr {
+                Array::Integer(vals) => vals.first().copied().flatten().map(|n| n as i64),
+                _ => None,
+            }
+        }
+        _ => None,
+    };
+    
+    // Get END
+    let end: Option<u64> = match info.get("END") {
+        Some(Some(InfoValue::Integer(n))) => Some(*n as u64),
+        _ => None,
+    };
+    
+    // Parse genotypes
+    let mut genotypes = HashMap::new();
+    let samples = record.samples();
+    
+    for (i, sample_name) in sample_names.iter().enumerate() {
+        if let Some(sample) = samples.get_index(i) {
+            if let Some(Some(gt_value)) = sample.get("GT") {
+                if let SampleValue::Genotype(gt) = gt_value {
+                    // Build genotype string from alleles using the GenotypeIter trait
+                    let mut alleles: Vec<String> = Vec::new();
+                    let mut phased = false;
+                    let mut first = true;
+                    for result in GenotypeIter::iter(&gt) {
+                        if let Ok((pos, phasing)) = result {
+                            if !first && phasing == Phasing::Phased {
+                                phased = true;
+                            }
+                            match pos {
+                                Some(idx) => alleles.push(idx.to_string()),
+                                None => alleles.push(".".to_string()),
+                            }
+                            first = false;
+                        }
+                    }
+                    let sep = if phased { "|" } else { "/" };
+                    let gt_str = alleles.join(sep);
+                    genotypes.insert(sample_name.clone(), Genotype::from_str(&gt_str));
+                }
+            }
+        }
+    }
+    
+    Ok(Some(SvRecord {
+        chrom,
+        pos,
+        id,
+        ref_allele,
+        alt_allele,
+        sv_type,
+        sv_len,
+        end,
+        genotypes,
+    }))
+}
+
+/// Parse an SV VCF file (plain text format)
+fn parse_sv_vcf_text<P: AsRef<Path>>(path: P) -> Result<(Vec<String>, Vec<SvRecord>), SvVcfError> {
     let file = File::open(path)?;
     let reader = BufReader::new(file);
 
