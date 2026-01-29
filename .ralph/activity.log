@@ -1026,3 +1026,4 @@ EOF
 Ralph Session Started: Thu Jan 29 09:22:35 PST 2026
 ═══════════════════════════════════════════════════════════════
 [09:22:36] 🔴 READ /Users/kiran/repositories/storm/src/vcf/trgt.rs (297 lines, ~29.0KB)
+[09:22:36] 🔴 ROTATE: Token threshold reached (93052 >= 80000)
