@@ -4,10 +4,10 @@
 
 ## Summary
 
-- Iterations completed: 0
-- Current status: **IN PROGRESS**
+- Iterations completed: 1
+- Current status: **COMPLETE**
 
-## Completed Criteria: 0/22
+## Completed Criteria: 22/22
 
 ### New Task: Real-Data Association Testing Workflow in Jupyter Notebook
 
@@ -592,3 +592,47 @@ Fixed duplicate `trgt_list` field in main.rs CLI struct.
 
 ### 2026-01-29 10:00:21
 **Session 2 started** (model: opus-4.5-thinking)
+
+### 2026-01-29 - Session 2 Completed
+**All 22 success criteria completed for Real-Data Association Testing Workflow**
+
+Added to `notebooks/storm_demo.ipynb`:
+
+**Section A - Build Cache (cells 24-28):**
+- Check for real data availability
+- Build cache from BCF + TRGT subset (configurable N_TRGT_FILES)
+- Runtime expectations table (100/500/10k files)
+- Cache statistics display
+
+**Section B - Phenotype Generation (cells 29-31):**
+- Seeded continuous phenotype (np.random.randn)
+- Seeded binary phenotype (30% case prevalence)
+- Simulated covariates (age, sex, PC1-3)
+- Example code for loading from CSV/Parquet
+
+**Section C - Association Tests (cells 32-39):**
+- Linear regression with continuous phenotype
+- Logistic regression with binary phenotype
+- Plan YAML-based model/encoding selection
+- Covariate-adjusted regression
+
+**Section D - Results Interpretation (cells 40-42):**
+- Top hits by p-value
+- P-value summary statistics
+- Visualization: p-value histogram + -log10(p) plot with significance thresholds
+
+**Section E - Performance Guidance (cells 43-44):**
+- Runtime expectations table
+- Memory considerations
+- Scaling tips
+- CLI usage for full pipeline
+
+**Section F - Cleanup (cells 45-46):**
+- Comprehensive cleanup of all temp directories
+- Graceful handling when scratch/ data unavailable
+
+**Tests passed:**
+- 17 Rust integration tests
+- 31 Python tests (with -W error)
+
+**DONE** - All 22 criteria complete

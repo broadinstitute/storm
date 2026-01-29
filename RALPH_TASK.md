@@ -20,48 +20,48 @@ The infrastructure to read real data (BCF, gzip VCF, multiple TRGT files) is com
 
 ### A. Build Cache from Real Data
 
-- [ ] Notebook has a section that builds a cache from the real BCF
-- [ ] Uses a manageable subset of TRGT files (e.g., 100–500 files) for demo speed
-- [ ] Documents how to scale up to the full ~10k TRGT files
-- [ ] Cache build completes in reasonable time (document expected duration)
-- [ ] Shows cache statistics (samples, test units, genotypes)
+- [x] Notebook has a section that builds a cache from the real BCF
+- [x] Uses a manageable subset of TRGT files (e.g., 100–500 files) for demo speed
+- [x] Documents how to scale up to the full ~10k TRGT files
+- [x] Cache build completes in reasonable time (document expected duration)
+- [x] Shows cache statistics (samples, test units, genotypes)
 
 ### B. Simulated Phenotype for Association Testing
 
-- [ ] Generate a simulated continuous phenotype for the samples in the cache
-- [ ] Generate a simulated binary phenotype (case/control) 
-- [ ] Phenotypes are reproducible (seeded random generation)
-- [ ] Optionally: show how to load phenotypes from an external file (CSV/Parquet)
+- [x] Generate a simulated continuous phenotype for the samples in the cache
+- [x] Generate a simulated binary phenotype (case/control) 
+- [x] Phenotypes are reproducible (seeded random generation)
+- [x] Optionally: show how to load phenotypes from an external file (CSV/Parquet)
 
 ### C. Run Association Tests with Real Data
 
-- [ ] Run `run_glm()` on the real-data cache with the simulated phenotype
-- [ ] Results show actual beta, SE, and p-values (not null/error)
-- [ ] Demonstrate linear regression (continuous phenotype)
-- [ ] Demonstrate logistic regression (binary phenotype)
-- [ ] Show how to use a plan YAML for model/encoding selection
-- [ ] Show covariate adjustment (at minimum: simulated age/sex or PCs)
+- [x] Run `run_glm()` on the real-data cache with the simulated phenotype
+- [x] Results show actual beta, SE, and p-values (not null/error)
+- [x] Demonstrate linear regression (continuous phenotype)
+- [x] Demonstrate logistic regression (binary phenotype)
+- [x] Show how to use a plan YAML for model/encoding selection
+- [x] Show covariate adjustment (at minimum: simulated age/sex or PCs)
 
 ### D. Interpret and Visualize Results
 
-- [ ] Display association results as a Polars DataFrame
-- [ ] Filter/sort results by p-value to show top hits
-- [ ] Create a simple visualization (e.g., Manhattan-style plot or p-value histogram) if matplotlib/seaborn available
-- [ ] Explain what the results mean (encoding, model, beta interpretation)
+- [x] Display association results as a Polars DataFrame
+- [x] Filter/sort results by p-value to show top hits
+- [x] Create a simple visualization (e.g., Manhattan-style plot or p-value histogram) if matplotlib/seaborn available
+- [x] Explain what the results mean (encoding, model, beta interpretation)
 
 ### E. Performance and Practical Guidance
 
-- [ ] Document expected runtime for different TRGT subset sizes (100, 500, all)
-- [ ] Note memory considerations for large sample counts
-- [ ] Provide guidance on running the full pipeline outside the notebook (CLI)
+- [x] Document expected runtime for different TRGT subset sizes (100, 500, all)
+- [x] Note memory considerations for large sample counts
+- [x] Provide guidance on running the full pipeline outside the notebook (CLI)
 
 ### F. Cleanup and Polish
 
-- [ ] Keep the existing fixture-based demo sections (or clearly separate them)
-- [ ] Notebook runs end-to-end without errors when real data is present
-- [ ] Graceful handling if `scratch/` data is not available (skip or use fixtures)
-- [ ] Clear section headers and explanatory markdown
-- [ ] Cleanup temporary cache directories at the end
+- [x] Keep the existing fixture-based demo sections (or clearly separate them)
+- [x] Notebook runs end-to-end without errors when real data is present
+- [x] Graceful handling if `scratch/` data is not available (skip or use fixtures)
+- [x] Clear section headers and explanatory markdown
+- [x] Cleanup temporary cache directories at the end
 
 ---
 
