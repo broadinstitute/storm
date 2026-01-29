@@ -3,315 +3,168 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769642672
-generated_at: 2026-01-28T23:24:46Z
+source_mtime: 1769707324
+generated_at: 2026-01-29T17:22:32Z
 
 tasks:
   - id: "line_21"
     line_number: 21
     status: completed
     parallel_group: 999999
-    description: Fix Polars Series conversion in `run_glm()` (line 206 checks `to_dict` but should check `to_list`)
+    description: SV pipeline can read BCF (binary) as well as plain VCF
     indent_level: 0
     raw_marker: -
   - id: "line_22"
     line_number: 22
     status: completed
     parallel_group: 999999
-    description: `run_glm()` handles Polars Series correctly without warnings
+    description: BCF path is accepted by CLI and Python `build_cache` (no format rename required)
     indent_level: 0
     raw_marker: -
   - id: "line_23"
     line_number: 23
     status: completed
     parallel_group: 999999
-    description: `run_glm()` handles dict-like phenotypes correctly
+    description: Parsed SV records (SVTYPE, SVLEN, END, GT) are equivalent whether source is VCF or BCF
     indent_level: 0
     raw_marker: -
   - id: "line_24"
     line_number: 24
     status: completed
     parallel_group: 999999
-    description: `run_glm()` handles list/array phenotypes correctly
+    description: Existing fixture-based tests still pass (plain VCF unchanged)
     indent_level: 0
     raw_marker: -
   - id: "line_25"
     line_number: 25
     status: completed
     parallel_group: 999999
-    description: All Python tests pass without warnings (`pytest -W error`)
+    description: Optional: document or test with `scratch/chr6.31803187_32050925.bcf` (manual or CI if available)
     indent_level: 0
     raw_marker: -
-  - id: "line_26"
-    line_number: 26
+  - id: "line_29"
+    line_number: 29
     status: completed
     parallel_group: 999999
-    description: Error messages are clear when phenotype format is incorrect
+    description: TRGT parser can read `.vcf.gz` (gzip or BGZF) in addition to plain `.vcf`
     indent_level: 0
     raw_marker: -
   - id: "line_30"
     line_number: 30
     status: completed
     parallel_group: 999999
-    description: `py_run_association()` calls actual `run_association()` from `glm.rs` module
+    description: SV parser can read `.vcf.gz` if we ever pass compressed VCF for SV
     indent_level: 0
     raw_marker: -
   - id: "line_31"
     line_number: 31
     status: completed
     parallel_group: 999999
-    description: `py_run_association()` loads test units from cache
+    description: Detection by extension or magic; no requirement to rename files
     indent_level: 0
     raw_marker: -
   - id: "line_32"
     line_number: 32
     status: completed
     parallel_group: 999999
-    description: `py_run_association()` loads genotypes from cache
-    indent_level: 0
-    raw_marker: -
-  - id: "line_33"
-    line_number: 33
-    status: completed
-    parallel_group: 999999
-    description: `py_run_association()` extracts encoded predictor values for each test unit
-    indent_level: 0
-    raw_marker: -
-  - id: "line_34"
-    line_number: 34
-    status: completed
-    parallel_group: 999999
-    description: `py_run_association()` applies plan rules to select encoding/model
-    indent_level: 0
-    raw_marker: -
-  - id: "line_35"
-    line_number: 35
-    status: completed
-    parallel_group: 999999
-    description: `py_run_association()` runs association test for each test unit
+    description: Fixture tests still pass with plain VCF; add test(s) with a small compressed VCF if feasible
     indent_level: 0
     raw_marker: -
   - id: "line_36"
     line_number: 36
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: `py_run_association()` returns real statistics (beta, SE, p-value, etc.)
+    description: Cache build accepts **multiple** TRGT paths (not just one)
     indent_level: 0
     raw_marker: -
   - id: "line_37"
     line_number: 37
     status: pending
     parallel_group: 999999
-    description: `py_run_association()` handles covariates if provided
+    description: CLI: accept multiple `--trgt-vcf` and/or `--trgt-dir` (with glob) and/or `--trgt-list` (file of paths)
     indent_level: 0
     raw_marker: -
   - id: "line_38"
     line_number: 38
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: `py_run_association()` respects plan configuration (rare-variant ladder, etc.)
+    description: Lib API: `build_cache` (and Python) accept a list/slice of TRGT paths
     indent_level: 0
     raw_marker: -
   - id: "line_39"
     line_number: 39
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Results include proper metadata (encoding, model, rule_id, etc.)
+    description: Merge strategy: one sample per file; merge by locus (TRID/chrom/pos/end) so each `TrgtRecord` has genotypes from all samples across the provided files
     indent_level: 0
     raw_marker: -
-  - id: "line_43"
-    line_number: 43
-    status: completed
+  - id: "line_40"
+    line_number: 40
+    status: pending
     parallel_group: 999999
-    description: Add `pytest` to `dev-requirements.txt` or `python/pyproject.toml`
+    description: Sample IDs: taken from VCF header (real files use numeric ID, e.g. `1524337`); no change to parser contract
     indent_level: 0
     raw_marker: -
-  - id: "line_44"
-    line_number: 44
-    status: completed
+  - id: "line_41"
+    line_number: 41
+    status: pending
     parallel_group: 999999
-    description: Add `polars` to test dependencies (if not already present)
+    description: Works with a small subset (e.g. 2–3 TRGT files) for tests and incremental validation
     indent_level: 0
     raw_marker: -
   - id: "line_45"
     line_number: 45
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: All Python tests pass with `pytest -W error` (no warnings)
+    description: Document that BCF sample IDs are numeric (e.g. `1000234`) and TRGT sample ID is the single sample in each file (same numeric ID in real data)
     indent_level: 0
     raw_marker: -
   - id: "line_46"
     line_number: 46
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Add test for error cases (invalid phenotype format, missing cache, etc.)
+    description: Joint SV + TRGT: same sample set or explicit subset; document ordering/subset requirements
     indent_level: 0
     raw_marker: -
   - id: "line_47"
     line_number: 47
-    status: completed
-    parallel_group: 999999
-    description: Add test for association testing with real data
-    indent_level: 0
-    raw_marker: -
-  - id: "line_48"
-    line_number: 48
-    status: completed
-    parallel_group: 999999
-    description: Add test for plan-based model selection
-    indent_level: 0
-    raw_marker: -
-  - id: "line_49"
-    line_number: 49
     status: pending
     parallel_group: 999999
-    description: Add test for covariates handling
+    description: Catalog: real region uses chr6:31803187–32050925; catalog format (BED/JSON) unchanged; TRID in real TRGT is coordinate-style (e.g. `6-31803583-31803598-T`) — code treats TRID as opaque string; ensure catalog matching or test-unit ID logic does not assume fixture-style IDs (e.g. `TR001`)
     indent_level: 0
     raw_marker: -
-  - id: "line_50"
-    line_number: 50
-    status: completed
+  - id: "line_51"
+    line_number: 51
+    status: pending
     parallel_group: 999999
-    description: CI runs Python tests automatically (check `.github/workflows/ci.yml`)
+    description: Plan documents expected behavior: BCF ~13k samples, TRGT ~10k files; no requirement to load all 10k TRGT in memory at once in v1 if we can specify a subset
     indent_level: 0
     raw_marker: -
-  - id: "line_54"
-    line_number: 54
-    status: completed
+  - id: "line_52"
+    line_number: 52
+    status: pending
     parallel_group: 999999
-    description: `run_glm()` provides clear error message when cache is missing required tables
-    indent_level: 0
-    raw_marker: -
-  - id: "line_55"
-    line_number: 55
-    status: completed
-    parallel_group: 999999
-    description: `run_glm()` provides clear error message when phenotype length doesn't match samples
+    description: Consider: parallel parsing of TRGT files, streaming/blocked BCF reading, or chunked merge — captured in plan; implementation can be incremental
     indent_level: 0
     raw_marker: -
   - id: "line_56"
     line_number: 56
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: `run_glm()` handles missing sample IDs gracefully
+    description: Update `DEV_DATA.md` (or equivalent) with: paths, format summary, and how to run cache build with real data (BCF + subset of TRGT)
     indent_level: 0
     raw_marker: -
   - id: "line_57"
     line_number: 57
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: `py_run_association()` handles empty cache gracefully
+    description: RALPH_TASK.md contains the full development plan (this file)
     indent_level: 0
     raw_marker: -
   - id: "line_58"
     line_number: 58
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: `py_run_association()` handles invalid plan YAML gracefully
-    indent_level: 0
-    raw_marker: -
-  - id: "line_59"
-    line_number: 59
-    status: completed
-    parallel_group: 999999
-    description: All error messages are user-friendly and actionable
-    indent_level: 0
-    raw_marker: -
-  - id: "line_60"
-    line_number: 60
-    status: completed
-    parallel_group: 999999
-    description: Error handling is consistent across Python API functions
-    indent_level: 0
-    raw_marker: -
-  - id: "line_64"
-    line_number: 64
-    status: completed
-    parallel_group: 999999
-    description: Remove placeholder comments in `py_run_association()` (line 862-863)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_65"
-    line_number: 65
-    status: completed
-    parallel_group: 999999
-    description: Add docstrings explaining phenotype format requirements
-    indent_level: 0
-    raw_marker: -
-  - id: "line_66"
-    line_number: 66
-    status: completed
-    parallel_group: 999999
-    description: Add docstrings explaining plan-based model selection
-    indent_level: 0
-    raw_marker: -
-  - id: "line_67"
-    line_number: 67
-    status: completed
-    parallel_group: 999999
-    description: Add examples in docstrings for common use cases
-    indent_level: 0
-    raw_marker: -
-  - id: "line_68"
-    line_number: 68
-    status: completed
-    parallel_group: 999999
-    description: Update README with association testing examples
-    indent_level: 0
-    raw_marker: -
-  - id: "line_69"
-    line_number: 69
-    status: completed
-    parallel_group: 999999
-    description: Document expected phenotype formats (Polars Series, dict, list)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_70"
-    line_number: 70
-    status: completed
-    parallel_group: 999999
-    description: Code follows consistent style (run formatters if needed)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_74"
-    line_number: 74
-    status: completed
-    parallel_group: 999999
-    description: Run full test suite: `cargo test --features python && cd python && python -m pytest -W error`
-    indent_level: 0
-    raw_marker: -
-  - id: "line_75"
-    line_number: 75
-    status: completed
-    parallel_group: 999999
-    description: Verify Python extension builds correctly with `maturin develop`
-    indent_level: 0
-    raw_marker: -
-  - id: "line_76"
-    line_number: 76
-    status: completed
-    parallel_group: 999999
-    description: Verify notebook runs without warnings
-    indent_level: 0
-    raw_marker: -
-  - id: "line_77"
-    line_number: 77
-    status: completed
-    parallel_group: 999999
-    description: Verify CLI commands work end-to-end
-    indent_level: 0
-    raw_marker: -
-  - id: "line_78"
-    line_number: 78
-    status: completed
-    parallel_group: 999999
-    description: Verify association results are reasonable (not all zeros/ones)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_79"
-    line_number: 79
-    status: completed
-    parallel_group: 999999
-    description: Verify plan-based model selection works correctly
+    description: Unit/integration tests still pass; add tests for: multiple TRGT paths, merge-by-locus, and (if feasible) one BCF and one .vcf.gz in tests
     indent_level: 0
     raw_marker: -
