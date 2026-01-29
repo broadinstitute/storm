@@ -27,7 +27,7 @@ pub mod results;
 
 // Re-exports
 pub use vcf::sv::{parse_sv_vcf, SvRecord, SvType, SvVcfError, Genotype};
-pub use vcf::trgt::{parse_trgt_vcf, TrgtRecord, TrgtGenotype, TrgtVcfError};
+pub use vcf::trgt::{parse_trgt_vcf, parse_and_merge_trgt_vcfs, TrgtRecord, TrgtGenotype, TrgtVcfError};
 pub use catalog::{
     Catalog, CatalogEntry, CatalogError,
     parse_trexplorer_bed, BedRecord, BedError,
@@ -100,9 +100,16 @@ pub struct CacheVerifyResult {
 /// 6. Resolves genotypes
 /// 7. Computes features
 /// 8. Writes cache to output directory
+/// 
+/// # Arguments
+/// * `sv_vcf_path` - Path to SV VCF or BCF file
+/// * `trgt_vcf_paths` - Optional list of TRGT VCF paths (supports .vcf and .vcf.gz)
+/// * `catalog_bed_path` - Optional path to catalog BED file
+/// * `catalog_json_path` - Optional path to catalog JSON file
+/// * `output_dir` - Output directory for cache files
 pub fn build_cache(
     sv_vcf_path: &str,
-    trgt_vcf_path: Option<&str>,
+    trgt_vcf_paths: Option<&[&str]>,
     catalog_bed_path: Option<&str>,
     catalog_json_path: Option<&str>,
     output_dir: &str,
@@ -114,25 +121,21 @@ pub fn build_cache(
     let mut all_samples: Vec<String> = sv_samples.clone();
     all_samples.sort();
 
-    // 2. Optionally parse TRGT VCF
-    let trgt_records = if let Some(path) = trgt_vcf_path {
-        let (_samples, records) = parse_trgt_vcf(path)?;
-        Some(records)
-    } else {
-        None
-    };
-
-    // Add TRGT samples to all_samples
-    if let Some(ref trgt) = trgt_records {
-        for rec in trgt {
-            for sample_id in rec.genotypes.keys() {
-                if !all_samples.contains(sample_id) {
-                    all_samples.push(sample_id.clone());
+    // 2. Optionally parse and merge TRGT VCFs
+    let trgt_records = match trgt_vcf_paths {
+        Some(paths) if !paths.is_empty() => {
+            let (trgt_samples, records) = parse_and_merge_trgt_vcfs(paths)?;
+            // Add TRGT samples to all_samples
+            for sample_id in trgt_samples {
+                if !all_samples.contains(&sample_id) {
+                    all_samples.push(sample_id);
                 }
             }
+            all_samples.sort();
+            Some(records)
         }
-        all_samples.sort();
-    }
+        _ => None,
+    };
 
     // 3. Load catalog
     let catalog = match (catalog_bed_path, catalog_json_path) {
@@ -340,8 +343,10 @@ pub fn build_cache(
     // 7. Set provenance
     let mut prov = Provenance::new();
     prov.input_files.push(sv_vcf_path.to_string());
-    if let Some(path) = trgt_vcf_path {
-        prov.input_files.push(path.to_string());
+    if let Some(paths) = trgt_vcf_paths {
+        for path in paths {
+            prov.input_files.push(path.to_string());
+        }
     }
     if let Some(path) = catalog_bed_path {
         prov.input_files.push(path.to_string());
@@ -683,12 +688,16 @@ fn _version() -> PyResult<String> {
 #[pyo3(signature = (sv_vcf, trgt_vcf=None, catalog_bed=None, catalog_json=None, output_dir="storm_cache"))]
 fn py_build_cache(
     sv_vcf: &str,
-    trgt_vcf: Option<&str>,
+    trgt_vcf: Option<Vec<String>>,
     catalog_bed: Option<&str>,
     catalog_json: Option<&str>,
     output_dir: &str,
 ) -> PyResult<(usize, usize, usize, usize)> {
-    let stats = build_cache(sv_vcf, trgt_vcf, catalog_bed, catalog_json, output_dir)
+    // Convert Vec<String> to Vec<&str> for the build_cache call
+    let trgt_paths: Option<Vec<&str>> = trgt_vcf.as_ref().map(|v| v.iter().map(|s| s.as_str()).collect());
+    let trgt_paths_slice: Option<&[&str]> = trgt_paths.as_deref();
+    
+    let stats = build_cache(sv_vcf, trgt_paths_slice, catalog_bed, catalog_json, output_dir)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
     Ok((
         stats.num_test_units,

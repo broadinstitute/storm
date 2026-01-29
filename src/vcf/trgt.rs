@@ -243,6 +243,77 @@ pub fn parse_trgt_vcf<P: AsRef<Path>>(path: P) -> Result<(Vec<String>, Vec<TrgtR
     Ok((sample_names, records))
 }
 
+/// A key for merging TRGT records by locus
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+struct LocusKey {
+    chrom: String,
+    pos: u64,
+    end: u64,
+    trid: String,
+}
+
+impl LocusKey {
+    fn from_record(rec: &TrgtRecord) -> Self {
+        LocusKey {
+            chrom: rec.chrom.clone(),
+            pos: rec.pos,
+            end: rec.end,
+            trid: rec.trid.clone(),
+        }
+    }
+}
+
+/// Parse multiple TRGT VCF files and merge records by locus
+/// 
+/// Each file is parsed individually, and records with the same locus key
+/// (chrom, pos, end, trid) are merged by combining their genotype maps.
+/// 
+/// Returns the combined list of all sample names seen and the merged records.
+pub fn parse_and_merge_trgt_vcfs<P: AsRef<Path>>(paths: &[P]) -> Result<(Vec<String>, Vec<TrgtRecord>), TrgtVcfError> {
+    if paths.is_empty() {
+        return Ok((Vec::new(), Vec::new()));
+    }
+
+    let mut all_samples: Vec<String> = Vec::new();
+    let mut merged: HashMap<LocusKey, TrgtRecord> = HashMap::new();
+
+    for path in paths {
+        let (samples, records) = parse_trgt_vcf(path)?;
+        
+        // Add new sample names
+        for sample in samples {
+            if !all_samples.contains(&sample) {
+                all_samples.push(sample);
+            }
+        }
+        
+        // Merge records by locus
+        for rec in records {
+            let key = LocusKey::from_record(&rec);
+            
+            if let Some(existing) = merged.get_mut(&key) {
+                // Merge genotypes from this record into existing record
+                for (sample_id, genotype) in rec.genotypes {
+                    existing.genotypes.insert(sample_id, genotype);
+                }
+            } else {
+                // New locus, insert the record
+                merged.insert(key, rec);
+            }
+        }
+    }
+
+    all_samples.sort();
+    
+    // Convert merged HashMap to Vec, preserving a deterministic order
+    let mut records: Vec<TrgtRecord> = merged.into_values().collect();
+    records.sort_by(|a, b| {
+        (&a.chrom, a.pos, &a.trid).cmp(&(&b.chrom, b.pos, &b.trid))
+    });
+
+    Ok((all_samples, records))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

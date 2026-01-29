@@ -8,4 +8,4 @@ pub mod sv;
 pub mod trgt;
 
 pub use sv::{SvRecord, SvType, parse_sv_vcf};
-pub use trgt::{TrgtRecord, parse_trgt_vcf};
+pub use trgt::{TrgtRecord, parse_trgt_vcf, parse_and_merge_trgt_vcfs};
