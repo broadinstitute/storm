@@ -642,3 +642,9 @@ Added to `notebooks/storm_demo.ipynb`:
 
 ### 2026-01-29 11:18:58
 **Session 1 started** (model: opus-4.5-thinking)
+
+### 2026-01-29 11:20:55
+**Session 1 ended** - 🔄 Context rotation (token limit reached)
+
+### 2026-01-29 11:20:57
+**Session 2 started** (model: opus-4.5-thinking)

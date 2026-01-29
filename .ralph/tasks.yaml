@@ -3,196 +3,77 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769709861
-generated_at: 2026-01-29T18:05:21Z
+source_mtime: 1769714137
+generated_at: 2026-01-29T19:20:54Z
 
 tasks:
-  - id: "line_23"
-    line_number: 23
-    status: completed
+  - id: "line_19"
+    line_number: 19
+    status: pending
     parallel_group: 999999
-    description: Notebook has a section that builds a cache from the real BCF
+    description: Real-data cache build uses **all** TRGT files in `scratch/trgt/` (e.g. `trgt_files` with no `N_TRGT_FILES` limit, or `N_TRGT_FILES = len(trgt_files)`).
     indent_level: 0
     raw_marker: -
-  - id: "line_24"
-    line_number: 24
-    status: completed
+  - id: "line_20"
+    line_number: 20
+    status: pending
     parallel_group: 999999
-    description: Uses a manageable subset of TRGT files (e.g., 100–500 files) for demo speed
+    description: Remove or repurpose the \"subset for demo speed\" logic so the default real-data run is full cohort.
     indent_level: 0
     raw_marker: -
-  - id: "line_25"
-    line_number: 25
-    status: completed
+  - id: "line_21"
+    line_number: 21
+    status: pending
     parallel_group: 999999
-    description: Documents how to scale up to the full ~10k TRGT files
+    description: Optionally: add a short note or variable (e.g. `USE_TRGT_SUBSET = False` or `N_TRGT_FILES = None` meaning \"all\") so users can still cap TRGT for quick tests if desired.
+    indent_level: 0
+    raw_marker: -
+  - id: "line_22"
+    line_number: 22
+    status: pending
+    parallel_group: 999999
+    description: Document expected runtime/memory for full TRGT load (~10k files).
     indent_level: 0
     raw_marker: -
   - id: "line_26"
     line_number: 26
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Cache build completes in reasonable time (document expected duration)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_27"
-    line_number: 27
-    status: completed
-    parallel_group: 999999
-    description: Shows cache statistics (samples, test units, genotypes)
+    description: **Notebook:** Add a \"Combination stats\" subsection (or expand the existing cache-stats section) that clearly reports:
     indent_level: 0
     raw_marker: -
   - id: "line_31"
     line_number: 31
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Generate a simulated continuous phenotype for the samples in the cache
-    indent_level: 0
-    raw_marker: -
-  - id: "line_32"
-    line_number: 32
-    status: completed
-    parallel_group: 999999
-    description: "Generate a simulated binary phenotype (case/control) "
-    indent_level: 0
-    raw_marker: -
-  - id: "line_33"
-    line_number: 33
-    status: completed
-    parallel_group: 999999
-    description: Phenotypes are reproducible (seeded random generation)
+    description: **Backend (optional but recommended):** Extend `build_cache` (and provenance) to expose combination counts so the notebook can display them:
     indent_level: 0
     raw_marker: -
   - id: "line_34"
     line_number: 34
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Optionally: show how to load phenotypes from an external file (CSV/Parquet)
+    description: Combination stats are printed or displayed in the notebook right after cache build (or in the same section).
     indent_level: 0
     raw_marker: -
   - id: "line_38"
     line_number: 38
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Run `run_glm()` on the real-data cache with the simulated phenotype
+    description: Markdown in the notebook explains what \"combination\" means (union of samples; test units from SV vs TRGT).
     indent_level: 0
     raw_marker: -
   - id: "line_39"
     line_number: 39
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Results show actual beta, SE, and p-values (not null/error)
+    description: Expected runtime for full TRGT load is noted (e.g. \"~5–10 min for ~10k TRGT files\" or similar from prior runs).
     indent_level: 0
     raw_marker: -
   - id: "line_40"
     line_number: 40
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Demonstrate linear regression (continuous phenotype)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_41"
-    line_number: 41
-    status: completed
-    parallel_group: 999999
-    description: Demonstrate logistic regression (binary phenotype)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_42"
-    line_number: 42
-    status: completed
-    parallel_group: 999999
-    description: Show how to use a plan YAML for model/encoding selection
-    indent_level: 0
-    raw_marker: -
-  - id: "line_43"
-    line_number: 43
-    status: completed
-    parallel_group: 999999
-    description: Show covariate adjustment (at minimum: simulated age/sex or PCs)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_47"
-    line_number: 47
-    status: completed
-    parallel_group: 999999
-    description: Display association results as a Polars DataFrame
-    indent_level: 0
-    raw_marker: -
-  - id: "line_48"
-    line_number: 48
-    status: completed
-    parallel_group: 999999
-    description: Filter/sort results by p-value to show top hits
-    indent_level: 0
-    raw_marker: -
-  - id: "line_49"
-    line_number: 49
-    status: completed
-    parallel_group: 999999
-    description: Create a simple visualization (e.g., Manhattan-style plot or p-value histogram) if matplotlib/seaborn available
-    indent_level: 0
-    raw_marker: -
-  - id: "line_50"
-    line_number: 50
-    status: completed
-    parallel_group: 999999
-    description: Explain what the results mean (encoding, model, beta interpretation)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_54"
-    line_number: 54
-    status: completed
-    parallel_group: 999999
-    description: Document expected runtime for different TRGT subset sizes (100, 500, all)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_55"
-    line_number: 55
-    status: completed
-    parallel_group: 999999
-    description: Note memory considerations for large sample counts
-    indent_level: 0
-    raw_marker: -
-  - id: "line_56"
-    line_number: 56
-    status: completed
-    parallel_group: 999999
-    description: Provide guidance on running the full pipeline outside the notebook (CLI)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_60"
-    line_number: 60
-    status: completed
-    parallel_group: 999999
-    description: Keep the existing fixture-based demo sections (or clearly separate them)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_61"
-    line_number: 61
-    status: completed
-    parallel_group: 999999
-    description: Notebook runs end-to-end without errors when real data is present
-    indent_level: 0
-    raw_marker: -
-  - id: "line_62"
-    line_number: 62
-    status: completed
-    parallel_group: 999999
-    description: Graceful handling if `scratch/` data is not available (skip or use fixtures)
-    indent_level: 0
-    raw_marker: -
-  - id: "line_63"
-    line_number: 63
-    status: completed
-    parallel_group: 999999
-    description: Clear section headers and explanatory markdown
-    indent_level: 0
-    raw_marker: -
-  - id: "line_64"
-    line_number: 64
-    status: completed
-    parallel_group: 999999
-    description: Cleanup temporary cache directories at the end
+    description: All cells still run successfully with real data present; no regressions.
     indent_level: 0
     raw_marker: -
