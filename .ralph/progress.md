@@ -4,10 +4,10 @@
 
 ## Summary
 
-- Iterations completed: 0
-- Current status: **IN PROGRESS**
+- Iterations completed: 2
+- Current status: **DONE**
 
-## Completed Criteria: 0/10
+## Completed Criteria: 10/10
 
 ### New Task: Real-Data Section — Load All TRGT Files and Add Combination Stats
 
@@ -680,3 +680,23 @@ Implemented in `notebooks/storm_demo.ipynb`:
 
 ### 2026-01-29 11:20:57
 **Session 2 started** (model: opus-4.5-thinking)
+
+### 2026-01-29 - Session 2 Completed (Iteration 2)
+**Verified all criteria already complete for Real-Data Section — Load All TRGT Files and Add Combination Stats**
+
+Verified notebook implementation:
+- Cell 27: `USE_TRGT_SUBSET = False` by default (uses ALL TRGT files)
+- Cell 26: Runtime expectations table (100/500/1000/10k files)
+- Cell 29: Markdown explaining how BCF + TRGT are combined (union of samples, test units by source)
+- Cell 30: Combination statistics displaying input counts, samples, test units by type, genotypes
+
+All tests passed:
+- 17 Rust integration tests pass
+- 31 Python tests pass with `-W error`
+
+All 10 success criteria marked [x] in RALPH_TASK.md:
+- A. Load All TRGT Files (4/4)
+- B. Combination Statistics (3/3)
+- C. Documentation and Polish (3/3)
+
+**DONE**
