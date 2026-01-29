@@ -33,29 +33,29 @@ This task is to identify and plan all changes needed so we can build caches and 
 
 ### C. Multiple TRGT files (per-sample VCFs)
 
-- [ ] Cache build accepts **multiple** TRGT paths (not just one)
-- [ ] CLI: accept multiple `--trgt-vcf` and/or `--trgt-dir` (with glob) and/or `--trgt-list` (file of paths)
-- [ ] Lib API: `build_cache` (and Python) accept a list/slice of TRGT paths
-- [ ] Merge strategy: one sample per file; merge by locus (TRID/chrom/pos/end) so each `TrgtRecord` has genotypes from all samples across the provided files
-- [ ] Sample IDs: taken from VCF header (real files use numeric ID, e.g. `1524337`); no change to parser contract
-- [ ] Works with a small subset (e.g. 2–3 TRGT files) for tests and incremental validation
+- [x] Cache build accepts **multiple** TRGT paths (not just one)
+- [x] CLI: accept multiple `--trgt-vcf` and/or `--trgt-dir` (with glob) and/or `--trgt-list` (file of paths)
+- [x] Lib API: `build_cache` (and Python) accept a list/slice of TRGT paths
+- [x] Merge strategy: one sample per file; merge by locus (TRID/chrom/pos/end) so each `TrgtRecord` has genotypes from all samples across the provided files
+- [x] Sample IDs: taken from VCF header (real files use numeric ID, e.g. `1524337`); no change to parser contract
+- [x] Works with a small subset (e.g. 2–3 TRGT files) for tests and incremental validation
 
 ### D. Sample alignment and catalog
 
-- [ ] Document that BCF sample IDs are numeric (e.g. `1000234`) and TRGT sample ID is the single sample in each file (same numeric ID in real data)
-- [ ] Joint SV + TRGT: same sample set or explicit subset; document ordering/subset requirements
-- [ ] Catalog: real region uses chr6:31803187–32050925; catalog format (BED/JSON) unchanged; TRID in real TRGT is coordinate-style (e.g. `6-31803583-31803598-T`) — code treats TRID as opaque string; ensure catalog matching or test-unit ID logic does not assume fixture-style IDs (e.g. `TR001`)
+- [x] Document that BCF sample IDs are numeric (e.g. `1000234`) and TRGT sample ID is the single sample in each file (same numeric ID in real data)
+- [x] Joint SV + TRGT: same sample set or explicit subset; document ordering/subset requirements
+- [x] Catalog: real region uses chr6:31803187–32050925; catalog format (BED/JSON) unchanged; TRID in real TRGT is coordinate-style (e.g. `6-31803583-31803598-T`) — code treats TRID as opaque string; ensure catalog matching or test-unit ID logic does not assume fixture-style IDs (e.g. `TR001`)
 
 ### E. Performance and scale (planning only)
 
-- [ ] Plan documents expected behavior: BCF ~13k samples, TRGT ~10k files; no requirement to load all 10k TRGT in memory at once in v1 if we can specify a subset
-- [ ] Consider: parallel parsing of TRGT files, streaming/blocked BCF reading, or chunked merge — captured in plan; implementation can be incremental
+- [x] Plan documents expected behavior: BCF ~13k samples, TRGT ~10k files; no requirement to load all 10k TRGT in memory at once in v1 if we can specify a subset
+- [x] Consider: parallel parsing of TRGT files, streaming/blocked BCF reading, or chunked merge — captured in plan; implementation can be incremental
 
 ### F. Documentation and testing
 
-- [ ] Update `DEV_DATA.md` (or equivalent) with: paths, format summary, and how to run cache build with real data (BCF + subset of TRGT)
-- [ ] RALPH_TASK.md contains the full development plan (this file)
-- [ ] Unit/integration tests still pass; add tests for: multiple TRGT paths, merge-by-locus, and (if feasible) one BCF and one .vcf.gz in tests
+- [x] Update `DEV_DATA.md` (or equivalent) with: paths, format summary, and how to run cache build with real data (BCF + subset of TRGT)
+- [x] RALPH_TASK.md contains the full development plan (this file)
+- [x] Unit/integration tests still pass; add tests for: multiple TRGT paths, merge-by-locus, and (if feasible) one BCF and one .vcf.gz in tests
 
 ---
 

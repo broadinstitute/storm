@@ -4,12 +4,48 @@
 
 ## Summary
 
-- Iterations completed: 6
-- Current status: **DONE**
+- Iterations completed: 7
+- Current status: **IN PROGRESS**
 
-## Completed Criteria: 44/44
+## Completed Criteria: 22/22
 
-**DONE**
+### Session 7 (2026-01-29)
+
+Implemented support for real data formats:
+
+**Section A: BCF input for SV calls (5/5)**
+- Added `bcf` feature to noodles
+- Implemented `parse_sv_bcf()` using noodles-bcf
+- Auto-detect BCF by extension or magic bytes
+- BCF path works with CLI and Python build_cache
+- Tested with real 12,680 sample BCF file
+
+**Section B: Compressed VCF input (4/4)**
+- Added flate2 for gzip decompression
+- Implemented `open_vcf_reader()` helper for both SV and TRGT
+- Detection by extension (.gz) or magic bytes
+- Tested with real .vcf.gz TRGT files
+
+**Section C: Multiple TRGT files (6/6)**
+- Changed build_cache to accept `Option<&[&str]>` for TRGT paths
+- Added `parse_and_merge_trgt_vcfs()` for merge-by-locus
+- CLI: `--trgt-vcf` (multiple), `--trgt-dir`, `--trgt-list`
+- Python: accepts list of strings for trgt_vcf
+- Tested with 10,023 real TRGT files
+- Added integration tests for multi-TRGT
+
+**Section D: Sample alignment and catalog (3/3)**
+- TRID treated as opaque string (works with coordinate-style IDs)
+- Sample merging works across BCF and multiple TRGT files
+- Documented in DEV_DATA.md
+
+**Section E: Performance and scale (2/2)**
+- Successfully processed 10,023 TRGT files
+- Plan documented in RALPH_TASK.md
+
+**Section F: Documentation and testing (2/2)**
+- Updated DEV_DATA.md with CLI and Python examples
+- 80 total tests pass (63 unit + 17 integration)
 
 All 44 success criteria have been completed:
 - Section A (Python API bugs): 6/6 - Fixed Polars Series conversion, handles dict/list phenotypes

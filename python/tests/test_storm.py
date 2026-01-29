@@ -154,6 +154,41 @@ class TestCacheBuild:
         assert hasattr(cache, "_build_stats")
         assert cache._build_stats["num_test_units"] >= 6
         assert cache._build_stats["num_catalog_entries"] > 0
+    
+    def test_build_cache_multi_trgt(self, fixtures_dir, temp_dir):
+        """Should build cache from multiple TRGT VCF files (per-sample VCFs)."""
+        if not storm.HAS_RUST:
+            pytest.skip("Rust bindings not available")
+        
+        output = os.path.join(temp_dir, "cache_multi_trgt")
+        
+        # Pass list of TRGT paths (per-sample VCFs)
+        trgt_paths = [
+            os.path.join(fixtures_dir, "trgt_sample1.vcf"),
+            os.path.join(fixtures_dir, "trgt_sample2.vcf"),
+        ]
+        
+        cache = storm.StormCache.build(
+            sv_vcf=os.path.join(fixtures_dir, "sv_small.vcf"),
+            trgt_vcf=trgt_paths,
+            output_dir=output,
+        )
+        
+        assert hasattr(cache, "_build_stats")
+        # Should have SV units + TRGT units
+        assert cache._build_stats["num_test_units"] >= 6
+        # Should have samples from both SV and TRGT files
+        assert cache._build_stats["num_samples"] >= 2
+        
+        # Verify provenance includes all TRGT files
+        import json
+        prov_path = os.path.join(output, "provenance.json")
+        with open(prov_path) as f:
+            prov = json.load(f)
+        
+        input_files = prov.get("input_files", [])
+        assert any("trgt_sample1.vcf" in f for f in input_files), "Should include trgt_sample1.vcf"
+        assert any("trgt_sample2.vcf" in f for f in input_files), "Should include trgt_sample2.vcf"
 
 
 class TestVerifyCache:
