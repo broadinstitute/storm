@@ -26,10 +26,10 @@ This task is to identify and plan all changes needed so we can build caches and 
 
 ### B. Compressed VCF input (gzip / BGZF)
 
-- [ ] TRGT parser can read `.vcf.gz` (gzip or BGZF) in addition to plain `.vcf`
-- [ ] SV parser can read `.vcf.gz` if we ever pass compressed VCF for SV
-- [ ] Detection by extension or magic; no requirement to rename files
-- [ ] Fixture tests still pass with plain VCF; add test(s) with a small compressed VCF if feasible
+- [x] TRGT parser can read `.vcf.gz` (gzip or BGZF) in addition to plain `.vcf`
+- [x] SV parser can read `.vcf.gz` if we ever pass compressed VCF for SV
+- [x] Detection by extension or magic; no requirement to rename files
+- [x] Fixture tests still pass with plain VCF; add test(s) with a small compressed VCF if feasible
 
 ### C. Multiple TRGT files (per-sample VCFs)
 

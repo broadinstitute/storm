@@ -15,6 +15,7 @@ use noodles::vcf::variant::record_buf::info::field::Value as InfoValue;
 use noodles::vcf::variant::record_buf::samples::sample::Value as SampleValue;
 use noodles::vcf::variant::record::samples::series::value::Genotype as GenotypeIter;
 use noodles::vcf::variant::record::samples::series::value::genotype::Phasing;
+use flate2::read::GzDecoder;
 
 /// Errors that can occur during SV VCF parsing
 #[derive(Error, Debug)]
@@ -147,6 +148,42 @@ fn is_bcf_file<P: AsRef<Path>>(path: P) -> Result<bool, SvVcfError> {
     }
     
     Ok(false)
+}
+
+/// Detect if a file is gzip-compressed based on extension or magic bytes
+fn is_gzip_file<P: AsRef<Path>>(path: P) -> Result<bool, SvVcfError> {
+    let path = path.as_ref();
+    
+    // Check extension first
+    if let Some(ext) = path.extension() {
+        if ext == "gz" {
+            return Ok(true);
+        }
+    }
+    
+    // Check magic bytes: gzip starts with 0x1f 0x8b
+    let mut file = File::open(path)?;
+    let mut magic = [0u8; 2];
+    if file.read_exact(&mut magic).is_ok() && magic == [0x1f, 0x8b] {
+        return Ok(true);
+    }
+    
+    Ok(false)
+}
+
+/// Open a VCF file, handling both plain text and gzip-compressed formats
+/// Returns a boxed BufRead trait object
+fn open_vcf_reader<P: AsRef<Path>>(path: P) -> Result<Box<dyn BufRead>, SvVcfError> {
+    let path = path.as_ref();
+    
+    if is_gzip_file(path)? {
+        let file = File::open(path)?;
+        let decoder = GzDecoder::new(file);
+        Ok(Box::new(BufReader::new(decoder)))
+    } else {
+        let file = File::open(path)?;
+        Ok(Box::new(BufReader::new(file)))
+    }
 }
 
 /// Parse an SV VCF or BCF file and return records
@@ -288,10 +325,9 @@ fn parse_noodles_record(
     }))
 }
 
-/// Parse an SV VCF file (plain text format)
+/// Parse an SV VCF file (plain text format, supports .vcf and .vcf.gz)
 fn parse_sv_vcf_text<P: AsRef<Path>>(path: P) -> Result<(Vec<String>, Vec<SvRecord>), SvVcfError> {
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
+    let reader = open_vcf_reader(path)?;
 
     let mut sample_names: Vec<String> = Vec::new();
     let mut records: Vec<SvRecord> = Vec::new();

@@ -1,13 +1,15 @@
 //! TRGT VCF parser
 //!
 //! Parses TRGT VCF files extracting TRID, AL (allele lengths), and GT fields.
+//! Supports both plain VCF and gzip-compressed .vcf.gz formats.
 
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
 use serde::Serialize;
 use thiserror::Error;
+use flate2::read::GzDecoder;
 
 /// Errors that can occur during TRGT VCF parsing
 #[derive(Error, Debug)]
@@ -93,10 +95,45 @@ impl TrgtGenotype {
     }
 }
 
+/// Detect if a file is gzip-compressed based on extension or magic bytes
+fn is_gzip_file<P: AsRef<Path>>(path: P) -> Result<bool, TrgtVcfError> {
+    let path = path.as_ref();
+    
+    // Check extension first
+    if let Some(ext) = path.extension() {
+        if ext == "gz" {
+            return Ok(true);
+        }
+    }
+    
+    // Check magic bytes: gzip starts with 0x1f 0x8b
+    let mut file = File::open(path)?;
+    let mut magic = [0u8; 2];
+    if file.read_exact(&mut magic).is_ok() && magic == [0x1f, 0x8b] {
+        return Ok(true);
+    }
+    
+    Ok(false)
+}
+
+/// Open a VCF file, handling both plain text and gzip-compressed formats
+fn open_vcf_reader<P: AsRef<Path>>(path: P) -> Result<Box<dyn BufRead>, TrgtVcfError> {
+    let path = path.as_ref();
+    
+    if is_gzip_file(path)? {
+        let file = File::open(path)?;
+        let decoder = GzDecoder::new(file);
+        Ok(Box::new(BufReader::new(decoder)))
+    } else {
+        let file = File::open(path)?;
+        Ok(Box::new(BufReader::new(file)))
+    }
+}
+
 /// Parse a TRGT VCF file and return records
+/// Supports both plain .vcf and gzip-compressed .vcf.gz files
 pub fn parse_trgt_vcf<P: AsRef<Path>>(path: P) -> Result<(Vec<String>, Vec<TrgtRecord>), TrgtVcfError> {
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
+    let reader = open_vcf_reader(path)?;
 
     let mut sample_names: Vec<String> = Vec::new();
     let mut records: Vec<TrgtRecord> = Vec::new();

@@ -1551,6 +1551,7 @@ dependencies = [
  "chrono",
  "clap",
  "criterion",
+ "flate2",
  "hex",
  "indexmap",
  "noodles",

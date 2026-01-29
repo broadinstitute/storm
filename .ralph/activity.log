@@ -990,3 +990,18 @@ EOF
 [09:19:13] 🟢 SHELL cd /Users/kiran/repositories/storm && ls -la scratch/ 2>&1 || echo "scratch directory not found" → exit 0
 [09:20:14] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo run -- cache build --sv-vcf scratch/chr6.31803187_32050925.bcf --output-dir /tmp/bcf_test 2>&1 | head -30 → exit 0
 [09:20:14] 🟢 TOKENS: 38607 / 80000 (48%) [read:145KB write:0KB assist:2KB shell:0KB]
+[09:20:26] 🟢 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: complete BCF support (Section A)
+
+- Update CLI help text to mention BCF support for --sv-vcf
+- Mark all Section A criteria complete in RALPH_TASK.md
+- Verified BCF parsing works with real data (12,680 samples)
+EOF
+)" → exit 0
+[09:20:37] 🟡 READ /Users/kiran/repositories/storm/src/vcf/sv.rs (456 lines, ~44.5KB)
+[09:20:44] 🟡 TOKENS: 50097 / 80000 (62%) [read:190KB write:0KB assist:2KB shell:0KB]
+[09:21:16] 🟡 TOKENS: 50188 / 80000 (62%) [read:190KB write:0KB assist:3KB shell:0KB]
+[09:21:38] 🟡 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
+[09:21:44] 🟡 SHELL cd /Users/kiran/repositories/storm && ls scratch/trgt/*.vcf.gz 2>&1 | head -5 → exit 0
+[09:21:46] 🟡 TOKENS: 50220 / 80000 (62%) [read:190KB write:0KB assist:3KB shell:0KB]
+[09:21:52] 🟡 SHELL cd /Users/kiran/repositories/storm && cargo run -- cache build --sv-vcf fixtures/sv_small.vcf --trgt-vcf scratch/trgt/1000234_trgt.TR_Explorer_1.01.chr6.31803187_32050925.vcf.gz --output-dir /tmp/gz_test 2>&1 → exit 0

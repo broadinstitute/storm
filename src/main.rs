@@ -51,7 +51,7 @@ enum CacheAction {
         #[arg(long, required = true)]
         sv_vcf: PathBuf,
 
-        /// Path to TRGT VCF file (optional)
+        /// Path to TRGT VCF file (optional, supports .vcf and .vcf.gz)
         #[arg(long)]
         trgt_vcf: Option<PathBuf>,
 
