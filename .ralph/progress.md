@@ -526,6 +526,17 @@ All tests verified:
 ### 2026-01-29 09:22:35
 **Session 2 started** (model: opus-4.5-thinking)
 
+### 2026-01-29
+**Session 2 completed** - Verified all criteria complete:
+- All 23 success criteria in RALPH_TASK.md are marked [x]
+- 60 Rust unit tests pass
+- 17 integration tests pass
+- 31 Python tests pass (with venv Python 3.13)
+
+Fixed duplicate `trgt_list` field in main.rs CLI struct.
+
+**DONE** - All success criteria for "Support Real Data — Integrated SV BCF and Per-Sample TRGT VCF.gz" are complete.
+
 ### 2026-01-29 09:23:29
 **Session 2 ended** - 🔄 Context rotation (token limit reached)
 
