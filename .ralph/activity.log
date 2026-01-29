@@ -972,3 +972,21 @@ Ralph Session Started: Thu Jan 29 09:14:47 PST 2026
 [09:17:54] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test vcf::sv 2>&1 → exit 0
 [09:17:59] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 → exit 0
 [09:18:07] 🟢 TOKENS: 33045 / 80000 (41%) [read:124KB write:0KB assist:1KB shell:0KB]
+[09:18:14] 🟢 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: add BCF support to SV parser
+
+- Add bcf feature to noodles dependency in Cargo.toml
+- Implement is_bcf_file() to detect BCF format by extension or magic bytes  
+- Add parse_sv_bcf() using noodles-bcf for binary BCF reading
+- Add parse_noodles_record() to convert noodles records to SvRecord
+- Refactor parse_sv_vcf() to dispatch to BCF or text parser automatically
+- Existing VCF tests still pass, BCF and VCF produce equivalent records
+EOF
+)" → exit 0
+[09:18:43] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo run -- cache build --help 2>&1 → exit 0
+[09:18:43] 🟢 TOKENS: 33173 / 80000 (41%) [read:124KB write:0KB assist:2KB shell:0KB]
+[09:18:47] 🟢 READ /Users/kiran/repositories/storm/src/main.rs (216 lines, ~21.0KB)
+[09:19:13] 🟢 TOKENS: 38592 / 80000 (48%) [read:145KB write:0KB assist:2KB shell:0KB]
+[09:19:13] 🟢 SHELL cd /Users/kiran/repositories/storm && ls -la scratch/ 2>&1 || echo "scratch directory not found" → exit 0
+[09:20:14] 🟢 SHELL cd /Users/kiran/repositories/storm && cargo run -- cache build --sv-vcf scratch/chr6.31803187_32050925.bcf --output-dir /tmp/bcf_test 2>&1 | head -30 → exit 0
+[09:20:14] 🟢 TOKENS: 38607 / 80000 (48%) [read:145KB write:0KB assist:2KB shell:0KB]

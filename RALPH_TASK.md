@@ -19,10 +19,10 @@ This task is to identify and plan all changes needed so we can build caches and 
 ### A. BCF input for SV calls
 
 - [x] SV pipeline can read BCF (binary) as well as plain VCF
-- [ ] BCF path is accepted by CLI and Python `build_cache` (no format rename required)
-- [ ] Parsed SV records (SVTYPE, SVLEN, END, GT) are equivalent whether source is VCF or BCF
-- [ ] Existing fixture-based tests still pass (plain VCF unchanged)
-- [ ] Optional: document or test with `scratch/chr6.31803187_32050925.bcf` (manual or CI if available)
+- [x] BCF path is accepted by CLI and Python `build_cache` (no format rename required)
+- [x] Parsed SV records (SVTYPE, SVLEN, END, GT) are equivalent whether source is VCF or BCF
+- [x] Existing fixture-based tests still pass (plain VCF unchanged)
+- [x] Optional: document or test with `scratch/chr6.31803187_32050925.bcf` (manual or CI if available)
 
 ### B. Compressed VCF input (gzip / BGZF)
 

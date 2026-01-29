@@ -47,7 +47,7 @@ enum Commands {
 enum CacheAction {
     /// Build a cache from input files
     Build {
-        /// Path to structural variant VCF file (required)
+        /// Path to structural variant VCF or BCF file (required)
         #[arg(long, required = true)]
         sv_vcf: PathBuf,
 
