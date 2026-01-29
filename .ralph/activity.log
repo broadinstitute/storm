@@ -1307,3 +1307,17 @@ Ralph Session Started: Thu Jan 29 11:20:57 PST 2026
 [11:21:49] 🟡 SHELL cd /Users/kiran/repositories/storm && cargo test 2>&1 | tail -20 → exit 0
 [11:22:16] 🟡 TOKENS: 57110 / 80000 (71%) [read:219KB write:0KB assist:1KB shell:0KB]
 [11:22:20] 🟡 READ /Users/kiran/repositories/storm/RALPH_TASK.md (117 lines, ~11.4KB)
+[11:22:40] 🟡 SHELL cd /Users/kiran/repositories/storm && git add -A && git commit -m "$(cat <<'EOF'
+ralph: verify all criteria complete for Real-Data TRGT + combination stats
+
+All 10 success criteria verified:
+- A. Load All TRGT Files: USE_TRGT_SUBSET=False by default, runtime docs
+- B. Combination Statistics: cells 29-30 show input counts, samples, units, genotypes
+- C. Documentation: markdown explains BCF+TRGT combination logic
+
+Tests: 17 Rust, 31 Python pass
+EOF
+)" → exit 0
+[11:22:46] 🟡 TOKENS: 60248 / 80000 (75%) - approaching limit [read:230KB write:0KB assist:1KB shell:0KB]
+[11:22:46] 🟡 SESSION END: 105263ms, ~60248 tokens used
+[11:22:46] 🟡 TOKENS: 60248 / 80000 (75%) - approaching limit [read:230KB write:0KB assist:1KB shell:0KB]

@@ -3,76 +3,76 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769714137
-generated_at: 2026-01-29T19:20:54Z
+source_mtime: 1769714521
+generated_at: 2026-01-29T19:22:46Z
 
 tasks:
   - id: "line_19"
     line_number: 19
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Real-data cache build uses **all** TRGT files in `scratch/trgt/` (e.g. `trgt_files` with no `N_TRGT_FILES` limit, or `N_TRGT_FILES = len(trgt_files)`).
     indent_level: 0
     raw_marker: -
   - id: "line_20"
     line_number: 20
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Remove or repurpose the \"subset for demo speed\" logic so the default real-data run is full cohort.
     indent_level: 0
     raw_marker: -
   - id: "line_21"
     line_number: 21
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Optionally: add a short note or variable (e.g. `USE_TRGT_SUBSET = False` or `N_TRGT_FILES = None` meaning \"all\") so users can still cap TRGT for quick tests if desired.
     indent_level: 0
     raw_marker: -
   - id: "line_22"
     line_number: 22
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Document expected runtime/memory for full TRGT load (~10k files).
     indent_level: 0
     raw_marker: -
   - id: "line_26"
     line_number: 26
-    status: pending
+    status: completed
     parallel_group: 999999
     description: **Notebook:** Add a \"Combination stats\" subsection (or expand the existing cache-stats section) that clearly reports:
     indent_level: 0
     raw_marker: -
   - id: "line_31"
     line_number: 31
-    status: pending
+    status: completed
     parallel_group: 999999
     description: **Backend (optional but recommended):** Extend `build_cache` (and provenance) to expose combination counts so the notebook can display them:
     indent_level: 0
     raw_marker: -
   - id: "line_34"
     line_number: 34
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Combination stats are printed or displayed in the notebook right after cache build (or in the same section).
     indent_level: 0
     raw_marker: -
   - id: "line_38"
     line_number: 38
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Markdown in the notebook explains what \"combination\" means (union of samples; test units from SV vs TRGT).
     indent_level: 0
     raw_marker: -
   - id: "line_39"
     line_number: 39
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Expected runtime for full TRGT load is noted (e.g. \"~5–10 min for ~10k TRGT files\" or similar from prior runs).
     indent_level: 0
     raw_marker: -
   - id: "line_40"
     line_number: 40
-    status: pending
+    status: completed
     parallel_group: 999999
     description: All cells still run successfully with real data present; no regressions.
     indent_level: 0
