@@ -123,6 +123,71 @@ fn test_build_cache_from_fixtures() {
 }
 
 // ============================================================================
+// Multi-TRGT Cache Tests
+// ============================================================================
+
+#[test]
+fn test_build_cache_multi_trgt() {
+    let output_dir = test_dir("build_multi_trgt");
+    
+    // Build cache with two single-sample TRGT files
+    let stats = build_cache(
+        "fixtures/sv_small.vcf",
+        Some(&["fixtures/trgt_sample1.vcf", "fixtures/trgt_sample2.vcf"][..]),
+        None,
+        None,
+        output_dir.to_str().unwrap(),
+    ).expect("Failed to build cache with multiple TRGT files");
+    
+    // 3 SV units + 3 TRGT units = 6 test units
+    // But samples should now include SV samples (SAMPLE1, SAMPLE2) + TRGT samples (1524337, 1524338)
+    assert!(stats.num_test_units >= 6, "Should have at least 6 test units, got {}", stats.num_test_units);
+    assert!(stats.num_samples >= 2, "Should have at least 2 samples, got {}", stats.num_samples);
+    
+    // Verify provenance includes both TRGT files
+    let prov_path = output_dir.join("provenance.json");
+    let prov_content = std::fs::read_to_string(&prov_path)
+        .expect("Failed to read provenance.json");
+    let prov: serde_json::Value = serde_json::from_str(&prov_content)
+        .expect("Failed to parse provenance.json");
+    
+    let input_files = prov.get("input_files").and_then(|v| v.as_array());
+    assert!(input_files.is_some(), "Should have input_files in provenance");
+    let files: Vec<&str> = input_files.unwrap().iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    
+    // Should have sv_small.vcf and both TRGT files
+    assert!(files.iter().any(|f| f.contains("sv_small.vcf")), "Should include sv_small.vcf");
+    assert!(files.iter().any(|f| f.contains("trgt_sample1.vcf")), "Should include trgt_sample1.vcf");
+    assert!(files.iter().any(|f| f.contains("trgt_sample2.vcf")), "Should include trgt_sample2.vcf");
+    
+    let _ = std::fs::remove_dir_all(&output_dir);
+}
+
+#[test]
+fn test_build_cache_multi_trgt_merged_genotypes() {
+    use storm::vcf::trgt::parse_and_merge_trgt_vcfs;
+    
+    // Test the merge function directly to verify genotypes are combined
+    let paths = vec!["fixtures/trgt_sample1.vcf", "fixtures/trgt_sample2.vcf"];
+    let (samples, records) = parse_and_merge_trgt_vcfs(&paths)
+        .expect("Failed to merge TRGT files");
+    
+    // Should have 2 samples total
+    assert_eq!(samples.len(), 2, "Should have 2 samples after merge");
+    
+    // Should have 3 records (same loci in both files)
+    assert_eq!(records.len(), 3, "Should have 3 merged records");
+    
+    // Each record should have genotypes from both samples
+    for rec in &records {
+        assert_eq!(rec.genotypes.len(), 2, 
+            "Record {} should have 2 genotypes", rec.trid);
+    }
+}
+
+// ============================================================================
 // Cache Verification Tests
 // ============================================================================
 

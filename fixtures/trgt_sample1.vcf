@@ -1,0 +1,12 @@
+##fileformat=VCFv4.2
+##INFO=<ID=TRID,Number=1,Type=String,Description="Tandem repeat ID">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position">
+##INFO=<ID=MOTIFS,Number=.,Type=String,Description="Repeat motifs">
+##INFO=<ID=STRUC,Number=1,Type=String,Description="Repeat structure">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=AL,Number=.,Type=Integer,Description="Allele lengths">
+##FORMAT=<ID=SD,Number=.,Type=Integer,Description="Spanning reads">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	1524337
+chr1	10000	.	CAGCAGCAG	CAGCAGCAGCAG,CAGCAGCAGCAGCAG	.	.	TRID=TR001;END=10009;MOTIFS=CAG;STRUC=(CAG)n	GT:AL:SD	0/1:9,12:15,12
+chr2	20000	.	ATAT	ATATAT,ATATATAT	.	.	TRID=TR002;END=20004;MOTIFS=AT;STRUC=(AT)n	GT:AL:SD	0/0:4,4:20,20
+chr3	30000	.	GGCGGCGGC	GGCGGCGGCGGC	.	.	TRID=TR003;END=30009;MOTIFS=GGC;STRUC=(GGC)n	GT:AL:SD	1/1:12,12:25,25

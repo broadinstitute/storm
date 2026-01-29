@@ -364,4 +364,62 @@ mod tests {
         let rec = &records[2];
         assert_eq!(rec.trid, "TR003");
     }
+
+    #[test]
+    fn test_parse_and_merge_trgt_vcfs() {
+        // Test merging two single-sample TRGT VCF files
+        let paths = vec![
+            "fixtures/trgt_sample1.vcf",
+            "fixtures/trgt_sample2.vcf",
+        ];
+        let (samples, records) = parse_and_merge_trgt_vcfs(&paths)
+            .expect("Failed to parse and merge TRGT VCFs");
+        
+        // Should have 2 samples (one from each file)
+        assert_eq!(samples.len(), 2, "Should have 2 samples");
+        assert!(samples.contains(&"1524337".to_string()), "Should contain sample 1524337");
+        assert!(samples.contains(&"1524338".to_string()), "Should contain sample 1524338");
+        
+        // Should still have 3 records (merged by locus)
+        assert_eq!(records.len(), 3, "Should have 3 merged records");
+        
+        // Each record should have genotypes from both samples
+        for rec in &records {
+            assert_eq!(rec.genotypes.len(), 2, 
+                "Record {} should have 2 genotypes, got {}", rec.trid, rec.genotypes.len());
+            assert!(rec.genotypes.contains_key("1524337"),
+                "Record {} should have genotype for 1524337", rec.trid);
+            assert!(rec.genotypes.contains_key("1524338"),
+                "Record {} should have genotype for 1524338", rec.trid);
+        }
+        
+        // Check specific genotypes after merge
+        let tr001 = records.iter().find(|r| r.trid == "TR001").expect("TR001 should exist");
+        let gt1 = tr001.genotypes.get("1524337").unwrap();
+        assert_eq!(gt1.allele_lengths, vec![9, 12], "Sample 1 TR001 alleles should be [9, 12]");
+        let gt2 = tr001.genotypes.get("1524338").unwrap();
+        assert_eq!(gt2.allele_lengths, vec![12, 15], "Sample 2 TR001 alleles should be [12, 15]");
+    }
+    
+    #[test]
+    fn test_merge_empty_paths() {
+        // Test merging with empty paths
+        let paths: Vec<&str> = vec![];
+        let (samples, records) = parse_and_merge_trgt_vcfs(&paths)
+            .expect("Should handle empty paths");
+        
+        assert_eq!(samples.len(), 0, "Should have no samples");
+        assert_eq!(records.len(), 0, "Should have no records");
+    }
+    
+    #[test]
+    fn test_merge_single_file() {
+        // Test merging with a single file (should work like parse_trgt_vcf)
+        let paths = vec!["fixtures/trgt_sample1.vcf"];
+        let (samples, records) = parse_and_merge_trgt_vcfs(&paths)
+            .expect("Should parse single file");
+        
+        assert_eq!(samples.len(), 1, "Should have 1 sample");
+        assert_eq!(records.len(), 3, "Should have 3 records");
+    }
 }
