@@ -108,7 +108,7 @@ fn test_build_cache_from_fixtures() {
     
     let stats = build_cache(
         "fixtures/sv_small.vcf",
-        Some("fixtures/trgt_small.vcf"),
+        Some(&["fixtures/trgt_small.vcf"][..]),
         Some("fixtures/trexplorer.bed"),
         Some("fixtures/trexplorer.json"),
         output_dir.to_str().unwrap(),
@@ -186,7 +186,7 @@ fn test_provenance_metadata() {
     
     build_cache(
         "fixtures/sv_small.vcf",
-        Some("fixtures/trgt_small.vcf"),
+        Some(&["fixtures/trgt_small.vcf"][..]),
         None,
         None,
         output_dir.to_str().unwrap(),

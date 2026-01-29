@@ -493,3 +493,9 @@ All tests verified:
 
 ### 2026-01-29 09:24:09
 **Session 4 started** (model: opus-4.5-thinking)
+
+### 2026-01-29 09:24:53
+**Session 4 ended** - 🔄 Context rotation (token limit reached)
+
+### 2026-01-29 09:24:55
+**Session 5 started** (model: opus-4.5-thinking)

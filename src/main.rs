@@ -59,6 +59,10 @@ enum CacheAction {
         /// Directory containing TRGT VCF files (will glob for *.vcf and *.vcf.gz)
         #[arg(long)]
         trgt_dir: Option<PathBuf>,
+        
+        /// File containing list of TRGT VCF paths (one path per line)
+        #[arg(long)]
+        trgt_list: Option<PathBuf>,
 
         /// Path to TRExplorer BED catalog file (optional)
         #[arg(long)]
@@ -89,10 +93,11 @@ fn main() {
                 sv_vcf,
                 trgt_vcf,
                 trgt_dir,
+                trgt_list,
                 catalog_bed,
                 catalog_json,
                 output_dir,
-            } => run_cache_build(sv_vcf, trgt_vcf, trgt_dir, catalog_bed, catalog_json, output_dir),
+            } => run_cache_build(sv_vcf, trgt_vcf, trgt_dir, trgt_list, catalog_bed, catalog_json, output_dir),
             CacheAction::Verify { cache_dir } => run_cache_verify(cache_dir),
         },
         Some(Commands::Explain {

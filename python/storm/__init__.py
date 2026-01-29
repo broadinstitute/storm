@@ -5,7 +5,7 @@ association testing of structural variants and tandem repeats.
 """
 
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 
 # Import Rust extension
 try:
@@ -76,7 +76,7 @@ class StormCache:
     def build(
         cls,
         sv_vcf: str,
-        trgt_vcf: Optional[str] = None,
+        trgt_vcf: Optional[Union[str, List[str]]] = None,
         catalog_bed: Optional[str] = None,
         catalog_json: Optional[str] = None,
         output_dir: str = "storm_cache",
@@ -87,8 +87,11 @@ class StormCache:
         and computing feature encodings. The cache is stored in Parquet format.
         
         Args:
-            sv_vcf: Path to integrated SV VCF file.
-            trgt_vcf: Optional path to TRGT VCF file.
+            sv_vcf: Path to integrated SV VCF or BCF file.
+            trgt_vcf: Optional path(s) to TRGT VCF file(s). Can be:
+                - A single path string
+                - A list of paths (for multiple per-sample TRGT VCFs)
+                Supports .vcf and .vcf.gz formats.
             catalog_bed: Optional path to TRExplorer BED file.
             catalog_json: Optional path to TRExplorer JSON file.
             output_dir: Output directory for cache.
@@ -103,7 +106,7 @@ class StormCache:
             >>> print(cache._build_stats)
             {'num_test_units': 3, 'num_samples': 100, ...}
             
-            Build cache with TRGT and catalog:
+            Build cache with single TRGT file and catalog:
             
             >>> cache = StormCache.build(
             ...     sv_vcf="sv.vcf",
@@ -112,11 +115,27 @@ class StormCache:
             ...     catalog_json="catalog.json",
             ...     output_dir="full_cache",
             ... )
+            
+            Build cache with multiple TRGT files (per-sample VCFs):
+            
+            >>> cache = StormCache.build(
+            ...     sv_vcf="sv.bcf",
+            ...     trgt_vcf=["sample1.vcf.gz", "sample2.vcf.gz", "sample3.vcf.gz"],
+            ...     output_dir="multi_trgt_cache",
+            ... )
         """
         if HAS_RUST and py_build_cache is not None:
+            # Normalize trgt_vcf to a list (or None)
+            trgt_vcf_list: Optional[List[str]] = None
+            if trgt_vcf is not None:
+                if isinstance(trgt_vcf, str):
+                    trgt_vcf_list = [trgt_vcf]
+                else:
+                    trgt_vcf_list = list(trgt_vcf)
+            
             # Call Rust build_cache function
             num_units, num_samples, num_gts, num_catalog = py_build_cache(
-                sv_vcf, trgt_vcf, catalog_bed, catalog_json, output_dir
+                sv_vcf, trgt_vcf_list, catalog_bed, catalog_json, output_dir
             )
             cache = cls(output_dir)
             cache._build_stats = {
