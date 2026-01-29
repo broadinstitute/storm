@@ -4,14 +4,14 @@
 
 ## Summary
 
-- Iterations completed: 1
-- Current status: **COMPLETE**
+- Iterations completed: 0
+- Current status: **IN PROGRESS**
 
-## Completed Criteria: 22/22
+## Completed Criteria: 0/10
 
-### New Task: Real-Data Association Testing Workflow in Jupyter Notebook
+### New Task: Real-Data Section — Load All TRGT Files and Add Combination Stats
 
-Starting fresh task to update the notebook for full association testing on real data.
+Starting task to (1) load all TRGT files in the real-data section and (2) add combination statistics for how BCF and TRGT calls are combined.
 
 ### Session 9 (2026-01-29)
 - Verified all 23 criteria already complete
@@ -636,3 +636,6 @@ Added to `notebooks/storm_demo.ipynb`:
 - 31 Python tests (with -W error)
 
 **DONE** - All 22 criteria complete
+
+### 2026-01-29 10:05:22
+**Session 2 ended** - ✅ TASK COMPLETE
