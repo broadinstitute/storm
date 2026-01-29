@@ -347,21 +347,48 @@ def run_glm(
                 covariates_json = json.dumps(cov_dict)
             
             # Call Rust run_association
-            results_json = py_run_association(
-                str(cache.cache_dir),
-                phenotype_json,
-                plan,
-                covariates_json,
-            )
+            # Check if extension supports covariates_json parameter
+            import inspect
+            sig = inspect.signature(py_run_association)
+            has_covariates_param = 'covariates_json' in sig.parameters
             
+            if has_covariates_param:
+                # Extension supports covariates - use keyword arguments
+                results_json = py_run_association(
+                    str(cache.cache_dir),
+                    phenotype_json,
+                    plan_path=plan,
+                    covariates_json=covariates_json,
+                )
+            else:
+                # Extension doesn't support covariates yet - use 3-parameter version
+                if covariates_json is not None:
+                    # Fall back to Python implementation if covariates are provided
+                    import warnings
+                    warnings.warn(
+                        "Covariates provided but extension doesn't support them yet. "
+                        "Rebuild with 'maturin develop' to enable covariates support. "
+                        "Falling back to Python implementation."
+                    )
+                    # Fall through to Python implementation below
+                else:
+                    # No covariates - use Rust function with 3 parameters
+                    results_json = py_run_association(
+                        str(cache.cache_dir),
+                        phenotype_json,
+                        plan_path=plan,
+                    )
+                    results_list = json.loads(results_json)
+                    results = pl.DataFrame(results_list)
+                    if output:
+                        results.write_parquet(output)
+                    return results
+            
+            # Process results from Rust function
             results_list = json.loads(results_json)
-            
-            # Convert to Polars DataFrame
             results = pl.DataFrame(results_list)
-            
             if output:
                 results.write_parquet(output)
-            
             return results
             
         except (ValueError, TypeError) as e:

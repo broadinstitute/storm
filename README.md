@@ -199,6 +199,10 @@ The cache directory contains Parquet files:
 - Python 3.8+ (for Python bindings)
 - Polars (for DataFrame operations)
 
+## Development data
+
+Full-scale SV BCF and TRGT VCFs for development live under `scratch/` (gitignored). See **[DEV_DATA.md](DEV_DATA.md)** for paths (`scratch/chr6.31803187_32050925.bcf`, `scratch/trgt/*.vcf.gz`) and usage.
+
 ## Running Tests
 
 ```bash
