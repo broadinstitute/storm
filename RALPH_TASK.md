@@ -1,138 +1,180 @@
 ---
-task: Support Real Data — Integrated SV BCF and Per-Sample TRGT VCF.gz
+task: Real-Data Association Testing Workflow in Jupyter Notebook
 test_command: "cargo test --features python && cd python && python -m pytest -W error"
 ---
 
-# Task: Support Real Data — Integrated SV BCF and Per-Sample TRGT VCF.gz
+# Task: Real-Data Association Testing Workflow in Jupyter Notebook
 
-The codebase currently works with small text fixtures (plain VCF, one SV file, one TRGT file with few samples). Real development data is:
+The infrastructure to read real data (BCF, gzip VCF, multiple TRGT files) is complete. Now we need to update the Jupyter notebook to demonstrate a full association testing workflow using the real development data.
 
-- **Integrated SV BCF** (~13k samples): `scratch/chr6.31803187_32050925.bcf`
-- **Per-sample TRGT VCF.gz** (~10k files): `scratch/trgt/*.vcf.gz` (one sample per file)
+**Real data:**
+- SV BCF: `scratch/chr6.31803187_32050925.bcf` (~12,680 samples)
+- TRGT: `scratch/trgt/*.vcf.gz` (~10,003 files, one sample per file)
+- Sample overlap: ~10,000 samples present in both
 
-This task is to identify and plan all changes needed so we can build caches and run association workflows on this real data. Use a couple of real TRGT files (and the BCF header) to inform the plan; do not assume the full ~10k TRGT set is loaded at once in early implementation.
+**Goal:** The notebook should show a complete, reproducible association testing workflow that runs on real data and produces meaningful statistical results (not the "Insufficient samples" errors from the 2-sample fixtures).
 
 ---
 
 ## Success Criteria
 
-### A. BCF input for SV calls
+### A. Build Cache from Real Data
 
-- [x] SV pipeline can read BCF (binary) as well as plain VCF
-- [x] BCF path is accepted by CLI and Python `build_cache` (no format rename required)
-- [x] Parsed SV records (SVTYPE, SVLEN, END, GT) are equivalent whether source is VCF or BCF
-- [x] Existing fixture-based tests still pass (plain VCF unchanged)
-- [x] Optional: document or test with `scratch/chr6.31803187_32050925.bcf` (manual or CI if available)
+- [ ] Notebook has a section that builds a cache from the real BCF
+- [ ] Uses a manageable subset of TRGT files (e.g., 100–500 files) for demo speed
+- [ ] Documents how to scale up to the full ~10k TRGT files
+- [ ] Cache build completes in reasonable time (document expected duration)
+- [ ] Shows cache statistics (samples, test units, genotypes)
 
-### B. Compressed VCF input (gzip / BGZF)
+### B. Simulated Phenotype for Association Testing
 
-- [x] TRGT parser can read `.vcf.gz` (gzip or BGZF) in addition to plain `.vcf`
-- [x] SV parser can read `.vcf.gz` if we ever pass compressed VCF for SV
-- [x] Detection by extension or magic; no requirement to rename files
-- [x] Fixture tests still pass with plain VCF; add test(s) with a small compressed VCF if feasible
+- [ ] Generate a simulated continuous phenotype for the samples in the cache
+- [ ] Generate a simulated binary phenotype (case/control) 
+- [ ] Phenotypes are reproducible (seeded random generation)
+- [ ] Optionally: show how to load phenotypes from an external file (CSV/Parquet)
 
-### C. Multiple TRGT files (per-sample VCFs)
+### C. Run Association Tests with Real Data
 
-- [x] Cache build accepts **multiple** TRGT paths (not just one)
-- [x] CLI: accept multiple `--trgt-vcf` and/or `--trgt-dir` (with glob) and/or `--trgt-list` (file of paths)
-- [x] Lib API: `build_cache` (and Python) accept a list/slice of TRGT paths
-- [x] Merge strategy: one sample per file; merge by locus (TRID/chrom/pos/end) so each `TrgtRecord` has genotypes from all samples across the provided files
-- [x] Sample IDs: taken from VCF header (real files use numeric ID, e.g. `1524337`); no change to parser contract
-- [x] Works with a small subset (e.g. 2–3 TRGT files) for tests and incremental validation
+- [ ] Run `run_glm()` on the real-data cache with the simulated phenotype
+- [ ] Results show actual beta, SE, and p-values (not null/error)
+- [ ] Demonstrate linear regression (continuous phenotype)
+- [ ] Demonstrate logistic regression (binary phenotype)
+- [ ] Show how to use a plan YAML for model/encoding selection
+- [ ] Show covariate adjustment (at minimum: simulated age/sex or PCs)
 
-### D. Sample alignment and catalog
+### D. Interpret and Visualize Results
 
-- [x] Document that BCF sample IDs are numeric (e.g. `1000234`) and TRGT sample ID is the single sample in each file (same numeric ID in real data)
-- [x] Joint SV + TRGT: same sample set or explicit subset; document ordering/subset requirements
-- [x] Catalog: real region uses chr6:31803187–32050925; catalog format (BED/JSON) unchanged; TRID in real TRGT is coordinate-style (e.g. `6-31803583-31803598-T`) — code treats TRID as opaque string; ensure catalog matching or test-unit ID logic does not assume fixture-style IDs (e.g. `TR001`)
+- [ ] Display association results as a Polars DataFrame
+- [ ] Filter/sort results by p-value to show top hits
+- [ ] Create a simple visualization (e.g., Manhattan-style plot or p-value histogram) if matplotlib/seaborn available
+- [ ] Explain what the results mean (encoding, model, beta interpretation)
 
-### E. Performance and scale (planning only)
+### E. Performance and Practical Guidance
 
-- [x] Plan documents expected behavior: BCF ~13k samples, TRGT ~10k files; no requirement to load all 10k TRGT in memory at once in v1 if we can specify a subset
-- [x] Consider: parallel parsing of TRGT files, streaming/blocked BCF reading, or chunked merge — captured in plan; implementation can be incremental
+- [ ] Document expected runtime for different TRGT subset sizes (100, 500, all)
+- [ ] Note memory considerations for large sample counts
+- [ ] Provide guidance on running the full pipeline outside the notebook (CLI)
 
-### F. Documentation and testing
+### F. Cleanup and Polish
 
-- [x] Update `DEV_DATA.md` (or equivalent) with: paths, format summary, and how to run cache build with real data (BCF + subset of TRGT)
-- [x] RALPH_TASK.md contains the full development plan (this file)
-- [x] Unit/integration tests still pass; add tests for: multiple TRGT paths, merge-by-locus, and (if feasible) one BCF and one .vcf.gz in tests
+- [ ] Keep the existing fixture-based demo sections (or clearly separate them)
+- [ ] Notebook runs end-to-end without errors when real data is present
+- [ ] Graceful handling if `scratch/` data is not available (skip or use fixtures)
+- [ ] Clear section headers and explanatory markdown
+- [ ] Cleanup temporary cache directories at the end
 
 ---
 
 ## Context
 
-### Current behavior
+### Current Notebook State
 
-- **SV**: `parse_sv_vcf(path)` in `src/vcf/sv.rs` uses `File::open` + `BufReader` + `reader.lines()`. **Plain text only**; BCF is binary and will fail if opened as text.
-- **TRGT**: `parse_trgt_vcf(path)` in `src/vcf/trgt.rs` uses the same pattern. **Plain text only**; `.vcf.gz` is gzip-compressed and will fail.
-- **Cache build**: `build_cache(sv_vcf_path, trgt_vcf_path, ...)` in `src/lib.rs` takes **one** optional `trgt_vcf_path`. It parses one SV file and optionally one TRGT file; TRGT records are expected to have multiple samples in `genotypes` (fixture: 2 samples in one file). Real data: **one sample per TRGT file**, ~10k files.
-- **CLI**: `storm cache build --sv-vcf <path> [--trgt-vcf <path>]` — single TRGT path only.
-- **Catalog**: BED + JSON (e.g. `fixtures/trexplorer.bed`, `fixtures/trexplorer.json`). Fixture uses chr1/chr2/chr3 and IDs like `TR001`. Real region is chr6; TRGT INFO TRID is like `6-31803583-31803598-T`. Parser and resolver use TRID as string; no code change for ID format.
+The notebook (`notebooks/storm_demo.ipynb`) currently:
+- Uses `fixtures/sv_small.vcf` and `fixtures/trgt_small.vcf` (2 samples)
+- Shows "Insufficient samples for regression" in association results
+- Demonstrates cache build, load, explain, and verify
+- Uses CLI examples that also use fixtures
 
-### Real data (from FIXTURE_COMPARISON.md and inspection)
+### What Needs to Change
 
-- **SV BCF** (`scratch/chr6.31803187_32050925.bcf`): ~12,680 samples; format `GT:FT:SQ:GQ:PS:NE:DP:AD:KS`; INFO includes SVTYPE, SVLEN, END. Parser only needs GT + SVTYPE/SVLEN/END — compatible once we can read BCF.
-- **TRGT** (`scratch/trgt/*.vcf.gz`): One sample per file; header sample name is numeric (e.g. `1524337`); format `GT:AL:ALLR:SD:MC:MS:AP:AM`; INFO TRID, END, MOTIFS, STRUC. Parser uses GT and AL — compatible; TRID format differs from fixture but is still a string.
+1. **Add real-data sections** after the fixture demo (or replace it):
+   - Build cache from BCF + subset of TRGT `.vcf.gz`
+   - Generate phenotypes for the samples
+   - Run association testing
+   - Show results
 
-### Key files to touch
+2. **Phenotype generation:**
+   - Get sample IDs from the cache
+   - Create simulated phenotypes aligned to those samples
+   - Pass to `run_glm()`
 
-| Area | Files | Change |
-|------|--------|--------|
-| SV input | `src/vcf/sv.rs` | Add BCF reading path (e.g. noodles-bcf) or reader abstraction that dispatches on format; keep existing text VCF path. |
-| TRGT input | `src/vcf/trgt.rs` | Add decompression for `.vcf.gz` (e.g. flate2 or noodles bgzf); keep existing text path. |
-| Multi-TRGT | `src/lib.rs` | `build_cache`: accept `Option<&[String]>` or `Vec<&str>` for TRGT paths; loop over paths, parse each, merge TrgtRecords by locus (trid/chrom/pos/end), then run existing TrueRepeat/test-unit logic. |
-| CLI | `src/main.rs` | Add multiple `--trgt-vcf` and/or `--trgt-dir` / `--trgt-list`; pass list into `build_cache`. |
-| Python | `python/storm/__init__.py`, `src/lib.rs` (py_build_cache) | Extend `build_cache(sv_vcf, trgt_vcf=None, ...)` to accept `trgt_vcf: Optional[Union[str, List[str]]]`; pass list to Rust. |
-| Tests | `src/vcf/sv.rs`, `src/vcf/trgt.rs`, `tests/integration_tests.rs`, `python/tests/test_storm.py` | Add tests for BCF (or stub), gzip VCF, multiple TRGT merge; keep fixture tests. |
-| Docs | `DEV_DATA.md`, `README.md` | Document real data paths, BCF + multi-TRGT usage, sample alignment. |
+3. **Results interpretation:**
+   - The current notebook shows results but with nulls
+   - With real data, we should have actual statistics
+
+### Key Files
+
+| File | Change |
+|------|--------|
+| `notebooks/storm_demo.ipynb` | Add real-data association workflow sections |
+| `fixtures/plan.yaml` | May need adjustment for real data (motif patterns, thresholds) |
+
+### API Reference
+
+```python
+# Build cache with multiple TRGT files
+cache = storm.StormCache.build(
+    sv_vcf="scratch/chr6.31803187_32050925.bcf",
+    trgt_vcf=["scratch/trgt/file1.vcf.gz", "scratch/trgt/file2.vcf.gz", ...],
+    output_dir="real_cache",
+)
+
+# Or use glob to get TRGT file list
+from pathlib import Path
+trgt_files = sorted(Path("scratch/trgt").glob("*.vcf.gz"))[:100]  # first 100
+cache = storm.StormCache.build(
+    sv_vcf="scratch/chr6.31803187_32050925.bcf",
+    trgt_vcf=[str(f) for f in trgt_files],
+    output_dir="real_cache",
+)
+
+# Get sample IDs from cache
+sample_ids = cache.genotypes["sample_id"].unique().to_list()
+
+# Create phenotype (Polars Series or dict)
+import polars as pl
+import numpy as np
+np.random.seed(42)
+phenotype = pl.Series("phenotype", np.random.randn(len(sample_ids)))
+
+# Run association
+results = storm.run_glm(
+    cache=cache,
+    phenotype=phenotype,
+    model="linear",       # or "logistic" for binary
+    encoding="S",         # S, M, D, or binary
+)
+```
 
 ---
 
-## Development Plan
+## Implementation Plan
 
-### Phase 1: Input format support (BCF + gzip)
+### Phase 1: Real-Data Cache Build Section
 
-1. **BCF for SV**
-   - Add noodles BCF support: enable `bcf` feature in `Cargo.toml` for noodles (or use separate `noodles-bcf` if versioning differs). Implement a BCF reader path that yields the same logical data as `parse_sv_vcf`: sample names from header; for each record, chrom, pos, id, ref, alt, INFO SVTYPE/SVLEN/END, and per-sample GT. Keep `parse_sv_vcf` for plain VCF; add `read_sv_vcf_or_bcf(path)` (or internal helper) that chooses by extension or magic (e.g. first bytes) and calls either the existing parser (on a `Read` impl) or the BCF path. Ensure `build_cache` uses this so a single `sv_vcf` path can be BCF or VCF.
-   - Tests: existing `parse_sv_vcf` tests unchanged; add test that BCF reader (or a small BCF fixture) produces expected SV records if feasible; otherwise document manual test with `scratch/...bcf`.
+1. Add markdown explaining the real data and where it comes from
+2. Check if `scratch/` exists; if not, note that fixtures will be used
+3. Build cache from BCF + subset of TRGT (e.g., 100 files for quick demo)
+4. Display cache statistics and sample count
 
-2. **Gzip/BGZF for VCF**
-   - In `sv.rs` and `trgt.rs`, support reading from a decompressing reader when the path ends in `.gz` or the stream is BGZF/gzip. Options: (a) `flate2::read::GzDecoder` for plain gzip, (b) noodles `bgzf` for BGZF. Prefer one abstraction (e.g. `open_vcf_read(path) -> impl BufRead`) used by both SV and TRGT parsers so that `parse_sv_vcf` and `parse_trgt_vcf` accept `.vcf.gz` without changing their function signatures (they take a path). Refactor current `File::open` + `BufReader` to use this reader so plain `.vcf` still works.
-   - Tests: add a small `.vcf.gz` fixture (or generate one from existing fixture) and test that parsing yields the same records as plain VCF.
+### Phase 2: Phenotype Generation Section
 
-### Phase 2: Multiple TRGT paths and merge
+5. Extract unique sample IDs from the cache
+6. Generate a simulated continuous phenotype (seeded numpy random)
+7. Generate a simulated binary phenotype (0/1 with ~50% prevalence)
+8. Optionally show loading from CSV
 
-3. **Lib API: multiple TRGT paths**
-   - Change `build_cache` to accept `trgt_vcf_paths: Option<&[impl AsRef<str>]>` (or `Option<Vec<&str>>`) instead of `trgt_vcf_path: Option<&str>`. Call sites: `src/main.rs`, `src/lib.rs` (py_build_cache), Python `StormCache.build(..., trgt_vcf=...)`.
-   - Single path: treat as one-element list for backward compatibility.
+### Phase 3: Association Testing Section
 
-4. **Merge logic**
-   - For each path in `trgt_vcf_paths`: call `parse_trgt_vcf(path)` (which now supports .gz), get `(sample_names, records)`. Real data: one sample per file, so `sample_names.len() == 1`. For each `TrgtRecord` in `records`, use a canonical locus key (e.g. `(rec.chrom.clone(), rec.pos, rec.end, rec.trid.clone())`) and either insert a new entry into a `HashMap<LocusKey, TrgtRecord>` or merge the single sample’s genotype into the existing record’s `genotypes` map. After processing all files, collect `TrgtRecord`s from the map (values). Use this merged list as the current “trgt_records” in the rest of `build_cache` (test units, resolution, features, cache write). Ensure `all_samples` includes every sample ID seen across TRGT files (and SV) and is sorted as today.
+9. Run `run_glm()` with continuous phenotype and linear model
+10. Run `run_glm()` with binary phenotype and logistic model
+11. Show results DataFrame with actual statistics
+12. Demonstrate plan-based model selection
+13. Demonstrate covariate adjustment
 
-5. **CLI**
-   - `storm cache build`: add `--trgt-vcf <path>` (multiple) and/or `--trgt-dir <dir>` (expand to `dir/*.vcf.gz` or `dir/*.vcf`) and/or `--trgt-list <file>` (one path per line). Pass the collected list of TRGT paths to `build_cache`.
+### Phase 4: Results Interpretation
 
-6. **Python**
-   - `StormCache.build(..., trgt_vcf=None, ...)`: allow `trgt_vcf` to be `str | List[str] | None`. If `str`, wrap in a one-element list; if `List[str]`, use as-is. Pass to Rust `py_build_cache(sv_vcf, trgt_vcf_paths, ...)`. Extend Rust `py_build_cache` to accept a list (e.g. `Vec<String>` from Python).
+14. Sort results by p-value, show top 10
+15. Explain columns (beta, se, p_value, encoding, model)
+16. Optional: simple matplotlib histogram of p-values or -log10(p) plot
+17. Discuss what a "hit" would mean in this context
 
-### Phase 3: Catalog and sample alignment
+### Phase 5: Polish
 
-7. **Catalog and TRID**
-   - No change to catalog format. For real chr6 region, user may provide a BED/JSON with entries overlapping chr6:31803187–32050925; IDs can be coordinate-based or symbolic. Code already treats TRID as opaque in TRGT; test units from TRGT use `rec.trid` as unit id. Document that real TRGT TRIDs look like `6-31803583-31803598-T`.
-
-8. **Sample alignment**
-   - Document in `DEV_DATA.md`: BCF sample order/IDs (numeric); TRGT one sample per file, same numeric ID in header; for joint SV+TRGT, use the intersection or a defined subset and consistent ordering. No code change required if we merge TRGT by locus and use `all_samples` as today.
-
-### Phase 4: Tests and documentation
-
-9. **Tests**
-   - Unit: multiple TRGT paths → merge produces one record per locus with N samples’ genotypes when N files each have one sample; fixture with 2 samples in one file still works (one path, two samples in that file).
-   - Integration: `build_cache` with two TRGT fixture files (e.g. split fixture into two single-sample VCFs) and verify cache contents (test units, genotype count). Optional: BCF fixture or skip BCF in CI and document manual test; optional: small .vcf.gz in tests.
-   - Python: `build_cache` with `trgt_vcf=[path1, path2]` and with `trgt_vcf=path1`; both succeed and produce consistent caches.
-
-10. **Documentation**
-    - Update `DEV_DATA.md`: paths to BCF and TRGT dir; example commands for building cache with BCF and a subset of TRGT (e.g. first 100 files); note on sample overlap and ordering.
-    - README: mention BCF and .vcf.gz support and multiple TRGT files where the “Usage” or “Input” section is described.
+18. Ensure notebook runs cleanly with and without real data
+19. Add cleanup cell at end
+20. Review and improve markdown explanations
+21. Test end-to-end execution
 
 ---
 
@@ -140,10 +182,12 @@ This task is to identify and plan all changes needed so we can build caches and 
 
 When complete:
 
-- Cache can be built from `scratch/chr6.31803187_32050925.bcf` (SV) and a subset of `scratch/trgt/*.vcf.gz` (e.g. 2–10 files) without converting BCF to VCF or decompressing TRGT on disk.
-- CLI and Python accept multiple TRGT paths; merge-by-locus is correct (one TrgtRecord per locus, genotypes from all provided files).
-- All existing fixture-based tests pass; new tests cover multi-TRGT merge and (if feasible) compressed VCF and BCF.
-- `DEV_DATA.md` (or equivalent) describes real data and how to run the pipeline; RALPH_TASK.md contains this plan.
+- Notebook demonstrates full association testing on real data
+- Results show actual beta, SE, and p-values (not null/Insufficient samples)
+- Both linear and logistic regression are demonstrated
+- Sample sizes are meaningful (100+ samples minimum)
+- Notebook runs without errors when `scratch/` data is present
+- Notebook gracefully handles missing `scratch/` data
 
 ---
 
@@ -151,10 +195,10 @@ When complete:
 
 When:
 
-- All checkboxes in Success Criteria are checked.
-- `cargo test --features python` passes.
-- `cd python && python -m pytest -W error` passes.
-- Cache build works with real BCF and a small set of real TRGT .vcf.gz files (validated manually or in CI).
-- Documentation is updated.
+- All checkboxes above are checked
+- `cargo test --features python` passes
+- `cd python && python -m pytest -W error` passes
+- Notebook runs end-to-end and displays association results with real statistics
+- Notebook is saved with output cells showing the workflow
 
 Write **DONE** in `.ralph/progress.md` and stop.
