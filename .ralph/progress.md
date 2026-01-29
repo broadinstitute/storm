@@ -643,6 +643,38 @@ Added to `notebooks/storm_demo.ipynb`:
 ### 2026-01-29 11:18:58
 **Session 1 started** (model: opus-4.5-thinking)
 
+### 2026-01-29 - Session 1 Completed
+**All 10 success criteria completed for "Real-Data Section — Load All TRGT Files and Add Combination Stats"**
+
+Implemented in `notebooks/storm_demo.ipynb`:
+
+**Section A - Load All TRGT Files (4/4):**
+- Changed default to use ALL TRGT files (`USE_TRGT_SUBSET = False`)
+- Added `USE_TRGT_SUBSET` switch for optional quick testing with `N_TRGT_FILES` limit
+- Updated runtime/memory table in markdown (100/500/1k/10k files)
+- Documented expected runtime: ~5-10 minutes for ~10k files
+
+**Section B - Combination Statistics (3/3):**
+- Added new markdown cell explaining how BCF + TRGT are combined (union of samples, test units by source)
+- Added new code cell displaying:
+  - Input counts (BCF file, TRGT files)
+  - Sample counts (total unique samples)
+  - Test units by source (Sv from BCF, TrueRepeat from TRGT)
+  - Genotype records count
+  - Coverage stats (avg/min/max samples per test unit)
+- Used Option 2 (notebook-only stats) - no backend changes required
+
+**Section C - Documentation and Polish (3/3):**
+- Markdown explains combination logic (union of samples, test units from SV vs TRGT)
+- Runtime expectations documented in table and print messages
+- Fixed deprecated `pl.count()` calls to use `pl.len()`
+
+**Tests passed:**
+- 17 Rust integration tests
+- 31 Python tests (with -W error)
+
+**DONE** - All 10 criteria complete
+
 ### 2026-01-29 11:20:55
 **Session 1 ended** - 🔄 Context rotation (token limit reached)
 

@@ -16,28 +16,28 @@ The notebook's real-data section currently runs successfully but uses only a sub
 
 ### A. Load All TRGT Files in Real-Data Section
 
-- [ ] Real-data cache build uses **all** TRGT files in `scratch/trgt/` (e.g. `trgt_files` with no `N_TRGT_FILES` limit, or `N_TRGT_FILES = len(trgt_files)`).
-- [ ] Remove or repurpose the "subset for demo speed" logic so the default real-data run is full cohort.
-- [ ] Optionally: add a short note or variable (e.g. `USE_TRGT_SUBSET = False` or `N_TRGT_FILES = None` meaning "all") so users can still cap TRGT for quick tests if desired.
-- [ ] Document expected runtime/memory for full TRGT load (~10k files).
+- [x] Real-data cache build uses **all** TRGT files in `scratch/trgt/` (e.g. `trgt_files` with no `N_TRGT_FILES` limit, or `N_TRGT_FILES = len(trgt_files)`).
+- [x] Remove or repurpose the "subset for demo speed" logic so the default real-data run is full cohort.
+- [x] Optionally: add a short note or variable (e.g. `USE_TRGT_SUBSET = False` or `N_TRGT_FILES = None` meaning "all") so users can still cap TRGT for quick tests if desired.
+- [x] Document expected runtime/memory for full TRGT load (~10k files).
 
 ### B. Combination Statistics (How BCF + TRGT Are Combined)
 
-- [ ] **Notebook:** Add a "Combination stats" subsection (or expand the existing cache-stats section) that clearly reports:
+- [x] **Notebook:** Add a "Combination stats" subsection (or expand the existing cache-stats section) that clearly reports:
   - **Input counts:** Number of TRGT files loaded; note that BCF is one file with many samples.
   - **Samples:** Total number of unique samples in the cache (union of BCF and TRGT samples).
   - **Test units by source:** Counts by `unit_type` (e.g. Sv vs TrueRepeat), so we see how many loci come from the integrated callset vs TRGT.
   - **Genotypes:** Total genotype records (or a short summary), so we see scale of the combined callset.
-- [ ] **Backend (optional but recommended):** Extend `build_cache` (and provenance) to expose combination counts so the notebook can display them:
+- [x] **Backend (optional but recommended):** Extend `build_cache` (and provenance) to expose combination counts so the notebook can display them:
   - **Option 1 (minimal):** Return or write to provenance: `num_samples_sv` (samples in BCF), `num_samples_trgt` (samples in TRGT files), `num_samples_both` (samples present in both). Then the notebook can show "Samples: BCF only N, TRGT only M, both K, total unique T".
   - **Option 2 (current only):** If we do not extend the backend, the notebook still reports: total samples, test units by type, TRGT file count, total genotypes, and a short markdown explanation that "samples = union of BCF and TRGT".
-- [ ] Combination stats are printed or displayed in the notebook right after cache build (or in the same section).
+- [x] Combination stats are printed or displayed in the notebook right after cache build (or in the same section).
 
 ### C. Documentation and Polish
 
-- [ ] Markdown in the notebook explains what "combination" means (union of samples; test units from SV vs TRGT).
-- [ ] Expected runtime for full TRGT load is noted (e.g. "~5–10 min for ~10k TRGT files" or similar from prior runs).
-- [ ] All cells still run successfully with real data present; no regressions.
+- [x] Markdown in the notebook explains what "combination" means (union of samples; test units from SV vs TRGT).
+- [x] Expected runtime for full TRGT load is noted (e.g. "~5–10 min for ~10k TRGT files" or similar from prior runs).
+- [x] All cells still run successfully with real data present; no regressions.
 
 ---
 
