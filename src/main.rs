@@ -51,9 +51,14 @@ enum CacheAction {
         #[arg(long, required = true)]
         sv_vcf: PathBuf,
 
-        /// Path to TRGT VCF file (optional, supports .vcf and .vcf.gz)
+        /// Paths to TRGT VCF files (optional, supports .vcf and .vcf.gz)
+        /// Can be specified multiple times: --trgt-vcf file1.vcf --trgt-vcf file2.vcf.gz
         #[arg(long)]
-        trgt_vcf: Option<PathBuf>,
+        trgt_vcf: Vec<PathBuf>,
+        
+        /// Directory containing TRGT VCF files (will glob for *.vcf and *.vcf.gz)
+        #[arg(long)]
+        trgt_dir: Option<PathBuf>,
 
         /// Path to TRExplorer BED catalog file (optional)
         #[arg(long)]
@@ -83,10 +88,11 @@ fn main() {
             CacheAction::Build {
                 sv_vcf,
                 trgt_vcf,
+                trgt_dir,
                 catalog_bed,
                 catalog_json,
                 output_dir,
-            } => run_cache_build(sv_vcf, trgt_vcf, catalog_bed, catalog_json, output_dir),
+            } => run_cache_build(sv_vcf, trgt_vcf, trgt_dir, catalog_bed, catalog_json, output_dir),
             CacheAction::Verify { cache_dir } => run_cache_verify(cache_dir),
         },
         Some(Commands::Explain {
@@ -110,15 +116,43 @@ fn main() {
 
 fn run_cache_build(
     sv_vcf: PathBuf,
-    trgt_vcf: Option<PathBuf>,
+    mut trgt_vcf: Vec<PathBuf>,
+    trgt_dir: Option<PathBuf>,
     catalog_bed: Option<PathBuf>,
     catalog_json: Option<PathBuf>,
     output_dir: PathBuf,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    // Expand trgt_dir to individual files
+    if let Some(dir) = trgt_dir {
+        if !dir.exists() {
+            return Err(format!("TRGT directory not found: {}", dir.display()).into());
+        }
+        // Glob for VCF files in the directory
+        for entry in std::fs::read_dir(&dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if let Some(ext) = path.extension() {
+                if ext == "vcf" || ext == "gz" {
+                    // Check if it's a .vcf or .vcf.gz file
+                    let name = path.file_name().unwrap().to_str().unwrap();
+                    if name.ends_with(".vcf") || name.ends_with(".vcf.gz") {
+                        trgt_vcf.push(path);
+                    }
+                }
+            }
+        }
+    }
+    
     println!("Building STORM cache...");
     println!("  SV VCF: {}", sv_vcf.display());
-    if let Some(ref p) = trgt_vcf {
-        println!("  TRGT VCF: {}", p.display());
+    if !trgt_vcf.is_empty() {
+        println!("  TRGT VCF files: {} file(s)", trgt_vcf.len());
+        for p in trgt_vcf.iter().take(5) {
+            println!("    - {}", p.display());
+        }
+        if trgt_vcf.len() > 5 {
+            println!("    ... and {} more", trgt_vcf.len() - 5);
+        }
     }
     if let Some(ref p) = catalog_bed {
         println!("  Catalog BED: {}", p.display());
@@ -132,7 +166,7 @@ fn run_cache_build(
     if !sv_vcf.exists() {
         return Err(format!("SV VCF file not found: {}", sv_vcf.display()).into());
     }
-    if let Some(ref p) = trgt_vcf {
+    for p in &trgt_vcf {
         if !p.exists() {
             return Err(format!("TRGT VCF file not found: {}", p.display()).into());
         }
@@ -148,10 +182,18 @@ fn run_cache_build(
         }
     }
 
+    // Convert TRGT paths for build_cache
+    let trgt_paths: Vec<&str> = trgt_vcf.iter().map(|p| p.to_str().unwrap()).collect();
+    let trgt_paths_opt: Option<&[&str]> = if trgt_paths.is_empty() {
+        None
+    } else {
+        Some(&trgt_paths)
+    };
+
     // Run the build pipeline
     let stats = build_cache(
         sv_vcf.to_str().unwrap(),
-        trgt_vcf.as_ref().map(|p| p.to_str().unwrap()),
+        trgt_paths_opt,
         catalog_bed.as_ref().map(|p| p.to_str().unwrap()),
         catalog_json.as_ref().map(|p| p.to_str().unwrap()),
         output_dir.to_str().unwrap(),
