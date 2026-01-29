@@ -3,168 +3,196 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769707772
-generated_at: 2026-01-29T17:38:08Z
+source_mtime: 1769709458
+generated_at: 2026-01-29T18:00:18Z
 
 tasks:
-  - id: "line_21"
-    line_number: 21
-    status: completed
-    parallel_group: 999999
-    description: SV pipeline can read BCF (binary) as well as plain VCF
-    indent_level: 0
-    raw_marker: -
-  - id: "line_22"
-    line_number: 22
-    status: completed
-    parallel_group: 999999
-    description: BCF path is accepted by CLI and Python `build_cache` (no format rename required)
-    indent_level: 0
-    raw_marker: -
   - id: "line_23"
     line_number: 23
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Parsed SV records (SVTYPE, SVLEN, END, GT) are equivalent whether source is VCF or BCF
+    description: Notebook has a section that builds a cache from the real BCF
     indent_level: 0
     raw_marker: -
   - id: "line_24"
     line_number: 24
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Existing fixture-based tests still pass (plain VCF unchanged)
+    description: Uses a manageable subset of TRGT files (e.g., 100–500 files) for demo speed
     indent_level: 0
     raw_marker: -
   - id: "line_25"
     line_number: 25
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Optional: document or test with `scratch/chr6.31803187_32050925.bcf` (manual or CI if available)
+    description: Documents how to scale up to the full ~10k TRGT files
     indent_level: 0
     raw_marker: -
-  - id: "line_29"
-    line_number: 29
-    status: completed
+  - id: "line_26"
+    line_number: 26
+    status: pending
     parallel_group: 999999
-    description: TRGT parser can read `.vcf.gz` (gzip or BGZF) in addition to plain `.vcf`
+    description: Cache build completes in reasonable time (document expected duration)
     indent_level: 0
     raw_marker: -
-  - id: "line_30"
-    line_number: 30
-    status: completed
+  - id: "line_27"
+    line_number: 27
+    status: pending
     parallel_group: 999999
-    description: SV parser can read `.vcf.gz` if we ever pass compressed VCF for SV
+    description: Shows cache statistics (samples, test units, genotypes)
     indent_level: 0
     raw_marker: -
   - id: "line_31"
     line_number: 31
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Detection by extension or magic; no requirement to rename files
+    description: Generate a simulated continuous phenotype for the samples in the cache
     indent_level: 0
     raw_marker: -
   - id: "line_32"
     line_number: 32
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Fixture tests still pass with plain VCF; add test(s) with a small compressed VCF if feasible
+    description: "Generate a simulated binary phenotype (case/control) "
     indent_level: 0
     raw_marker: -
-  - id: "line_36"
-    line_number: 36
-    status: completed
+  - id: "line_33"
+    line_number: 33
+    status: pending
     parallel_group: 999999
-    description: Cache build accepts **multiple** TRGT paths (not just one)
+    description: Phenotypes are reproducible (seeded random generation)
     indent_level: 0
     raw_marker: -
-  - id: "line_37"
-    line_number: 37
-    status: completed
+  - id: "line_34"
+    line_number: 34
+    status: pending
     parallel_group: 999999
-    description: CLI: accept multiple `--trgt-vcf` and/or `--trgt-dir` (with glob) and/or `--trgt-list` (file of paths)
+    description: Optionally: show how to load phenotypes from an external file (CSV/Parquet)
     indent_level: 0
     raw_marker: -
   - id: "line_38"
     line_number: 38
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Lib API: `build_cache` (and Python) accept a list/slice of TRGT paths
+    description: Run `run_glm()` on the real-data cache with the simulated phenotype
     indent_level: 0
     raw_marker: -
   - id: "line_39"
     line_number: 39
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Merge strategy: one sample per file; merge by locus (TRID/chrom/pos/end) so each `TrgtRecord` has genotypes from all samples across the provided files
+    description: Results show actual beta, SE, and p-values (not null/error)
     indent_level: 0
     raw_marker: -
   - id: "line_40"
     line_number: 40
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Sample IDs: taken from VCF header (real files use numeric ID, e.g. `1524337`); no change to parser contract
+    description: Demonstrate linear regression (continuous phenotype)
     indent_level: 0
     raw_marker: -
   - id: "line_41"
     line_number: 41
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Works with a small subset (e.g. 2–3 TRGT files) for tests and incremental validation
+    description: Demonstrate logistic regression (binary phenotype)
     indent_level: 0
     raw_marker: -
-  - id: "line_45"
-    line_number: 45
-    status: completed
+  - id: "line_42"
+    line_number: 42
+    status: pending
     parallel_group: 999999
-    description: Document that BCF sample IDs are numeric (e.g. `1000234`) and TRGT sample ID is the single sample in each file (same numeric ID in real data)
+    description: Show how to use a plan YAML for model/encoding selection
     indent_level: 0
     raw_marker: -
-  - id: "line_46"
-    line_number: 46
-    status: completed
+  - id: "line_43"
+    line_number: 43
+    status: pending
     parallel_group: 999999
-    description: Joint SV + TRGT: same sample set or explicit subset; document ordering/subset requirements
+    description: Show covariate adjustment (at minimum: simulated age/sex or PCs)
     indent_level: 0
     raw_marker: -
   - id: "line_47"
     line_number: 47
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Catalog: real region uses chr6:31803187–32050925; catalog format (BED/JSON) unchanged; TRID in real TRGT is coordinate-style (e.g. `6-31803583-31803598-T`) — code treats TRID as opaque string; ensure catalog matching or test-unit ID logic does not assume fixture-style IDs (e.g. `TR001`)
+    description: Display association results as a Polars DataFrame
     indent_level: 0
     raw_marker: -
-  - id: "line_51"
-    line_number: 51
-    status: completed
+  - id: "line_48"
+    line_number: 48
+    status: pending
     parallel_group: 999999
-    description: Plan documents expected behavior: BCF ~13k samples, TRGT ~10k files; no requirement to load all 10k TRGT in memory at once in v1 if we can specify a subset
+    description: Filter/sort results by p-value to show top hits
     indent_level: 0
     raw_marker: -
-  - id: "line_52"
-    line_number: 52
-    status: completed
+  - id: "line_49"
+    line_number: 49
+    status: pending
     parallel_group: 999999
-    description: Consider: parallel parsing of TRGT files, streaming/blocked BCF reading, or chunked merge — captured in plan; implementation can be incremental
+    description: Create a simple visualization (e.g., Manhattan-style plot or p-value histogram) if matplotlib/seaborn available
+    indent_level: 0
+    raw_marker: -
+  - id: "line_50"
+    line_number: 50
+    status: pending
+    parallel_group: 999999
+    description: Explain what the results mean (encoding, model, beta interpretation)
+    indent_level: 0
+    raw_marker: -
+  - id: "line_54"
+    line_number: 54
+    status: pending
+    parallel_group: 999999
+    description: Document expected runtime for different TRGT subset sizes (100, 500, all)
+    indent_level: 0
+    raw_marker: -
+  - id: "line_55"
+    line_number: 55
+    status: pending
+    parallel_group: 999999
+    description: Note memory considerations for large sample counts
     indent_level: 0
     raw_marker: -
   - id: "line_56"
     line_number: 56
-    status: completed
+    status: pending
     parallel_group: 999999
-    description: Update `DEV_DATA.md` (or equivalent) with: paths, format summary, and how to run cache build with real data (BCF + subset of TRGT)
+    description: Provide guidance on running the full pipeline outside the notebook (CLI)
     indent_level: 0
     raw_marker: -
-  - id: "line_57"
-    line_number: 57
-    status: completed
+  - id: "line_60"
+    line_number: 60
+    status: pending
     parallel_group: 999999
-    description: RALPH_TASK.md contains the full development plan (this file)
+    description: Keep the existing fixture-based demo sections (or clearly separate them)
     indent_level: 0
     raw_marker: -
-  - id: "line_58"
-    line_number: 58
-    status: completed
+  - id: "line_61"
+    line_number: 61
+    status: pending
     parallel_group: 999999
-    description: Unit/integration tests still pass; add tests for: multiple TRGT paths, merge-by-locus, and (if feasible) one BCF and one .vcf.gz in tests
+    description: Notebook runs end-to-end without errors when real data is present
+    indent_level: 0
+    raw_marker: -
+  - id: "line_62"
+    line_number: 62
+    status: pending
+    parallel_group: 999999
+    description: Graceful handling if `scratch/` data is not available (skip or use fixtures)
+    indent_level: 0
+    raw_marker: -
+  - id: "line_63"
+    line_number: 63
+    status: pending
+    parallel_group: 999999
+    description: Clear section headers and explanatory markdown
+    indent_level: 0
+    raw_marker: -
+  - id: "line_64"
+    line_number: 64
+    status: pending
+    parallel_group: 999999
+    description: Cleanup temporary cache directories at the end
     indent_level: 0
     raw_marker: -
