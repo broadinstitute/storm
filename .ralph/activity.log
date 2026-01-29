@@ -1181,3 +1181,7 @@ Ralph Session Started: Thu Jan 29 09:27:38 PST 2026
 [09:37:48] 🔴 SHELL cd /Users/kiran/repositories/storm/python && ../venv/bin/python -m pytest -W error 2>&1 | tail -10 → exit 0
 [09:37:50] 🔴 TOKENS: 75529 / 80000 (94%) - rotation imminent [read:290KB write:0KB assist:1KB shell:0KB]
 [09:37:52] 🔴 READ /Users/kiran/repositories/storm/DEV_DATA.md (97 lines, ~9.4KB)
+[09:38:08] 🔴 READ /Users/kiran/repositories/storm/.ralph/progress.md (565 lines, ~55.1KB)
+[09:38:08] 🔴 ROTATE: Token threshold reached (92118 >= 80000)
+[09:38:12] 🔴 SHELL cd /Users/kiran/repositories/storm && git status → exit 0
+[09:38:12] 🔴 ROTATE: Token threshold reached (92138 >= 80000)

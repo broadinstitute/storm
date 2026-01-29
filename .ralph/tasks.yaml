@@ -3,8 +3,8 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769707324
-generated_at: 2026-01-29T17:22:32Z
+source_mtime: 1769707772
+generated_at: 2026-01-29T17:38:08Z
 
 tasks:
   - id: "line_21"
@@ -72,98 +72,98 @@ tasks:
     raw_marker: -
   - id: "line_36"
     line_number: 36
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Cache build accepts **multiple** TRGT paths (not just one)
     indent_level: 0
     raw_marker: -
   - id: "line_37"
     line_number: 37
-    status: pending
+    status: completed
     parallel_group: 999999
     description: CLI: accept multiple `--trgt-vcf` and/or `--trgt-dir` (with glob) and/or `--trgt-list` (file of paths)
     indent_level: 0
     raw_marker: -
   - id: "line_38"
     line_number: 38
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Lib API: `build_cache` (and Python) accept a list/slice of TRGT paths
     indent_level: 0
     raw_marker: -
   - id: "line_39"
     line_number: 39
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Merge strategy: one sample per file; merge by locus (TRID/chrom/pos/end) so each `TrgtRecord` has genotypes from all samples across the provided files
     indent_level: 0
     raw_marker: -
   - id: "line_40"
     line_number: 40
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Sample IDs: taken from VCF header (real files use numeric ID, e.g. `1524337`); no change to parser contract
     indent_level: 0
     raw_marker: -
   - id: "line_41"
     line_number: 41
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Works with a small subset (e.g. 2–3 TRGT files) for tests and incremental validation
     indent_level: 0
     raw_marker: -
   - id: "line_45"
     line_number: 45
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Document that BCF sample IDs are numeric (e.g. `1000234`) and TRGT sample ID is the single sample in each file (same numeric ID in real data)
     indent_level: 0
     raw_marker: -
   - id: "line_46"
     line_number: 46
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Joint SV + TRGT: same sample set or explicit subset; document ordering/subset requirements
     indent_level: 0
     raw_marker: -
   - id: "line_47"
     line_number: 47
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Catalog: real region uses chr6:31803187–32050925; catalog format (BED/JSON) unchanged; TRID in real TRGT is coordinate-style (e.g. `6-31803583-31803598-T`) — code treats TRID as opaque string; ensure catalog matching or test-unit ID logic does not assume fixture-style IDs (e.g. `TR001`)
     indent_level: 0
     raw_marker: -
   - id: "line_51"
     line_number: 51
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Plan documents expected behavior: BCF ~13k samples, TRGT ~10k files; no requirement to load all 10k TRGT in memory at once in v1 if we can specify a subset
     indent_level: 0
     raw_marker: -
   - id: "line_52"
     line_number: 52
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Consider: parallel parsing of TRGT files, streaming/blocked BCF reading, or chunked merge — captured in plan; implementation can be incremental
     indent_level: 0
     raw_marker: -
   - id: "line_56"
     line_number: 56
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Update `DEV_DATA.md` (or equivalent) with: paths, format summary, and how to run cache build with real data (BCF + subset of TRGT)
     indent_level: 0
     raw_marker: -
   - id: "line_57"
     line_number: 57
-    status: pending
+    status: completed
     parallel_group: 999999
     description: RALPH_TASK.md contains the full development plan (this file)
     indent_level: 0
     raw_marker: -
   - id: "line_58"
     line_number: 58
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Unit/integration tests still pass; add tests for: multiple TRGT paths, merge-by-locus, and (if feasible) one BCF and one .vcf.gz in tests
     indent_level: 0
