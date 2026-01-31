@@ -7,6 +7,34 @@
 - Iterations completed: 2
 - Current status: **DONE**
 
+## Task: Canonical Repeat Units (Catalog Loci) - COMPLETE
+
+### Session 2 (2026-01-30)
+
+**All 6 success criteria completed:**
+
+1. **Catalog loci as canonical repeat units** - Implemented `build_cache_with_options` that creates canonical `Repeat` type units from catalog loci. When a catalog is provided, repeat units use `TestUnit::from_catalog_locus()` which creates units with type `Repeat`.
+
+2. **SVs overlapping catalog don't get separate units** - SVs that overlap any catalog locus are tracked in `svs_in_catalog` HashSet and skipped when creating SV units. They only contribute to the canonical repeat unit.
+
+3. **SVs outside catalog get sv_<id> units** - SVs that don't overlap any catalog entry get their own `sv_<id>` test units.
+
+4. **TRGT merged into catalog units** - TRGT data is matched to catalog entries by TRID (catalog ID). The `resolver.resolve_merged()` function merges SV proxy genotypes with TRGT data, preferring TRGT when available.
+
+5. **Optional comparison mode** - `build_cache_with_options()` accepts a `comparison_mode: bool` parameter. When true, it emits shadow `shadow_<trid>` units of type `TrueRepeat` for validation/comparison.
+
+6. **Tests updated** - Added 3 new integration tests:
+   - `test_canonical_repeat_units_sv_overlap`: Verifies SVs overlapping catalog don't get separate units
+   - `test_canonical_repeat_units_trgt_merged`: Verifies no TrueRepeat or RepeatProxy units when catalog exists
+   - `test_trgt_without_catalog_creates_repeat_units`: Verifies TRGT without catalog creates Repeat units
+
+**Test Results:**
+- 66 Rust unit tests pass
+- 20 integration tests pass
+- 31 Python tests pass
+
+**DONE**
+
 ## Completed Criteria: 10/10
 
 ### New Task: Real-Data Section — Load All TRGT Files and Add Combination Stats
