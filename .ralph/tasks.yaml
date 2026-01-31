@@ -3,48 +3,48 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769819891
-generated_at: 2026-01-31T00:41:16Z
+source_mtime: 1769820465
+generated_at: 2026-01-31T00:50:15Z
 
 tasks:
   - id: "line_44"
     line_number: 44
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Catalog loci are the only repeat test units in the default output (no separate `repeat_<trid>` by default).
     indent_level: 0
     raw_marker: -
   - id: "line_45"
     line_number: 45
-    status: pending
+    status: completed
     parallel_group: 999999
-    description: SVs overlapping a catalog repeat locus do not get an `sv_<id>` unit; they only contribute to that repeat unit’s presence/zygosity and proxy allele representation.
+    description: SVs overlapping a catalog repeat locus do not get an `sv_<id>` unit; they only contribute to that repeat unit's presence/zygosity and proxy allele representation.
     indent_level: 0
     raw_marker: -
   - id: "line_46"
     line_number: 46
-    status: pending
+    status: completed
     parallel_group: 999999
     description: SVs outside all catalog repeat regions still get one `sv_<id>` unit each.
     indent_level: 0
     raw_marker: -
   - id: "line_47"
     line_number: 47
-    status: pending
+    status: completed
     parallel_group: 999999
     description: TRGT data is merged into the canonical catalog-locus unit (matching by catalog id / locus); QC policy can prefer TRGT over proxy when both exist.
     indent_level: 0
     raw_marker: -
   - id: "line_48"
     line_number: 48
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Optional: comparison mode can emit shadow `repeat_<trid>` units for validation/comparison; default is off.
     indent_level: 0
     raw_marker: -
   - id: "line_49"
     line_number: 49
-    status: pending
+    status: completed
     parallel_group: 999999
     description: Tests and notebook updated to reflect canonical repeat units and SV-only-for-non-repeat regions.
     indent_level: 0
