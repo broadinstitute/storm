@@ -5,14 +5,14 @@ test_command: "cargo test --features python && cd python && python -m pytest -W 
 
 # Task: Canonical Repeat Units (Catalog Loci)
 
-Make **catalog loci/clusters** the canonical unit for repeats. Integrated-callset SV records that overlap repeats contribute to the repeat unit’s presence/zygosity and proxy allele representation. TRGT contributes an alternate allele representation that can override proxy by QC policy. Do **not** emit `repeat_<trid>` as a separate default-tested unit; keep it as a representation (and optionally as a shadow unit only in comparison mode). SV units remain one-per-SV only for SVs **outside** repeat catalog regions.
+Make **catalog loci/clusters** the canonical unit for repeats. Integrated-callset SV records that overlap repeats contribute to the repeat unit's presence/zygosity and proxy allele representation. TRGT contributes an alternate allele representation that can override proxy by QC policy. Do **not** emit `repeat_<trid>` as a separate default-tested unit; keep it as a representation (and optionally as a shadow unit only in comparison mode). SV units remain one-per-SV only for SVs **outside** repeat catalog regions.
 
 ---
 
 ## Design
 
 1. **Canonical repeat unit = catalog locus**
-   - The single canonical “repeat” test unit for a region is the **catalog locus** (from BED/JSON), not a separate SV unit or a separate TRGT locus unit.
+   - The single canonical "repeat" test unit for a region is the **catalog locus** (from BED/JSON), not a separate SV unit or a separate TRGT locus unit.
    - One test unit per catalog locus that is either:
      - overlapped by ≥1 SV (so we can build proxy alleles), and/or
      - covered by TRGT (so we have true repeat alleles).
@@ -21,7 +21,7 @@ Make **catalog loci/clusters** the canonical unit for repeats. Integrated-callse
 2. **SVs overlapping repeats → contribute to the repeat unit only**
    - Integrated-callset SV records that overlap a catalog repeat locus **do not** get their own `sv_<id>` test unit.
    - They contribute only to the **repeat (catalog) unit** for that locus:
-     - **Presence/zygosity:** SV presence/GT feeds into whether the repeat unit is “present” and zygosity for that sample.
+     - **Presence/zygosity:** SV presence/GT feeds into whether the repeat unit is "present" and zygosity for that sample.
      - **Proxy allele representation:** SV-based proxy (e.g. INS/DEL length) is the allele representation when TRGT is absent or overridden by QC.
    - SVs inside catalog repeat regions → no separate Sv unit; they feed the single repeat (catalog) unit.
 
@@ -35,18 +35,18 @@ Make **catalog loci/clusters** the canonical unit for repeats. Integrated-callse
 
 5. **Do not emit `repeat_<trid>` as a default-tested unit**
    - **Default:** Do **not** create a separate test unit `repeat_<trid>` for each TRGT locus. TRGT data is merged into the canonical catalog-locus unit (matched by locus id / position / catalog id as appropriate).
-   - **Optional comparison mode:** Allow a “shadow” or secondary unit per TRGT locus **only** when a comparison mode is enabled (e.g. to compare catalog-unit results vs raw TRGT-unit results). This is not the default; it is for analysis/validation only.
+   - **Optional comparison mode:** Allow a "shadow" or secondary unit per TRGT locus **only** when a comparison mode is enabled (e.g. to compare catalog-unit results vs raw TRGT-unit results). This is not the default; it is for analysis/validation only.
 
 ---
 
 ## Success Criteria
 
-- [ ] Catalog loci are the only repeat test units in the default output (no separate `repeat_<trid>` by default).
-- [ ] SVs overlapping a catalog repeat locus do not get an `sv_<id>` unit; they only contribute to that repeat unit’s presence/zygosity and proxy allele representation.
-- [ ] SVs outside all catalog repeat regions still get one `sv_<id>` unit each.
-- [ ] TRGT data is merged into the canonical catalog-locus unit (matching by catalog id / locus); QC policy can prefer TRGT over proxy when both exist.
-- [ ] Optional: comparison mode can emit shadow `repeat_<trid>` units for validation/comparison; default is off.
-- [ ] Tests and notebook updated to reflect canonical repeat units and SV-only-for-non-repeat regions.
+- [x] Catalog loci are the only repeat test units in the default output (no separate `repeat_<trid>` by default).
+- [x] SVs overlapping a catalog repeat locus do not get an `sv_<id>` unit; they only contribute to that repeat unit's presence/zygosity and proxy allele representation.
+- [x] SVs outside all catalog repeat regions still get one `sv_<id>` unit each.
+- [x] TRGT data is merged into the canonical catalog-locus unit (matching by catalog id / locus); QC policy can prefer TRGT over proxy when both exist.
+- [x] Optional: comparison mode can emit shadow `repeat_<trid>` units for validation/comparison; default is off.
+- [x] Tests and notebook updated to reflect canonical repeat units and SV-only-for-non-repeat regions.
 
 ---
 
@@ -57,7 +57,7 @@ Make **catalog loci/clusters** the canonical unit for repeats. Integrated-callse
 - **Sv:** One test unit per SV record (`sv_<id>`), regardless of overlap with catalog or TRGT.
 - **RepeatProxy:** One test unit per catalog locus that overlaps ≥1 SV (`proxy_<catalog_id>`); genotypes from SVs via Resolver.
 - **TrueRepeat:** One test unit per TRGT locus (`repeat_<trid>`); genotypes from TRGT.
-- The same genomic region can thus have three units (Sv + RepeatProxy + TrueRepeat). No merging; no “canonical” repeat unit.
+- The same genomic region can thus have three units (Sv + RepeatProxy + TrueRepeat). No merging; no "canonical" repeat unit.
 
 ### Desired Behavior
 
@@ -116,7 +116,7 @@ Make **catalog loci/clusters** the canonical unit for repeats. Integrated-callse
    - Update fixtures if needed (catalog + SV + TRGT overlap scenarios).
 
 7. **Notebook and docs**
-   - Update combination stats / “test units by source” to describe canonical repeat units and SV-only-outside-repeat. Remove or relabel “TrueRepeat” for default output; add note on optional comparison (shadow) mode if implemented.
+   - Update combination stats / "test units by source" to describe canonical repeat units and SV-only-outside-repeat. Remove or relabel "TrueRepeat" for default output; add note on optional comparison (shadow) mode if implemented.
    - README or RALPH_TASK context: short description of canonical repeat units and QC policy.
 
 ---

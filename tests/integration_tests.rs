@@ -424,6 +424,263 @@ fn test_association_result_structure() {
 // ============================================================================
 
 #[test]
+fn test_canonical_repeat_units_only() {
+    use arrow::array::StringArray;
+    
+    let output_dir = test_dir("canonical_repeat");
+    
+    // Build cache with SV + TRGT + catalog
+    build_cache(
+        "fixtures/sv_small.vcf",
+        Some(&["fixtures/trgt_small.vcf"][..]),
+        Some("fixtures/trexplorer.bed"),
+        None,
+        output_dir.to_str().unwrap(),
+    ).expect("Failed to build cache");
+    
+    // Read cache and verify test unit types
+    let cache = read_cache_from_dir(&output_dir).expect("Failed to read cache");
+    let test_units = cache.test_units.as_ref().expect("Should have test_units");
+    
+    let unit_type_col = test_units.column_by_name("unit_type")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have unit_type column");
+    
+    let id_col = test_units.column_by_name("id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have id column");
+    
+    // Count unit types
+    let mut sv_count = 0;
+    let mut repeat_count = 0;
+    let mut true_repeat_count = 0;
+    let mut repeat_proxy_count = 0;
+    
+    for i in 0..unit_type_col.len() {
+        let unit_type = unit_type_col.value(i);
+        let id = id_col.value(i);
+        
+        match unit_type {
+            "Sv" => sv_count += 1,
+            "Repeat" => repeat_count += 1,
+            "TrueRepeat" => {
+                true_repeat_count += 1;
+                // Fail if we see separate TrueRepeat units (should be merged into Repeat)
+                panic!("Found unexpected TrueRepeat unit: {}", id);
+            }
+            "RepeatProxy" => {
+                repeat_proxy_count += 1;
+                // Fail if we see separate RepeatProxy units (should be merged into Repeat)
+                panic!("Found unexpected RepeatProxy unit: {}", id);
+            }
+            _ => {}
+        }
+    }
+    
+    // Should have only canonical Repeat units, not TrueRepeat or RepeatProxy
+    assert!(repeat_count > 0, "Should have canonical Repeat units");
+    assert_eq!(true_repeat_count, 0, "Should NOT have separate TrueRepeat units");
+    assert_eq!(repeat_proxy_count, 0, "Should NOT have separate RepeatProxy units");
+    assert!(sv_count > 0, "Should have SV units for non-overlapping SVs");
+    
+    let _ = std::fs::remove_dir_all(&output_dir);
+}
+
+#[test]
+fn test_sv_overlapping_catalog_no_separate_unit() {
+    use arrow::array::StringArray;
+    use std::io::Write;
+    
+    let output_dir = test_dir("sv_overlap_catalog");
+    
+    // Create a VCF with an SV that overlaps catalog locus TR001 (chr1:10000-10050)
+    let sv_vcf_path = output_dir.parent().unwrap().join("sv_overlap_test.vcf");
+    std::fs::create_dir_all(output_dir.parent().unwrap()).ok();
+    let mut f = std::fs::File::create(&sv_vcf_path).expect("Failed to create VCF");
+    writeln!(f, "##fileformat=VCFv4.2").ok();
+    writeln!(f, "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type\">").ok();
+    writeln!(f, "##INFO=<ID=SVLEN,Number=.,Type=Integer,Description=\"Length\">").ok();
+    writeln!(f, "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End\">").ok();
+    writeln!(f, "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">").ok();
+    writeln!(f, "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE1\tSAMPLE2").ok();
+    // This SV overlaps TR001 (chr1:10000-10050)
+    writeln!(f, "chr1\t9900\tsv_inside\tN\t<INS>\t.\tPASS\tSVTYPE=INS;SVLEN=500;END=10400\tGT\t0/1\t1/1").ok();
+    // This SV is outside all catalog regions
+    writeln!(f, "chr1\t1000\tsv_outside\tN\t<DEL>\t.\tPASS\tSVTYPE=DEL;SVLEN=-500;END=1500\tGT\t0/1\t0/0").ok();
+    drop(f);
+    
+    // Build cache
+    build_cache(
+        sv_vcf_path.to_str().unwrap(),
+        None,
+        Some("fixtures/trexplorer.bed"),
+        None,
+        output_dir.to_str().unwrap(),
+    ).expect("Failed to build cache");
+    
+    // Read cache and verify
+    let cache = read_cache_from_dir(&output_dir).expect("Failed to read cache");
+    let test_units = cache.test_units.as_ref().expect("Should have test_units");
+    
+    let id_col = test_units.column_by_name("id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have id column");
+    
+    let unit_type_col = test_units.column_by_name("unit_type")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have unit_type column");
+    
+    // Collect unit IDs and types
+    let mut found_sv_inside = false;
+    let mut found_sv_outside = false;
+    let mut found_repeat_tr001 = false;
+    
+    for i in 0..id_col.len() {
+        let id = id_col.value(i);
+        let unit_type = unit_type_col.value(i);
+        
+        if id == "sv_sv_inside" {
+            found_sv_inside = true;
+        }
+        if id == "sv_sv_outside" {
+            found_sv_outside = true;
+        }
+        if id == "repeat_TR001" && unit_type == "Repeat" {
+            found_repeat_tr001 = true;
+        }
+    }
+    
+    // sv_inside overlaps TR001, should NOT have separate unit
+    assert!(!found_sv_inside, "SV overlapping catalog should NOT have separate sv_* unit");
+    // sv_outside does not overlap catalog, should have separate unit
+    assert!(found_sv_outside, "SV outside catalog SHOULD have sv_* unit");
+    // TR001 should exist as canonical repeat unit (with SV contributing to it)
+    assert!(found_repeat_tr001, "Should have canonical repeat_TR001 unit");
+    
+    let _ = std::fs::remove_dir_all(&output_dir);
+    let _ = std::fs::remove_file(&sv_vcf_path);
+}
+
+#[test]
+fn test_trgt_merged_into_catalog_unit() {
+    use arrow::array::{StringArray, BooleanArray, Int64Array};
+    
+    let output_dir = test_dir("trgt_merged");
+    
+    // Build cache with TRGT + catalog (no overlapping SVs)
+    build_cache(
+        "fixtures/sv_small.vcf",  // SVs don't overlap catalog
+        Some(&["fixtures/trgt_small.vcf"][..]),
+        Some("fixtures/trexplorer.bed"),
+        None,
+        output_dir.to_str().unwrap(),
+    ).expect("Failed to build cache");
+    
+    // Read cache
+    let cache = read_cache_from_dir(&output_dir).expect("Failed to read cache");
+    let test_units = cache.test_units.as_ref().expect("Should have test_units");
+    let genotypes = cache.genotypes.as_ref().expect("Should have genotypes");
+    
+    // Find repeat_TR001 unit
+    let tu_id_col = test_units.column_by_name("id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have id column");
+    let tu_source_col = test_units.column_by_name("source")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have source column");
+    
+    let mut tr001_idx = None;
+    for i in 0..tu_id_col.len() {
+        if tu_id_col.value(i) == "repeat_TR001" {
+            tr001_idx = Some(i);
+            break;
+        }
+    }
+    
+    let tr001_idx = tr001_idx.expect("Should have repeat_TR001 unit");
+    let tr001_source = tu_source_col.value(tr001_idx);
+    
+    // Source should be TrgtVcf (TRGT data merged in)
+    assert_eq!(tr001_source, "TrgtVcf", "repeat_TR001 should have TrgtVcf source");
+    
+    // Check genotypes for TR001 have TRGT allele data
+    let gt_unit_col = genotypes.column_by_name("unit_id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have unit_id column");
+    let gt_allele_source_col = genotypes.column_by_name("allele_source")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have allele_source column");
+    let gt_allele1_col = genotypes.column_by_name("allele1")
+        .and_then(|c| c.as_any().downcast_ref::<Int64Array>())
+        .expect("Should have allele1 column");
+    
+    let mut found_trgt_genotype = false;
+    for i in 0..gt_unit_col.len() {
+        if gt_unit_col.value(i) == "repeat_TR001" {
+            let allele_source = gt_allele_source_col.value(i);
+            // Should be TrgtTrue (TRGT-derived alleles)
+            assert_eq!(allele_source, "TrgtTrue", "Genotype should have TrgtTrue allele source");
+            // Should have allele lengths from TRGT
+            assert!(!gt_allele1_col.is_null(i), "Should have allele1 value from TRGT");
+            found_trgt_genotype = true;
+        }
+    }
+    
+    assert!(found_trgt_genotype, "Should have genotypes for repeat_TR001 from TRGT");
+    
+    let _ = std::fs::remove_dir_all(&output_dir);
+}
+
+#[test]
+fn test_comparison_mode_shadow_units() {
+    use arrow::array::StringArray;
+    use storm::build_cache_with_options;
+    
+    let output_dir = test_dir("comparison_mode");
+    
+    // Build cache WITH comparison mode enabled
+    build_cache_with_options(
+        "fixtures/sv_small.vcf",
+        Some(&["fixtures/trgt_small.vcf"][..]),
+        Some("fixtures/trexplorer.bed"),
+        None,
+        output_dir.to_str().unwrap(),
+        true,  // comparison_mode = true
+    ).expect("Failed to build cache with comparison mode");
+    
+    // Read cache
+    let cache = read_cache_from_dir(&output_dir).expect("Failed to read cache");
+    let test_units = cache.test_units.as_ref().expect("Should have test_units");
+    
+    let id_col = test_units.column_by_name("id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have id column");
+    
+    // Count shadow units
+    let mut shadow_count = 0;
+    let mut canonical_repeat_count = 0;
+    
+    for i in 0..id_col.len() {
+        let id = id_col.value(i);
+        if id.starts_with("shadow_") {
+            shadow_count += 1;
+        } else if id.starts_with("repeat_") {
+            canonical_repeat_count += 1;
+        }
+    }
+    
+    // Should have both canonical repeat units AND shadow units
+    assert!(canonical_repeat_count > 0, "Should have canonical repeat units");
+    assert!(shadow_count > 0, "Comparison mode should emit shadow units");
+    
+    let _ = std::fs::remove_dir_all(&output_dir);
+}
+
+// ============================================================================
+// Canonical Repeat Unit Tests
+// ============================================================================
+
+#[test]
 fn test_canonical_repeat_units_sv_overlap() {
     use arrow::array::StringArray;
     

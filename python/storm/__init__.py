@@ -80,11 +80,17 @@ class StormCache:
         catalog_bed: Optional[str] = None,
         catalog_json: Optional[str] = None,
         output_dir: str = "storm_cache",
+        comparison_mode: bool = False,
     ) -> "StormCache":
         """Build a new cache from input files.
         
         Creates a STORM cache by parsing VCF files, resolving genotypes,
         and computing feature encodings. The cache is stored in Parquet format.
+        
+        Uses canonical repeat units: catalog loci are the primary repeat unit.
+        SVs overlapping catalog loci contribute to the repeat unit (not separate sv_<id>).
+        SVs outside catalog regions get their own sv_<id> units.
+        TRGT data is merged into canonical repeat units.
         
         Args:
             sv_vcf: Path to integrated SV VCF or BCF file.
@@ -95,6 +101,9 @@ class StormCache:
             catalog_bed: Optional path to TRExplorer BED file.
             catalog_json: Optional path to TRExplorer JSON file.
             output_dir: Output directory for cache.
+            comparison_mode: If True, emit additional shadow repeat_<trid> units
+                for each TRGT locus (for comparing canonical vs raw TRGT results).
+                Default is False.
             
         Returns:
             StormCache instance pointing to the new cache.
@@ -123,6 +132,15 @@ class StormCache:
             ...     trgt_vcf=["sample1.vcf.gz", "sample2.vcf.gz", "sample3.vcf.gz"],
             ...     output_dir="multi_trgt_cache",
             ... )
+            
+            Build cache with comparison mode (includes shadow units):
+            
+            >>> cache = StormCache.build(
+            ...     sv_vcf="sv.vcf",
+            ...     trgt_vcf="trgt.vcf",
+            ...     comparison_mode=True,
+            ...     output_dir="comparison_cache",
+            ... )
         """
         if HAS_RUST and py_build_cache is not None:
             # Resolve paths to absolute so Rust can open files regardless of cwd
@@ -142,7 +160,7 @@ class StormCache:
 
             # Call Rust build_cache function
             num_units, num_samples, num_gts, num_catalog = py_build_cache(
-                sv_vcf_abs, trgt_vcf_list, catalog_bed_abs, catalog_json_abs, output_dir
+                sv_vcf_abs, trgt_vcf_list, catalog_bed_abs, catalog_json_abs, output_dir, comparison_mode
             )
             cache = cls(output_dir)
             cache._build_stats = {

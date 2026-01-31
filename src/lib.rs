@@ -816,19 +816,20 @@ fn _version() -> PyResult<String> {
 /// Python binding for build_cache
 #[cfg(feature = "python")]
 #[pyfunction]
-#[pyo3(signature = (sv_vcf, trgt_vcf=None, catalog_bed=None, catalog_json=None, output_dir="storm_cache"))]
+#[pyo3(signature = (sv_vcf, trgt_vcf=None, catalog_bed=None, catalog_json=None, output_dir="storm_cache", comparison_mode=false))]
 fn py_build_cache(
     sv_vcf: &str,
     trgt_vcf: Option<Vec<String>>,
     catalog_bed: Option<&str>,
     catalog_json: Option<&str>,
     output_dir: &str,
+    comparison_mode: bool,
 ) -> PyResult<(usize, usize, usize, usize)> {
     // Convert Vec<String> to Vec<&str> for the build_cache call
     let trgt_paths: Option<Vec<&str>> = trgt_vcf.as_ref().map(|v| v.iter().map(|s| s.as_str()).collect());
     let trgt_paths_slice: Option<&[&str]> = trgt_paths.as_deref();
     
-    let stats = build_cache(sv_vcf, trgt_paths_slice, catalog_bed, catalog_json, output_dir)
+    let stats = build_cache_with_options(sv_vcf, trgt_paths_slice, catalog_bed, catalog_json, output_dir, comparison_mode)
         .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
     Ok((
         stats.num_test_units,
