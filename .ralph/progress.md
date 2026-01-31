@@ -30,10 +30,20 @@
 
 **Test Results:**
 - 66 Rust unit tests pass
-- 20 integration tests pass
+- 24 integration tests pass (4 new tests for canonical repeat units)
 - 31 Python tests pass
 
 **DONE**
+
+---
+
+## DONE
+
+All success criteria for "Canonical Repeat Units (Catalog Loci)" are complete.
+
+- `cargo test` passes (66 unit + 24 integration)
+- `cd python && python -m pytest -W error` passes (31 tests)
+- All 6 success criteria marked [x] in RALPH_TASK.md
 
 ## Completed Criteria: 10/10
 
@@ -758,3 +768,23 @@ All 10 success criteria marked [x] in RALPH_TASK.md:
 
 ### 2026-01-30 16:47:46
 **Session 5 started** (model: opus-4.5-thinking)
+
+### 2026-01-30 - Session 5 Completed
+**Verified all criteria complete for "Canonical Repeat Units (Catalog Loci)"**
+
+Task: Make catalog loci/clusters the canonical unit for repeats.
+
+All 6 success criteria marked [x] in RALPH_TASK.md:
+- [x] Catalog loci are the only repeat test units in default output
+- [x] SVs overlapping catalog repeat locus do not get sv_<id> unit
+- [x] SVs outside catalog repeat regions still get sv_<id> each
+- [x] TRGT data merged into canonical catalog-locus unit; QC policy can prefer TRGT over proxy
+- [x] Optional comparison mode can emit shadow repeat_<trid> units (default off)
+- [x] Tests and notebook updated
+
+Tests passed:
+- 66 Rust unit tests pass
+- 24 Rust integration tests pass
+- 31 Python tests pass (with -W error)
+
+**DONE**
