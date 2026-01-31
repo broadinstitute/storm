@@ -150,12 +150,145 @@ pub fn build_cache(
         (None, None) => None,
     };
 
-    // 4. Build test units
+    // 4. Build test units using catalog-first approach
+    //
+    // Design: Canonical repeat units (catalog loci) are the primary unit for repeats.
+    // SVs overlapping catalog loci contribute to the repeat unit (not separate sv_<id>).
+    // SVs outside catalog regions get their own sv_<id> units.
+    // TRGT data is merged into canonical repeat units, not separate repeat_<trid> units.
+    
     let mut test_units = Vec::new();
     let mut genotypes_map: Vec<(String, Vec<ResolvedGenotype>)> = Vec::new();
 
-    // Create TestUnits from SVs
+    // Track SVs that overlap catalog entries (these won't get separate SV units)
+    let mut svs_in_catalog: HashSet<String> = HashSet::new();
+    
+    // Build TRGT lookup by TRID for matching to catalog entries
+    let trgt_by_trid: HashMap<&str, &vcf::trgt::TrgtRecord> = trgt_records
+        .as_ref()
+        .map(|recs| recs.iter().map(|r| (r.trid.as_str(), r)).collect())
+        .unwrap_or_default();
+
+    // If we have a catalog, create canonical repeat units for loci with SV overlap and/or TRGT
+    if let Some(ref cat) = catalog {
+        let mappings = map_svs_to_catalog(&sv_records, cat);
+        
+        // Group SVs by catalog entry
+        let mut entry_sv_map: HashMap<String, Vec<&SvRecord>> = HashMap::new();
+        for mapping in &mappings {
+            for entry in &mapping.overlaps {
+                entry_sv_map
+                    .entry(entry.id.clone())
+                    .or_default()
+                    .push(mapping.sv);
+                // Mark this SV as overlapping catalog (won't get separate unit)
+                svs_in_catalog.insert(mapping.sv.id.clone());
+            }
+        }
+
+        // Create canonical repeat units for each catalog entry that has SV overlap OR TRGT data
+        for (entry_id, entry) in &cat.entries {
+            let has_sv_overlap = entry_sv_map.contains_key(entry_id);
+            let has_trgt = trgt_by_trid.contains_key(entry_id.as_str());
+            
+            // Only create unit if there's at least one data source
+            if !has_sv_overlap && !has_trgt {
+                continue;
+            }
+            
+            // Gather overlapping SVs (if any)
+            let overlapping_svs: Vec<&SvRecord> = entry_sv_map
+                .get(entry_id)
+                .map(|svs| svs.iter().copied().collect())
+                .unwrap_or_default();
+            let sv_ids: Vec<String> = overlapping_svs.iter().map(|sv| sv.id.clone()).collect();
+            
+            // Create canonical repeat unit
+            let unit = TestUnit::from_catalog_locus(
+                entry_id,
+                &entry.chrom,
+                entry.start,
+                entry.end,
+                &entry.motif,
+                sv_ids.clone(),
+                has_trgt,
+            );
+
+            // Resolve genotypes: merge SV proxy with TRGT when both exist
+            let mut resolver = Resolver::new();
+            let entries_slice: Vec<&CatalogEntry> = vec![entry];
+            resolver.add_catalog_refs(&entries_slice);
+            
+            // Get TRGT record for this locus (if any)
+            let trgt_record = trgt_by_trid.get(entry_id.as_str()).copied();
+            
+            // Resolve merged genotypes (SV proxy + TRGT override)
+            let unit_gts = if !overlapping_svs.is_empty() || trgt_record.is_some() {
+                resolver.resolve_merged(entry_id, &overlapping_svs, trgt_record, &all_samples)
+            } else {
+                // Shouldn't reach here due to the continue above, but handle gracefully
+                all_samples.iter().map(|s| ResolvedGenotype::missing(s)).collect()
+            };
+
+            genotypes_map.push((unit.id.clone(), unit_gts));
+            test_units.push(unit);
+        }
+    } else if let Some(ref trgt) = trgt_records {
+        // No catalog: create canonical repeat units directly from TRGT records
+        for rec in trgt {
+            let motif = rec.motifs.first().map(|s| s.as_str()).unwrap_or("N");
+            let unit = TestUnit::from_catalog_locus(
+                &rec.trid,
+                &rec.chrom,
+                rec.pos,
+                rec.end,
+                motif,
+                vec![], // No SVs
+                true,   // Has TRGT
+            );
+
+            let mut unit_gts = Vec::new();
+            for sample_id in &all_samples {
+                let gt = if let Some(trgt_gt) = rec.genotypes.get(sample_id) {
+                    let is_present = trgt_gt.allele_lengths.iter().any(|&l| l > 0);
+                    let (allele1, allele2) = if trgt_gt.allele_lengths.len() >= 2 {
+                        (
+                            Some(trgt_gt.allele_lengths[0]),
+                            Some(trgt_gt.allele_lengths[1]),
+                        )
+                    } else if trgt_gt.allele_lengths.len() == 1 {
+                        (Some(trgt_gt.allele_lengths[0]), None)
+                    } else {
+                        (None, None)
+                    };
+
+                    ResolvedGenotype {
+                        sample_id: sample_id.clone(),
+                        is_present,
+                        presence_source: PresenceSource::TrgtVcf,
+                        allele1,
+                        allele2,
+                        allele_source: AlleleSource::TrgtTrue,
+                        raw_gt: Some(trgt_gt.allele_lengths.iter().map(|l| l.to_string()).collect::<Vec<_>>().join("/")),
+                    }
+                } else {
+                    ResolvedGenotype::missing(sample_id)
+                };
+                unit_gts.push(gt);
+            }
+
+            genotypes_map.push((unit.id.clone(), unit_gts));
+            test_units.push(unit);
+        }
+    }
+
+    // Create SV test units ONLY for SVs outside catalog regions
     for sv in &sv_records {
+        // Skip SVs that overlap catalog entries
+        if svs_in_catalog.contains(&sv.id) {
+            continue;
+        }
+        
         let sv_type_str = match &sv.sv_type {
             SvType::Del => "DEL",
             SvType::Ins => "INS",
@@ -217,97 +350,6 @@ pub fn build_cache(
 
         genotypes_map.push((unit.id.clone(), unit_gts));
         test_units.push(unit);
-    }
-
-    // If we have a catalog, also create RepeatProxy test units for mapped loci
-    if let Some(ref cat) = catalog {
-        let mappings = map_svs_to_catalog(&sv_records, cat);
-        
-        // Group mappings by catalog entry
-        let mut entry_sv_map: HashMap<String, Vec<&SvRecord>> = HashMap::new();
-        for mapping in &mappings {
-            for entry in &mapping.overlaps {
-                entry_sv_map
-                    .entry(entry.id.clone())
-                    .or_default()
-                    .push(mapping.sv);
-            }
-        }
-
-        // Create RepeatProxy units for each catalog entry with overlapping SVs
-        for (entry_id, svs) in entry_sv_map {
-            if let Some(entry) = cat.entries.get(&entry_id) {
-                let sv_ids: Vec<String> = svs.iter().map(|sv| sv.id.clone()).collect();
-                let unit = TestUnit::from_repeat_proxy(
-                    &entry_id,
-                    &entry.chrom,
-                    entry.start,
-                    entry.end,
-                    &entry.motif,
-                    sv_ids,
-                );
-
-                // Resolve genotypes using the Resolver
-                let mut resolver = Resolver::new();
-                let entries_slice: Vec<&CatalogEntry> = vec![entry];
-                resolver.add_catalog_refs(&entries_slice);
-                
-                // Create slice of references for resolve_from_svs
-                let svs_refs: Vec<&SvRecord> = svs.iter().copied().collect();
-                let unit_gts = resolver.resolve_from_svs(&entry_id, &svs_refs, &all_samples);
-
-                genotypes_map.push((unit.id.clone(), unit_gts));
-                test_units.push(unit);
-            }
-        }
-    }
-
-    // If we have TRGT data, create TrueRepeat units
-    if let Some(ref trgt) = trgt_records {
-        for rec in trgt {
-            let motif = rec.motifs.first().map(|s| s.as_str()).unwrap_or("N");
-            let unit = TestUnit::from_true_repeat(
-                &rec.trid,
-                &rec.chrom,
-                rec.pos,
-                rec.end,
-                motif,
-                &rec.trid,
-            );
-
-            let mut unit_gts = Vec::new();
-            for sample_id in &all_samples {
-                let gt = if let Some(trgt_gt) = rec.genotypes.get(sample_id) {
-                    let is_present = trgt_gt.allele_lengths.iter().any(|&l| l > 0);
-                    let (allele1, allele2) = if trgt_gt.allele_lengths.len() >= 2 {
-                        (
-                            Some(trgt_gt.allele_lengths[0]),
-                            Some(trgt_gt.allele_lengths[1]),
-                        )
-                    } else if trgt_gt.allele_lengths.len() == 1 {
-                        (Some(trgt_gt.allele_lengths[0]), None)
-                    } else {
-                        (None, None)
-                    };
-
-                    ResolvedGenotype {
-                        sample_id: sample_id.clone(),
-                        is_present,
-                        presence_source: PresenceSource::TrgtVcf,
-                        allele1,
-                        allele2,
-                        allele_source: AlleleSource::TrgtTrue,
-                        raw_gt: Some(trgt_gt.allele_lengths.iter().map(|l| l.to_string()).collect::<Vec<_>>().join("/")),
-                    }
-                } else {
-                    ResolvedGenotype::missing(sample_id)
-                };
-                unit_gts.push(gt);
-            }
-
-            genotypes_map.push((unit.id.clone(), unit_gts));
-            test_units.push(unit);
-        }
     }
 
     // 5. Compute features
