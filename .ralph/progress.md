@@ -9,6 +9,27 @@
 
 ## Task: Canonical Repeat Units (Catalog Loci)
 
+### Session 3 (2026-01-30)
+
+**Verified and added comprehensive tests for canonical repeat units:**
+
+1. Added 4 new integration tests:
+   - `test_canonical_repeat_units_only`: Verifies only canonical `Repeat` units (not `TrueRepeat`/`RepeatProxy`)
+   - `test_sv_overlapping_catalog_no_separate_unit`: Tests SV overlap behavior with custom fixture
+   - `test_trgt_merged_into_catalog_unit`: Verifies TRGT genotypes merged with `TrgtTrue` allele source
+   - `test_comparison_mode_shadow_units`: Tests shadow unit emission in comparison mode
+
+2. Updated notebook documentation:
+   - Changed explanation of "Combination logic" to describe canonical repeat units
+   - Updated code that displays unit_type descriptions to handle `Repeat` type
+   - Replaced `RepeatProxy` references with canonical `Repeat` unit terminology
+
+**Test Results:**
+- 24 Rust integration tests pass (all canonical repeat tests passing)
+- 31 Python tests pass with `-W error`
+
+**DONE** - All 6 success criteria verified and tests added.
+
 ### Session 1 (2026-01-30)
 
 Verified and completed all 6 success criteria for Canonical Repeat Units:
