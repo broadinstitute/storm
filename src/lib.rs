@@ -109,12 +109,35 @@ pub struct CacheVerifyResult {
 /// * `catalog_bed_path` - Optional path to catalog BED file
 /// * `catalog_json_path` - Optional path to catalog JSON file
 /// * `output_dir` - Output directory for cache files
+/// * `comparison_mode` - If true, emit shadow repeat_<trid> units for validation (default: false)
 pub fn build_cache(
     sv_vcf_path: &str,
     trgt_vcf_paths: Option<&[&str]>,
     catalog_bed_path: Option<&str>,
     catalog_json_path: Option<&str>,
     output_dir: &str,
+) -> Result<CacheBuildStats, BuildCacheError> {
+    build_cache_with_options(sv_vcf_path, trgt_vcf_paths, catalog_bed_path, catalog_json_path, output_dir, false)
+}
+
+/// Build a STORM cache with extended options
+///
+/// Same as build_cache but with additional options like comparison_mode.
+/// 
+/// # Arguments
+/// * `sv_vcf_path` - Path to SV VCF or BCF file
+/// * `trgt_vcf_paths` - Optional list of TRGT VCF paths (supports .vcf and .vcf.gz)
+/// * `catalog_bed_path` - Optional path to catalog BED file
+/// * `catalog_json_path` - Optional path to catalog JSON file
+/// * `output_dir` - Output directory for cache files
+/// * `comparison_mode` - If true, emit shadow repeat_<trid> units for TRGT-catalog comparison
+pub fn build_cache_with_options(
+    sv_vcf_path: &str,
+    trgt_vcf_paths: Option<&[&str]>,
+    catalog_bed_path: Option<&str>,
+    catalog_json_path: Option<&str>,
+    output_dir: &str,
+    comparison_mode: bool,
 ) -> Result<CacheBuildStats, BuildCacheError> {
     // 1. Parse SV VCF
     let (sv_samples, sv_records) = parse_sv_vcf(sv_vcf_path)?;
@@ -354,6 +377,63 @@ pub fn build_cache(
 
         genotypes_map.push((unit.id.clone(), unit_gts));
         test_units.push(unit);
+    }
+
+    // Optional: In comparison mode, emit shadow repeat_<trid> units for each TRGT record
+    // These are separate from canonical repeat units and allow comparison of results
+    if comparison_mode {
+        if let Some(ref trgt) = trgt_records {
+            for rec in trgt {
+                // Shadow units use "shadow_" prefix to distinguish from canonical repeat units
+                let shadow_id = format!("shadow_{}", rec.trid);
+                let motif = rec.motifs.first().map(|s| s.as_str()).unwrap_or("N");
+                
+                let mut shadow_unit = TestUnit::from_true_repeat(
+                    &rec.trid,
+                    &rec.chrom,
+                    rec.pos,
+                    rec.end,
+                    motif,
+                    &rec.trid,
+                );
+                // Override the ID to mark as shadow
+                shadow_unit.id = shadow_id.clone();
+                shadow_unit.metadata.insert("shadow".to_string(), "true".to_string());
+
+                let mut unit_gts = Vec::new();
+                for sample_id in &all_samples {
+                    let gt = if let Some(trgt_gt) = rec.genotypes.get(sample_id) {
+                        let is_present = trgt_gt.allele_lengths.iter().any(|&l| l > 0);
+                        let (allele1, allele2) = if trgt_gt.allele_lengths.len() >= 2 {
+                            (
+                                Some(trgt_gt.allele_lengths[0]),
+                                Some(trgt_gt.allele_lengths[1]),
+                            )
+                        } else if trgt_gt.allele_lengths.len() == 1 {
+                            (Some(trgt_gt.allele_lengths[0]), None)
+                        } else {
+                            (None, None)
+                        };
+
+                        ResolvedGenotype {
+                            sample_id: sample_id.clone(),
+                            is_present,
+                            presence_source: PresenceSource::TrgtVcf,
+                            allele1,
+                            allele2,
+                            allele_source: AlleleSource::TrgtTrue,
+                            raw_gt: Some(trgt_gt.allele_lengths.iter().map(|l| l.to_string()).collect::<Vec<_>>().join("/")),
+                        }
+                    } else {
+                        ResolvedGenotype::missing(sample_id)
+                    };
+                    unit_gts.push(gt);
+                }
+
+                genotypes_map.push((shadow_unit.id.clone(), unit_gts));
+                test_units.push(shadow_unit);
+            }
+        }
     }
 
     // 5. Compute features

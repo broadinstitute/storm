@@ -2,6 +2,7 @@
 //!
 //! These tests verify the end-to-end functionality of the STORM pipeline.
 
+use arrow::array::Array;
 use storm::{
     build_cache, verify_cache, explain_genotype, explain_locus,
     parse_sv_vcf, parse_trgt_vcf,
@@ -416,4 +417,182 @@ fn test_association_result_structure() {
     assert!(result.call_rate >= 0.0 && result.call_rate <= 1.0, "call_rate should be in [0,1]");
     assert!(!result.model.is_empty(), "model should not be empty");
     assert!(!result.encoding.is_empty(), "encoding should not be empty");
+}
+
+// ============================================================================
+// Canonical Repeat Unit Tests
+// ============================================================================
+
+#[test]
+fn test_canonical_repeat_units_sv_overlap() {
+    use arrow::array::StringArray;
+    
+    let output_dir = test_dir("canonical_repeat_sv");
+    
+    // sv_with_overlap.vcf has:
+    //   sv_overlap1: chr1:10010 (overlaps TR001 at chr1:10000-10050)
+    //   sv_outside1: chr1:1000-1500 (outside all catalog regions)
+    //   sv_overlap2: chr2:20010-20030 (overlaps TR003 at chr2:20000-20030)
+    //   sv_outside2: chr3:99999 (outside all catalog regions)
+    let stats = build_cache(
+        "fixtures/sv_with_overlap.vcf",
+        None,
+        Some("fixtures/trexplorer.bed"),
+        None,
+        output_dir.to_str().unwrap(),
+    ).expect("Failed to build cache");
+    
+    // Should have:
+    // - 2 SV units (sv_outside1, sv_outside2) for SVs outside catalog
+    // - 2 Repeat units (TR001, TR003) for catalog loci with SV overlap
+    // SVs that overlap catalog (sv_overlap1, sv_overlap2) should NOT have separate units
+    assert_eq!(stats.num_test_units, 4, 
+        "Should have 4 test units: 2 SV (outside catalog) + 2 Repeat (catalog with overlap)");
+    
+    // Read cache and verify unit types
+    let cache = read_cache_from_dir(&output_dir).expect("Failed to read cache");
+    let test_units = cache.test_units.as_ref().expect("Should have test_units");
+    
+    let id_col = test_units.column_by_name("id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have id column");
+    let type_col = test_units.column_by_name("unit_type")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have unit_type column");
+    
+    let mut sv_units = Vec::new();
+    let mut repeat_units = Vec::new();
+    
+    for i in 0..id_col.len() {
+        let id = id_col.value(i);
+        let unit_type = type_col.value(i);
+        
+        if unit_type == "Sv" {
+            sv_units.push(id.to_string());
+        } else if unit_type == "Repeat" {
+            repeat_units.push(id.to_string());
+        }
+    }
+    
+    // SVs overlapping catalog should NOT appear as separate SV units
+    assert!(!sv_units.iter().any(|id| id.contains("overlap")), 
+        "SVs overlapping catalog should NOT have separate sv_<id> units");
+    
+    // SVs outside catalog SHOULD have sv_<id> units
+    assert!(sv_units.iter().any(|id| id.contains("outside1")),
+        "SV outside catalog (sv_outside1) should have sv_<id> unit");
+    assert!(sv_units.iter().any(|id| id.contains("outside2")),
+        "SV outside catalog (sv_outside2) should have sv_<id> unit");
+    
+    // Catalog loci with SV overlap should have canonical repeat units
+    assert!(repeat_units.iter().any(|id| id.contains("TR001")),
+        "Catalog TR001 (with SV overlap) should have repeat unit");
+    assert!(repeat_units.iter().any(|id| id.contains("TR003")),
+        "Catalog TR003 (with SV overlap) should have repeat unit");
+    
+    let _ = std::fs::remove_dir_all(&output_dir);
+}
+
+#[test]
+fn test_canonical_repeat_units_trgt_merged() {
+    use arrow::array::StringArray;
+    
+    let output_dir = test_dir("canonical_repeat_trgt");
+    
+    // Build cache with both SV and TRGT to test merging
+    let stats = build_cache(
+        "fixtures/sv_with_overlap.vcf",
+        Some(&["fixtures/trgt_small.vcf"][..]),
+        Some("fixtures/trexplorer.bed"),
+        None,
+        output_dir.to_str().unwrap(),
+    ).expect("Failed to build cache");
+    
+    // Read cache and verify unit types
+    let cache = read_cache_from_dir(&output_dir).expect("Failed to read cache");
+    let test_units = cache.test_units.as_ref().expect("Should have test_units");
+    
+    let id_col = test_units.column_by_name("id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have id column");
+    let type_col = test_units.column_by_name("unit_type")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have unit_type column");
+    
+    let mut unit_types: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    for i in 0..id_col.len() {
+        unit_types.insert(id_col.value(i).to_string(), type_col.value(i).to_string());
+    }
+    
+    // Verify canonical repeat units (not TrueRepeat or RepeatProxy)
+    // When catalog exists, repeat units should be of type "Repeat"
+    for (id, unit_type) in &unit_types {
+        if id.starts_with("repeat_") {
+            assert_eq!(unit_type, "Repeat", 
+                "Unit {} should be canonical 'Repeat' type, not '{}'", id, unit_type);
+        }
+    }
+    
+    // There should be NO separate TrueRepeat units (TRGT is merged into catalog units)
+    let true_repeat_count = unit_types.values()
+        .filter(|t| *t == "TrueRepeat")
+        .count();
+    assert_eq!(true_repeat_count, 0, 
+        "There should be no separate TrueRepeat units when catalog exists");
+    
+    // There should be NO RepeatProxy units (replaced by canonical Repeat)
+    let proxy_count = unit_types.values()
+        .filter(|t| *t == "RepeatProxy")
+        .count();
+    assert_eq!(proxy_count, 0,
+        "There should be no RepeatProxy units (replaced by canonical Repeat)");
+    
+    let _ = std::fs::remove_dir_all(&output_dir);
+}
+
+#[test]
+fn test_trgt_without_catalog_creates_repeat_units() {
+    use arrow::array::StringArray;
+    
+    let output_dir = test_dir("trgt_no_catalog");
+    
+    // Build cache with TRGT but NO catalog
+    let stats = build_cache(
+        "fixtures/sv_small.vcf",
+        Some(&["fixtures/trgt_small.vcf"][..]),
+        None,  // No catalog
+        None,
+        output_dir.to_str().unwrap(),
+    ).expect("Failed to build cache");
+    
+    // Should have SV units + repeat units from TRGT
+    assert!(stats.num_test_units >= 6, "Should have at least 6 test units");
+    
+    // Read cache and verify
+    let cache = read_cache_from_dir(&output_dir).expect("Failed to read cache");
+    let test_units = cache.test_units.as_ref().expect("Should have test_units");
+    
+    let id_col = test_units.column_by_name("id")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have id column");
+    let type_col = test_units.column_by_name("unit_type")
+        .and_then(|c| c.as_any().downcast_ref::<StringArray>())
+        .expect("Should have unit_type column");
+    
+    let mut has_repeat_units = false;
+    for i in 0..id_col.len() {
+        let id = id_col.value(i);
+        let unit_type = type_col.value(i);
+        
+        if id.starts_with("repeat_") {
+            has_repeat_units = true;
+            // Without catalog, TRGT creates canonical Repeat units
+            assert_eq!(unit_type, "Repeat", 
+                "TRGT units without catalog should be 'Repeat' type, got '{}'", unit_type);
+        }
+    }
+    
+    assert!(has_repeat_units, "Should have repeat units from TRGT data");
+    
+    let _ = std::fs::remove_dir_all(&output_dir);
 }
