@@ -4,8 +4,32 @@
 
 ## Summary
 
-- Iterations completed: 2
+- Iterations completed: 3
 - Current status: **DONE**
+
+## Task: Canonical Repeat Units (Catalog Loci)
+
+### Session 1 (2026-01-30)
+
+Verified and completed all 6 success criteria for Canonical Repeat Units:
+
+**Implementation Summary:**
+1. Added `TestUnitType::Repeat` as the canonical repeat unit type in testunit.rs
+2. Refactored `build_cache()` to use catalog-first approach:
+   - Canonical repeat units are created for catalog loci with SV overlap and/or TRGT
+   - SVs overlapping catalog loci do NOT get separate `sv_<id>` units
+   - SVs outside catalog regions get `sv_<id>` units as before
+   - TRGT data is merged into canonical repeat units (no separate `repeat_<trid>`)
+3. Added `build_cache_with_options()` with `comparison_mode` parameter
+   - When enabled, emits shadow `shadow_<trid>` units for validation
+4. Sample collection uses UNION (not intersection) to handle different samples
+
+**All Tests Pass:**
+- 66 Rust unit tests
+- 24 Rust integration tests (7 new tests for canonical repeat units)
+- 31 Python tests
+
+**DONE**
 
 ## Task: Canonical Repeat Units (Catalog Loci) - COMPLETE
 
@@ -812,3 +836,6 @@ Tests passed:
 - 31 Python tests pass (with -W error)
 
 **DONE**
+
+### 2026-01-30 16:50:16
+**Session 5 ended** - ✅ TASK COMPLETE
