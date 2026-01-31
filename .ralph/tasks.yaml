@@ -3,77 +3,49 @@
 # DO NOT EDIT - regenerated on task file change
 
 source_file: RALPH_TASK.md
-source_mtime: 1769714521
-generated_at: 2026-01-29T19:22:46Z
+source_mtime: 1769819891
+generated_at: 2026-01-31T00:41:16Z
 
 tasks:
-  - id: "line_19"
-    line_number: 19
-    status: completed
+  - id: "line_44"
+    line_number: 44
+    status: pending
     parallel_group: 999999
-    description: Real-data cache build uses **all** TRGT files in `scratch/trgt/` (e.g. `trgt_files` with no `N_TRGT_FILES` limit, or `N_TRGT_FILES = len(trgt_files)`).
+    description: Catalog loci are the only repeat test units in the default output (no separate `repeat_<trid>` by default).
     indent_level: 0
     raw_marker: -
-  - id: "line_20"
-    line_number: 20
-    status: completed
+  - id: "line_45"
+    line_number: 45
+    status: pending
     parallel_group: 999999
-    description: Remove or repurpose the \"subset for demo speed\" logic so the default real-data run is full cohort.
+    description: SVs overlapping a catalog repeat locus do not get an `sv_<id>` unit; they only contribute to that repeat unit’s presence/zygosity and proxy allele representation.
     indent_level: 0
     raw_marker: -
-  - id: "line_21"
-    line_number: 21
-    status: completed
+  - id: "line_46"
+    line_number: 46
+    status: pending
     parallel_group: 999999
-    description: Optionally: add a short note or variable (e.g. `USE_TRGT_SUBSET = False` or `N_TRGT_FILES = None` meaning \"all\") so users can still cap TRGT for quick tests if desired.
+    description: SVs outside all catalog repeat regions still get one `sv_<id>` unit each.
     indent_level: 0
     raw_marker: -
-  - id: "line_22"
-    line_number: 22
-    status: completed
+  - id: "line_47"
+    line_number: 47
+    status: pending
     parallel_group: 999999
-    description: Document expected runtime/memory for full TRGT load (~10k files).
+    description: TRGT data is merged into the canonical catalog-locus unit (matching by catalog id / locus); QC policy can prefer TRGT over proxy when both exist.
     indent_level: 0
     raw_marker: -
-  - id: "line_26"
-    line_number: 26
-    status: completed
+  - id: "line_48"
+    line_number: 48
+    status: pending
     parallel_group: 999999
-    description: **Notebook:** Add a \"Combination stats\" subsection (or expand the existing cache-stats section) that clearly reports:
+    description: Optional: comparison mode can emit shadow `repeat_<trid>` units for validation/comparison; default is off.
     indent_level: 0
     raw_marker: -
-  - id: "line_31"
-    line_number: 31
-    status: completed
+  - id: "line_49"
+    line_number: 49
+    status: pending
     parallel_group: 999999
-    description: **Backend (optional but recommended):** Extend `build_cache` (and provenance) to expose combination counts so the notebook can display them:
-    indent_level: 0
-    raw_marker: -
-  - id: "line_34"
-    line_number: 34
-    status: completed
-    parallel_group: 999999
-    description: Combination stats are printed or displayed in the notebook right after cache build (or in the same section).
-    indent_level: 0
-    raw_marker: -
-  - id: "line_38"
-    line_number: 38
-    status: completed
-    parallel_group: 999999
-    description: Markdown in the notebook explains what \"combination\" means (union of samples; test units from SV vs TRGT).
-    indent_level: 0
-    raw_marker: -
-  - id: "line_39"
-    line_number: 39
-    status: completed
-    parallel_group: 999999
-    description: Expected runtime for full TRGT load is noted (e.g. \"~5–10 min for ~10k TRGT files\" or similar from prior runs).
-    indent_level: 0
-    raw_marker: -
-  - id: "line_40"
-    line_number: 40
-    status: completed
-    parallel_group: 999999
-    description: All cells still run successfully with real data present; no regressions.
+    description: Tests and notebook updated to reflect canonical repeat units and SV-only-for-non-repeat regions.
     indent_level: 0
     raw_marker: -

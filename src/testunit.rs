@@ -10,12 +10,14 @@ use std::collections::HashMap;
 /// The type of test unit
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TestUnitType {
-    /// A standalone structural variant
+    /// A standalone structural variant (only for SVs outside catalog regions)
     Sv,
-    /// A repeat locus with SV-based proxy measurements
+    /// A repeat locus with SV-based proxy measurements (legacy, use Repeat for new code)
     RepeatProxy,
-    /// A repeat locus with true TRGT measurements
+    /// A repeat locus with true TRGT measurements (legacy, use Repeat for new code)
     TrueRepeat,
+    /// Canonical repeat unit: catalog locus with merged proxy+TRGT data
+    Repeat,
 }
 
 /// Source of the genotype/measurement data
@@ -132,6 +134,43 @@ impl TestUnit {
         }
     }
 
+    /// Create a canonical repeat unit for a catalog locus
+    /// This unit can hold merged proxy (SV-derived) and TRGT data
+    pub fn from_catalog_locus(
+        catalog_id: &str,
+        chrom: &str,
+        start: u64,
+        end: u64,
+        motif: &str,
+        sv_ids: Vec<String>,
+        has_trgt: bool,
+    ) -> Self {
+        let mut metadata = HashMap::new();
+        metadata.insert("proxy_sv_count".to_string(), sv_ids.len().to_string());
+        metadata.insert("has_trgt".to_string(), has_trgt.to_string());
+
+        // Determine source based on what data we have
+        let source = match (sv_ids.is_empty(), has_trgt) {
+            (false, true) => DataSource::Merged,   // Both proxy SVs and TRGT
+            (false, false) => DataSource::SvVcf,   // Only proxy SVs
+            (true, true) => DataSource::TrgtVcf,   // Only TRGT
+            (true, false) => DataSource::SvVcf,    // Neither (shouldn't happen)
+        };
+
+        TestUnit {
+            id: format!("repeat_{}", catalog_id),
+            chrom: chrom.to_string(),
+            start,
+            end,
+            unit_type: TestUnitType::Repeat,
+            source,
+            catalog_id: Some(catalog_id.to_string()),
+            sv_ids,
+            motif: Some(motif.to_string()),
+            metadata,
+        }
+    }
+
     /// Check if this is an SV test unit
     pub fn is_sv(&self) -> bool {
         self.unit_type == TestUnitType::Sv
@@ -145,6 +184,19 @@ impl TestUnit {
     /// Check if this is a true repeat test unit
     pub fn is_true_repeat(&self) -> bool {
         self.unit_type == TestUnitType::TrueRepeat
+    }
+
+    /// Check if this is a canonical repeat test unit
+    pub fn is_repeat(&self) -> bool {
+        self.unit_type == TestUnitType::Repeat
+    }
+
+    /// Check if this is any kind of repeat unit (canonical, proxy, or true repeat)
+    pub fn is_any_repeat(&self) -> bool {
+        matches!(
+            self.unit_type,
+            TestUnitType::Repeat | TestUnitType::RepeatProxy | TestUnitType::TrueRepeat
+        )
     }
 }
 
@@ -232,6 +284,22 @@ impl TestUnitBuilder {
                 &rec.trid,
             ));
         }
+    }
+
+    /// Add a canonical repeat unit from a catalog locus
+    pub fn add_canonical_repeat(
+        &mut self,
+        catalog_id: &str,
+        chrom: &str,
+        start: u64,
+        end: u64,
+        motif: &str,
+        sv_ids: Vec<String>,
+        has_trgt: bool,
+    ) {
+        self.units.push(TestUnit::from_catalog_locus(
+            catalog_id, chrom, start, end, motif, sv_ids, has_trgt,
+        ));
     }
 
     /// Build and return the test units
@@ -327,5 +395,70 @@ mod tests {
         let units = builder.build();
         assert_eq!(units.len(), 3);
         assert!(units.iter().all(|u| u.is_true_repeat()));
+    }
+
+    #[test]
+    fn test_testunit_from_catalog_locus() {
+        // With both SVs and TRGT
+        let unit = TestUnit::from_catalog_locus(
+            "TR001",
+            "chr1",
+            10000,
+            10050,
+            "CAG",
+            vec!["sv1".to_string(), "sv2".to_string()],
+            true,
+        );
+        
+        assert_eq!(unit.id, "repeat_TR001");
+        assert!(unit.is_repeat());
+        assert!(unit.is_any_repeat());
+        assert!(!unit.is_sv());
+        assert_eq!(unit.source, DataSource::Merged);
+        assert_eq!(unit.catalog_id, Some("TR001".to_string()));
+        assert_eq!(unit.sv_ids.len(), 2);
+        assert_eq!(unit.motif, Some("CAG".to_string()));
+
+        // With only SVs (no TRGT)
+        let unit2 = TestUnit::from_catalog_locus(
+            "TR002",
+            "chr1",
+            20000,
+            20050,
+            "CAG",
+            vec!["sv3".to_string()],
+            false,
+        );
+        assert_eq!(unit2.source, DataSource::SvVcf);
+
+        // With only TRGT (no SVs)
+        let unit3 = TestUnit::from_catalog_locus(
+            "TR003",
+            "chr1",
+            30000,
+            30050,
+            "CAG",
+            vec![],
+            true,
+        );
+        assert_eq!(unit3.source, DataSource::TrgtVcf);
+    }
+
+    #[test]
+    fn test_builder_add_canonical_repeat() {
+        let mut builder = TestUnitBuilder::new();
+        
+        builder.add_canonical_repeat(
+            "TR001", "chr1", 1000, 1100, "CAG",
+            vec!["sv1".to_string()], true,
+        );
+        builder.add_canonical_repeat(
+            "TR002", "chr2", 2000, 2100, "CGG",
+            vec![], true, // TRGT-only
+        );
+        
+        let units = builder.build();
+        assert_eq!(units.len(), 2);
+        assert!(units.iter().all(|u| u.is_repeat()));
     }
 }
