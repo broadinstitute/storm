@@ -15,7 +15,7 @@ use noodles::vcf::variant::record_buf::info::field::Value as InfoValue;
 use noodles::vcf::variant::record_buf::samples::sample::Value as SampleValue;
 use noodles::vcf::variant::record::samples::series::value::Genotype as GenotypeIter;
 use noodles::vcf::variant::record::samples::series::value::genotype::Phasing;
-use flate2::read::GzDecoder;
+use noodles::bgzf;
 
 /// Errors that can occur during SV VCF parsing
 #[derive(Error, Debug)]
@@ -171,15 +171,15 @@ fn is_gzip_file<P: AsRef<Path>>(path: P) -> Result<bool, SvVcfError> {
     Ok(false)
 }
 
-/// Open a VCF file, handling both plain text and gzip-compressed formats
-/// Returns a boxed BufRead trait object
+/// Open a VCF file, handling both plain text and gzip/BGZF-compressed formats.
+/// Uses BGZF reader for .gz so multi-block bgzip (typical for indexed .vcf.gz) is read fully.
 fn open_vcf_reader<P: AsRef<Path>>(path: P) -> Result<Box<dyn BufRead>, SvVcfError> {
     let path = path.as_ref();
-    
+
     if is_gzip_file(path)? {
         let file = File::open(path)?;
-        let decoder = GzDecoder::new(file);
-        Ok(Box::new(BufReader::new(decoder)))
+        let bgzf_reader = bgzf::Reader::new(file);
+        Ok(Box::new(BufReader::new(bgzf_reader)))
     } else {
         let file = File::open(path)?;
         Ok(Box::new(BufReader::new(file)))

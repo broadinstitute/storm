@@ -129,20 +129,20 @@ fn test_build_cache_from_fixtures() {
 #[test]
 fn test_build_cache_multi_trgt() {
     let output_dir = test_dir("build_multi_trgt");
-    
-    // Build cache with two single-sample TRGT files
+
+    // Use SV and TRGT fixtures that share sample IDs so intersection is non-empty.
+    // Samples = intersection(BCF, TRGT); trgt_small.vcf has SAMPLE1, SAMPLE2 (same as sv_small.vcf).
     let stats = build_cache(
         "fixtures/sv_small.vcf",
-        Some(&["fixtures/trgt_sample1.vcf", "fixtures/trgt_sample2.vcf"][..]),
+        Some(&["fixtures/trgt_small.vcf"][..]),
         None,
         None,
         output_dir.to_str().unwrap(),
-    ).expect("Failed to build cache with multiple TRGT files");
-    
-    // 3 SV units + 3 TRGT units = 6 test units
-    // But samples should now include SV samples (SAMPLE1, SAMPLE2) + TRGT samples (1524337, 1524338)
+    ).expect("Failed to build cache with TRGT");
+
+    // 3 SV units + 3 TRGT units = 6 test units; samples = intersection = 2 (SAMPLE1, SAMPLE2)
     assert!(stats.num_test_units >= 6, "Should have at least 6 test units, got {}", stats.num_test_units);
-    assert!(stats.num_samples >= 2, "Should have at least 2 samples, got {}", stats.num_samples);
+    assert_eq!(stats.num_samples, 2, "Should have 2 samples (intersection of BCF and TRGT), got {}", stats.num_samples);
     
     // Verify provenance includes both TRGT files
     let prov_path = output_dir.join("provenance.json");
@@ -157,10 +157,9 @@ fn test_build_cache_multi_trgt() {
         .filter_map(|v| v.as_str())
         .collect();
     
-    // Should have sv_small.vcf and both TRGT files
+    // Should have sv_small.vcf and TRGT file
     assert!(files.iter().any(|f| f.contains("sv_small.vcf")), "Should include sv_small.vcf");
-    assert!(files.iter().any(|f| f.contains("trgt_sample1.vcf")), "Should include trgt_sample1.vcf");
-    assert!(files.iter().any(|f| f.contains("trgt_sample2.vcf")), "Should include trgt_sample2.vcf");
+    assert!(files.iter().any(|f| f.contains("trgt_small.vcf")), "Should include trgt_small.vcf");
     
     let _ = std::fs::remove_dir_all(&output_dir);
 }

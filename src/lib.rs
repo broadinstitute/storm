@@ -6,7 +6,7 @@
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::path::Path;
 use thiserror::Error;
@@ -67,6 +67,8 @@ pub enum BuildCacheError {
     Io(#[from] std::io::Error),
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
+    #[error("TRGT paths provided ({0} files) but no records parsed. Check that paths are valid and files contain TRGT records with TRID in INFO. First path: {1}")]
+    TrgtNoRecords(usize, String),
 }
 
 /// Statistics from cache building
@@ -125,12 +127,15 @@ pub fn build_cache(
     let trgt_records = match trgt_vcf_paths {
         Some(paths) if !paths.is_empty() => {
             let (trgt_samples, records) = parse_and_merge_trgt_vcfs(paths)?;
-            // Add TRGT samples to all_samples
-            for sample_id in trgt_samples {
-                if !all_samples.contains(&sample_id) {
-                    all_samples.push(sample_id);
-                }
+            if records.is_empty() {
+                return Err(BuildCacheError::TrgtNoRecords(
+                    paths.len(),
+                    paths[0].to_string(),
+                ));
             }
+            // Use intersection of BCF and TRGT samples so we only work with samples that have both
+            let trgt_set: HashSet<&str> = trgt_samples.iter().map(String::as_str).collect();
+            all_samples.retain(|s| trgt_set.contains(s.as_str()));
             all_samples.sort();
             Some(records)
         }

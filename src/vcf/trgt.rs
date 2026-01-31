@@ -9,7 +9,7 @@ use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
 use serde::Serialize;
 use thiserror::Error;
-use flate2::read::GzDecoder;
+use noodles::bgzf;
 
 /// Errors that can occur during TRGT VCF parsing
 #[derive(Error, Debug)]
@@ -116,14 +116,15 @@ fn is_gzip_file<P: AsRef<Path>>(path: P) -> Result<bool, TrgtVcfError> {
     Ok(false)
 }
 
-/// Open a VCF file, handling both plain text and gzip-compressed formats
+/// Open a VCF file, handling both plain text and gzip/BGZF-compressed formats.
+/// Uses BGZF reader for .gz so multi-block bgzip (typical for indexed .vcf.gz) is read fully.
 fn open_vcf_reader<P: AsRef<Path>>(path: P) -> Result<Box<dyn BufRead>, TrgtVcfError> {
     let path = path.as_ref();
-    
+
     if is_gzip_file(path)? {
         let file = File::open(path)?;
-        let decoder = GzDecoder::new(file);
-        Ok(Box::new(BufReader::new(decoder)))
+        let bgzf_reader = bgzf::Reader::new(file);
+        Ok(Box::new(BufReader::new(bgzf_reader)))
     } else {
         let file = File::open(path)?;
         Ok(Box::new(BufReader::new(file)))

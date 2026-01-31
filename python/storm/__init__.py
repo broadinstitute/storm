@@ -125,17 +125,24 @@ class StormCache:
             ... )
         """
         if HAS_RUST and py_build_cache is not None:
-            # Normalize trgt_vcf to a list (or None)
+            # Resolve paths to absolute so Rust can open files regardless of cwd
+            sv_vcf_abs = str(Path(sv_vcf).resolve())
+
+            # Normalize trgt_vcf to a list (or None) and resolve to absolute paths
             trgt_vcf_list: Optional[List[str]] = None
             if trgt_vcf is not None:
                 if isinstance(trgt_vcf, str):
-                    trgt_vcf_list = [trgt_vcf]
+                    trgt_vcf_list = [str(Path(trgt_vcf).resolve())]
                 else:
-                    trgt_vcf_list = list(trgt_vcf)
-            
+                    trgt_vcf_list = [str(Path(p).resolve()) for p in trgt_vcf]
+
+            # Resolve optional catalog paths
+            catalog_bed_abs = str(Path(catalog_bed).resolve()) if catalog_bed else None
+            catalog_json_abs = str(Path(catalog_json).resolve()) if catalog_json else None
+
             # Call Rust build_cache function
             num_units, num_samples, num_gts, num_catalog = py_build_cache(
-                sv_vcf, trgt_vcf_list, catalog_bed, catalog_json, output_dir
+                sv_vcf_abs, trgt_vcf_list, catalog_bed_abs, catalog_json_abs, output_dir
             )
             cache = cls(output_dir)
             cache._build_stats = {

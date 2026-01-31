@@ -12,6 +12,12 @@ Local, full-scale datasets for driving development. These live under `scratch/` 
 - **Samples:** ~12,680
 - **Content:** Multi-sample SV callset (DEL, INS, DUP, INV, BND); format `GT:FT:SQ:GQ:PS:NE:DP:AD:KS`
 
+### TRExplorer repeat catalog (optional, for RepeatProxy units)
+
+- **BED:** `scratch/TRExplorer.repeat_catalog_v2.hg38.1_to_1000bp_motifs.bed.gz` (plain or .gz)
+- **JSON (annotations):** `scratch/TRExplorer.repeat_catalog_v2.hg38.1_to_1000bp_motifs.EH.with_annotations.json.gz` (plain or .gz)
+- **Note:** Use the **main** BED and the **EH** JSON for STORM’s catalog. The `.TRGT.bed.gz` file is TRGT-specific and is not used by STORM’s cache build. STORM supports gzipped catalog files (`.bed.gz`, `.json.gz`).
+
 ### TRGT calls (per-sample VCF.gz)
 
 - **Path:** `scratch/trgt/*.vcf.gz`
@@ -24,7 +30,7 @@ Local, full-scale datasets for driving development. These live under `scratch/` 
 
 - BCF has ~12,680 samples; TRGT directory has ~10,023 `.vcf.gz` files.
 - Sample IDs match: BCF column names are numeric IDs (e.g. `1000234`); TRGT sample ID is the filename prefix before `_trgt`.
-- Use the subset of samples present in both for joint SV + TRGT workflows.
+- **When both BCF and TRGT are provided, the cache uses the intersection of samples** (only samples present in both). This ensures genotypes align for joint SV + TRGT association testing.
 
 ## Usage
 
@@ -67,7 +73,7 @@ storm cache build \
 ```
 
 **Joint SV + TRGT:**  
-Use the same sample ordering or sample subset in both the BCF and the TRGT file list so genotypes align.
+The cache includes only samples that appear in both the BCF and the TRGT files (intersection), so genotypes align for association testing.
 
 ### Python API
 

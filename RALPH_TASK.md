@@ -1,43 +1,52 @@
 ---
-task: Real-Data Section — Load All TRGT Files and Add Combination Stats
+task: Canonical Repeat Units (Catalog Loci)
 test_command: "cargo test --features python && cd python && python -m pytest -W error"
 ---
 
-# Task: Real-Data Section — Load All TRGT Files and Add Combination Stats
+# Task: Canonical Repeat Units (Catalog Loci)
 
-The notebook's real-data section currently runs successfully but uses only a subset of TRGT files (e.g. 200) for speed, and it does not clearly show how the integrated callset (BCF) and TRGT calls are combined. This task updates the real-data section to:
+Make **catalog loci/clusters** the canonical unit for repeats. Integrated-callset SV records that overlap repeats contribute to the repeat unit’s presence/zygosity and proxy allele representation. TRGT contributes an alternate allele representation that can override proxy by QC policy. Do **not** emit `repeat_<trid>` as a separate default-tested unit; keep it as a representation (and optionally as a shadow unit only in comparison mode). SV units remain one-per-SV only for SVs **outside** repeat catalog regions.
 
-1. **Load all TRGT files** for the real-data workflow (no subset cap).
-2. **Add combination statistics** so we can see how BCF and TRGT are combined (samples, test units by source, etc.).
+---
+
+## Design
+
+1. **Canonical repeat unit = catalog locus**
+   - The single canonical “repeat” test unit for a region is the **catalog locus** (from BED/JSON), not a separate SV unit or a separate TRGT locus unit.
+   - One test unit per catalog locus that is either:
+     - overlapped by ≥1 SV (so we can build proxy alleles), and/or
+     - covered by TRGT (so we have true repeat alleles).
+   - Identify catalog loci as usual (BED + optional JSON). Optionally support locus clusters if the catalog defines them.
+
+2. **SVs overlapping repeats → contribute to the repeat unit only**
+   - Integrated-callset SV records that overlap a catalog repeat locus **do not** get their own `sv_<id>` test unit.
+   - They contribute only to the **repeat (catalog) unit** for that locus:
+     - **Presence/zygosity:** SV presence/GT feeds into whether the repeat unit is “present” and zygosity for that sample.
+     - **Proxy allele representation:** SV-based proxy (e.g. INS/DEL length) is the allele representation when TRGT is absent or overridden by QC.
+   - SVs inside catalog repeat regions → no separate Sv unit; they feed the single repeat (catalog) unit.
+
+3. **SVs outside repeat catalog regions**
+   - SV records that do **not** overlap any catalog repeat locus remain **one-per-SV** test units (`sv_<id>`) as today.
+
+4. **TRGT as alternate representation; override by QC**
+   - TRGT provides an **alternate allele representation** for a catalog locus (true repeat lengths).
+   - When both proxy (SV-derived) and TRGT data exist for the same catalog locus and sample, a **QC policy** decides which representation to use (e.g. prefer TRGT when pass, else fall back to proxy).
+   - TRGT is stored as a **representation** on the canonical (catalog) repeat unit, not as a separate default-tested unit.
+
+5. **Do not emit `repeat_<trid>` as a default-tested unit**
+   - **Default:** Do **not** create a separate test unit `repeat_<trid>` for each TRGT locus. TRGT data is merged into the canonical catalog-locus unit (matched by locus id / position / catalog id as appropriate).
+   - **Optional comparison mode:** Allow a “shadow” or secondary unit per TRGT locus **only** when a comparison mode is enabled (e.g. to compare catalog-unit results vs raw TRGT-unit results). This is not the default; it is for analysis/validation only.
 
 ---
 
 ## Success Criteria
 
-### A. Load All TRGT Files in Real-Data Section
-
-- [x] Real-data cache build uses **all** TRGT files in `scratch/trgt/` (e.g. `trgt_files` with no `N_TRGT_FILES` limit, or `N_TRGT_FILES = len(trgt_files)`).
-- [x] Remove or repurpose the "subset for demo speed" logic so the default real-data run is full cohort.
-- [x] Optionally: add a short note or variable (e.g. `USE_TRGT_SUBSET = False` or `N_TRGT_FILES = None` meaning "all") so users can still cap TRGT for quick tests if desired.
-- [x] Document expected runtime/memory for full TRGT load (~10k files).
-
-### B. Combination Statistics (How BCF + TRGT Are Combined)
-
-- [x] **Notebook:** Add a "Combination stats" subsection (or expand the existing cache-stats section) that clearly reports:
-  - **Input counts:** Number of TRGT files loaded; note that BCF is one file with many samples.
-  - **Samples:** Total number of unique samples in the cache (union of BCF and TRGT samples).
-  - **Test units by source:** Counts by `unit_type` (e.g. Sv vs TrueRepeat), so we see how many loci come from the integrated callset vs TRGT.
-  - **Genotypes:** Total genotype records (or a short summary), so we see scale of the combined callset.
-- [x] **Backend (optional but recommended):** Extend `build_cache` (and provenance) to expose combination counts so the notebook can display them:
-  - **Option 1 (minimal):** Return or write to provenance: `num_samples_sv` (samples in BCF), `num_samples_trgt` (samples in TRGT files), `num_samples_both` (samples present in both). Then the notebook can show "Samples: BCF only N, TRGT only M, both K, total unique T".
-  - **Option 2 (current only):** If we do not extend the backend, the notebook still reports: total samples, test units by type, TRGT file count, total genotypes, and a short markdown explanation that "samples = union of BCF and TRGT".
-- [x] Combination stats are printed or displayed in the notebook right after cache build (or in the same section).
-
-### C. Documentation and Polish
-
-- [x] Markdown in the notebook explains what "combination" means (union of samples; test units from SV vs TRGT).
-- [x] Expected runtime for full TRGT load is noted (e.g. "~5–10 min for ~10k TRGT files" or similar from prior runs).
-- [x] All cells still run successfully with real data present; no regressions.
+- [ ] Catalog loci are the only repeat test units in the default output (no separate `repeat_<trid>` by default).
+- [ ] SVs overlapping a catalog repeat locus do not get an `sv_<id>` unit; they only contribute to that repeat unit’s presence/zygosity and proxy allele representation.
+- [ ] SVs outside all catalog repeat regions still get one `sv_<id>` unit each.
+- [ ] TRGT data is merged into the canonical catalog-locus unit (matching by catalog id / locus); QC policy can prefer TRGT over proxy when both exist.
+- [ ] Optional: comparison mode can emit shadow `repeat_<trid>` units for validation/comparison; default is off.
+- [ ] Tests and notebook updated to reflect canonical repeat units and SV-only-for-non-repeat regions.
 
 ---
 
@@ -45,52 +54,70 @@ The notebook's real-data section currently runs successfully but uses only a sub
 
 ### Current Behavior
 
-- **Notebook:** Real-data section sets `N_TRGT_FILES = 200` and builds cache with `trgt_subset = trgt_files[:N_TRGT_FILES]`, so only 200 TRGT files are used.
-- **Cache stats shown:** Build stats (num_test_units, num_samples, num_genotypes) and test units by `unit_type` (e.g. Sv only if no catalog). There is no explicit "samples from BCF vs TRGT" or "how we combine" summary.
-- **Backend:** `build_cache` returns `CacheBuildStats { num_test_units, num_samples, num_genotypes, num_catalog_entries }`. It does not return per-source sample counts (BCF-only, TRGT-only, overlap).
+- **Sv:** One test unit per SV record (`sv_<id>`), regardless of overlap with catalog or TRGT.
+- **RepeatProxy:** One test unit per catalog locus that overlaps ≥1 SV (`proxy_<catalog_id>`); genotypes from SVs via Resolver.
+- **TrueRepeat:** One test unit per TRGT locus (`repeat_<trid>`); genotypes from TRGT.
+- The same genomic region can thus have three units (Sv + RepeatProxy + TrueRepeat). No merging; no “canonical” repeat unit.
 
 ### Desired Behavior
 
-- Real-data section uses **all** TRGT files by default (with optional subset for quick tests).
-- A clear "Combination stats" block shows: TRGT files loaded, total samples, test units by type (Sv, TrueRepeat), total genotypes, and ideally sample overlap (BCF-only, TRGT-only, both) if the backend is extended.
+- **Repeat (canonical):** One test unit per catalog locus that has SV overlap and/or TRGT coverage. Genotypes combine proxy (from SVs) and TRGT; QC policy chooses which allele representation to use when both exist. No separate `repeat_<trid>` by default.
+- **Sv:** One test unit per SV **only** for SVs that do **not** overlap any catalog repeat locus. SVs inside repeat regions contribute only to the repeat unit.
+- **Optional:** Comparison mode can emit shadow `repeat_<trid>` units for validation.
 
 ### Key Files
 
 | File | Change |
 |------|--------|
-| `notebooks/storm_demo.ipynb` | Use all TRGT files; add combination-stats subsection and optional subset switch. |
-| `src/lib.rs` | Optionally extend `CacheBuildStats` and build logic to track/return `num_samples_sv`, `num_samples_trgt`, `num_samples_both`. |
-| `src/cache/` (provenance) | Optionally add combination fields to provenance JSON. |
-| Python `storm/__init__.py`, `py_build_cache` | Optionally expose new stats from Rust. |
+| `src/lib.rs` | Build logic: catalog-first repeat units; SV units only for non-overlapping SVs; merge TRGT into catalog units; no default TrueRepeat units. |
+| `src/resolver.rs` | Resolve genotypes for catalog units (proxy from SVs; merge or override with TRGT per QC policy). |
+| `src/testunit.rs` | Unit types / IDs for canonical repeat vs shadow; metadata for representation source. |
+| `src/cache/` | Schema for genotypes (allele representation source; QC); provenance for canonical vs shadow. |
+| `notebooks/storm_demo.ipynb` | Stats and text for canonical repeat units; optional comparison-mode note. |
+| Tests | Fixtures and expectations for canonical units, SV-only-outside-repeat, TRGT merged into catalog. |
 
 ---
 
 ## Implementation Plan
 
-### Phase 1: Notebook — Use All TRGT Files
+### Phase 1: Catalog-first repeat units
 
-1. In the real-data cache-build cell, stop using a fixed subset (e.g. remove `N_TRGT_FILES = 200` or set it to use all files).
-   - Use `trgt_subset = [str(f) for f in trgt_files]` (all files), or introduce `N_TRGT_FILES = None` (meaning all) and `trgt_subset = trgt_files[:N_TRGT_FILES] if N_TRGT_FILES else trgt_files`, then `trgt_subset = [str(f) for f in trgt_subset]`.
-2. Update the print message to say "Building cache with N TRGT files" where N = len(trgt_files).
-3. Add a short markdown or comment: expected runtime for full TRGT load (~5–10 min) and optional note on how to cap TRGT for a quick test (e.g. set `N_TRGT_FILES = 100`).
+1. **Define canonical repeat units**
+   - From catalog (BED + optional JSON), build the set of catalog loci (id, chrom, start, end, motif, etc.).
+   - For each catalog locus, determine:
+     - Which SVs overlap it (existing `map_svs_to_catalog` / overlap logic).
+     - Which TRGT loci match it (by catalog id / LocusId or by position overlap; define matching rule).
+   - Emit **one** test unit per catalog locus that has at least one overlapping SV **or** TRGT coverage (or both). Unit id e.g. `repeat_<catalog_id>` or keep `proxy_<catalog_id>` naming; document as the canonical repeat unit.
 
-### Phase 2: Combination Statistics
+2. **Genotypes for canonical repeat units**
+   - **Proxy (SV-derived):** For samples with overlapping SV calls, compute presence/zygosity and proxy allele (e.g. INS/DEL length) using existing Resolver logic.
+   - **TRGT:** For samples with TRGT genotypes at the matching locus, attach true repeat allele representation.
+   - **QC policy:** When both proxy and TRGT exist for a sample at a locus, apply policy (e.g. prefer TRGT if pass, else proxy). Store chosen representation and optionally store both in genotype row for downstream comparison.
+   - Persist in cache: per (unit, sample) one chosen allele representation plus optional source flag (proxy vs TRGT vs merged).
 
-4. **Notebook:** Add a "Combination stats" subsection after cache build (or merge into existing stats):
-   - TRGT files loaded: `len(trgt_files)` (or len of list actually passed to build).
-   - Total samples: from build stats or `real_cache.genotypes["sample_id"].n_unique()`.
-   - Test units by type: `real_cache.test_units.group_by("unit_type").agg(pl.len().alias("count"))` (or equivalent).
-   - Total genotypes: from build stats or `len(real_cache.genotypes)`.
-5. **Backend (optional):** In `build_cache`, after merging `all_samples`, compute:
-   - `num_samples_sv` = sv_samples.len()
-   - `num_samples_trgt` = number of unique samples that came from TRGT (from parse_and_merge_trgt_vcfs or by tracking which IDs were added from TRGT).
-   - `num_samples_both` = number of sample IDs that appear in both sv_samples and the TRGT sample set.
-   Add these to `CacheBuildStats` and to provenance JSON. Expose in Python `py_build_cache` return value / `_build_stats` so the notebook can print "Samples: BCF only X, TRGT only Y, both Z, total T".
+### Phase 2: SV units only outside repeat regions
 
-### Phase 3: Polish
+3. **Filter SVs for standalone Sv units**
+   - After building canonical repeat units, identify SVs that overlap **any** catalog repeat locus.
+   - Emit `sv_<id>` test units **only** for SVs that do **not** overlap any catalog locus. SVs that overlap repeats are not emitted as separate Sv units; they already contributed to the repeat unit.
 
-6. Add markdown explaining that the cache combines the integrated callset (BCF) and TRGT by taking the union of samples and building test units from both SV records and TRGT loci.
-7. Verify all cells run successfully with real data.
+### Phase 3: No default TrueRepeat units; optional shadow
+
+4. **Stop emitting `repeat_<trid>` by default**
+   - Remove (or gate) the loop that creates a test unit per TRGT locus. TRGT data is only used to fill the canonical catalog-locus units (matching TRGT locus to catalog locus by id/position).
+
+5. **Optional comparison mode**
+   - Add a build/cache option (e.g. `emit_trgt_shadow_units: bool` or `comparison_mode: bool`). When enabled, additionally emit shadow test units `repeat_<trid>` with TRGT-only genotypes so users can compare association results: canonical repeat unit vs raw TRGT unit. Default: off.
+
+### Phase 4: Tests and docs
+
+6. **Tests**
+   - Update or add tests: cache build with catalog + SV + TRGT produces canonical repeat units only (no standalone `repeat_<trid>`), SV units only for non-overlapping SVs, and TRGT merged into repeat unit genotypes. Add test for comparison mode emitting shadow units if implemented.
+   - Update fixtures if needed (catalog + SV + TRGT overlap scenarios).
+
+7. **Notebook and docs**
+   - Update combination stats / “test units by source” to describe canonical repeat units and SV-only-outside-repeat. Remove or relabel “TrueRepeat” for default output; add note on optional comparison (shadow) mode if implemented.
+   - README or RALPH_TASK context: short description of canonical repeat units and QC policy.
 
 ---
 
@@ -98,9 +125,13 @@ The notebook's real-data section currently runs successfully but uses only a sub
 
 When complete:
 
-- Real-data section builds the cache using **all** TRGT files in `scratch/trgt/` by default.
-- Combination statistics are visible in the notebook (TRGT file count, total samples, test units by type, total genotypes; optionally BCF-only / TRGT-only / both sample counts).
-- Notebook still runs to completion with real data; no regressions.
+- Canonical repeat units are the only repeat units in the default cache (one per catalog locus with SV and/or TRGT).
+- SVs overlapping a catalog repeat do not have their own `sv_<id>` unit.
+- SVs outside catalog repeat regions have one `sv_<id>` unit each.
+- TRGT data is merged into canonical repeat units; QC policy selects proxy vs TRGT when both exist.
+- No `repeat_<trid>` units in default output; optional shadow units only when comparison mode is on.
+- `cargo test --features python` and `cd python && python -m pytest -W error` pass.
+- Notebook and docs reflect the new design.
 
 ---
 
@@ -108,9 +139,9 @@ When complete:
 
 When:
 
-- All checkboxes above are checked.
+- All success-criteria checkboxes above are checked.
 - `cargo test --features python` passes.
 - `cd python && python -m pytest -W error` passes.
-- Real-data section uses all TRGT files and displays combination stats.
+- Cache build produces canonical repeat units and SV-only-outside-repeat; TRGT merged into repeat units; no default TrueRepeat units.
 
 Write **DONE** in `.ralph/progress.md` and stop.
