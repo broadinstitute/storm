@@ -120,8 +120,7 @@ pub fn build_cache(
     let (sv_samples, sv_records) = parse_sv_vcf(sv_vcf_path)?;
     
     // Collect all sample IDs from SV records
-    let mut all_samples: Vec<String> = sv_samples.clone();
-    all_samples.sort();
+    let mut all_samples: HashSet<String> = sv_samples.iter().cloned().collect();
 
     // 2. Optionally parse and merge TRGT VCFs
     let trgt_records = match trgt_vcf_paths {
@@ -133,14 +132,19 @@ pub fn build_cache(
                     paths[0].to_string(),
                 ));
             }
-            // Use intersection of BCF and TRGT samples so we only work with samples that have both
-            let trgt_set: HashSet<&str> = trgt_samples.iter().map(String::as_str).collect();
-            all_samples.retain(|s| trgt_set.contains(s.as_str()));
-            all_samples.sort();
+            // Use UNION of samples: any sample from SV or TRGT files
+            // Genotypes will be resolved per-sample with available data
+            for sample in trgt_samples {
+                all_samples.insert(sample);
+            }
             Some(records)
         }
         _ => None,
     };
+    
+    // Sort samples for consistent ordering
+    let mut all_samples: Vec<String> = all_samples.into_iter().collect();
+    all_samples.sort();
 
     // 3. Load catalog
     let catalog = match (catalog_bed_path, catalog_json_path) {
