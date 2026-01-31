@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 use storm::{
-    build_cache, verify_cache, explain_genotype, explain_locus,
+    build_cache_with_options, verify_cache, explain_genotype, explain_locus,
     read_cache_from_dir,
 };
 
@@ -75,6 +75,11 @@ enum CacheAction {
         /// Output directory for cache files
         #[arg(long, default_value = "storm_cache")]
         output_dir: PathBuf,
+
+        /// Enable comparison mode: emit shadow repeat units alongside canonical units
+        /// for validation/comparison of results. Default: off.
+        #[arg(long, default_value = "false")]
+        comparison_mode: bool,
     },
     /// Verify an existing cache
     Verify {
@@ -97,7 +102,8 @@ fn main() {
                 catalog_bed,
                 catalog_json,
                 output_dir,
-            } => run_cache_build(sv_vcf, trgt_vcf, trgt_dir, trgt_list, catalog_bed, catalog_json, output_dir),
+                comparison_mode,
+            } => run_cache_build(sv_vcf, trgt_vcf, trgt_dir, trgt_list, catalog_bed, catalog_json, output_dir, comparison_mode),
             CacheAction::Verify { cache_dir } => run_cache_verify(cache_dir),
         },
         Some(Commands::Explain {
@@ -127,6 +133,7 @@ fn run_cache_build(
     catalog_bed: Option<PathBuf>,
     catalog_json: Option<PathBuf>,
     output_dir: PathBuf,
+    comparison_mode: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Expand trgt_dir to individual files
     if let Some(dir) = trgt_dir {
@@ -181,6 +188,9 @@ fn run_cache_build(
         println!("  Catalog JSON: {}", p.display());
     }
     println!("  Output: {}", output_dir.display());
+    if comparison_mode {
+        println!("  Comparison mode: enabled (shadow units will be emitted)");
+    }
 
     // Validate inputs exist
     if !sv_vcf.exists() {
@@ -211,12 +221,13 @@ fn run_cache_build(
     };
 
     // Run the build pipeline
-    let stats = build_cache(
+    let stats = build_cache_with_options(
         sv_vcf.to_str().unwrap(),
         trgt_paths_opt,
         catalog_bed.as_ref().map(|p| p.to_str().unwrap()),
         catalog_json.as_ref().map(|p| p.to_str().unwrap()),
         output_dir.to_str().unwrap(),
+        comparison_mode,
     )?;
 
     println!("\nCache built successfully!");
