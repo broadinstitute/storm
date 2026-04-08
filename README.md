@@ -11,6 +11,10 @@ A high-performance framework for association testing of structural variants and 
 - **Arrow/Parquet Cache**: Efficient storage for large-scale analysis
 - **Plan-based Configuration**: YAML-driven analysis rules
 
+## How test units are combined
+
+Catalog loci are the canonical unit for repeats. SVs that overlap a catalog locus contribute to that repeat unit (proxy allele); SVs that do not overlap any catalog locus become standalone SV units. TRGT data is merged into the matching catalog locus; a QC policy chooses proxy vs TRGT when both exist. See **[How STORM combines test units](docs/test_units.md)** for a diagram and summary.
+
 ## Installation
 
 ### Rust Binary
