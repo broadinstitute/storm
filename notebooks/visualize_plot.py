@@ -55,8 +55,42 @@ Y = {
 TRACK_H = 0.24
 TRACK_UCSC = 0.17
 
+# TRGT and SV variant strokes share this width; INS rects use the same thickness in data units.
+VARIANT_LINE_WIDTH_PX = 10
+# y-axis view + nominal inner plot height (must stay consistent with ``update_layout`` below).
+FIG_Y_RANGE = (0.05, 3.38)
+FIG_INNER_PLOT_H_PX = 268.0  # ~ height 500 − top/bottom margins; maps stroke px ↔ y data for INS
+
 # INS has no reference span; drawn width is max(insertion length, INS_PAD_MIN_BP) from VCF POS.
 INS_PAD_MIN_BP = 20
+
+# Per-base sequence strips: cap points for very long TR alleles.
+INSSEQ_MAX_BP = 20000
+INSSEQ_STRIP_H = 0.06
+INSSEQ_GAP_BELOW_MAIN = 0.02
+
+# IGV-style nucleotide colors.
+BASE_COLOR = {
+    "A": "#00A000",
+    "C": "#0000E0",
+    "G": "#F09000",
+    "T": "#E00000",
+}
+BASE_COLOR_OTHER = "#888888"
+
+
+def base_color(ch: str) -> str:
+    return BASE_COLOR.get((ch or "?").upper(), BASE_COLOR_OTHER)
+
+
+def insseq_group_id(*, chrom: str, pos: int, hap: int, kind: str, vid: str) -> str:
+    return f"{chrom}|{pos}|H{hap + 1}|{kind}|{vid}"
+
+
+def _variant_stroke_height_data() -> float:
+    """Vertical span in y data units matching ``VARIANT_LINE_WIDTH_PX`` on the default figure."""
+    y0, y1 = FIG_Y_RANGE
+    return (VARIANT_LINE_WIDTH_PX / FIG_INNER_PLOT_H_PX) * (y1 - y0)
 
 
 @dataclass
@@ -70,6 +104,8 @@ class SVRow:
     qual: float
     filter: str
     info: str
+    # Per-haplotype inserted sequence (concrete ALT only); None if not INS / not carried / symbolic.
+    ins_seq: tuple[Optional[str], Optional[str]] = (None, None)
 
 
 @dataclass
@@ -82,6 +118,8 @@ class TRGTRow:
     al: tuple[int, ...]
     mc: tuple[int, ...]
     info: str
+    ref: str  # VCF REF (full repeat + padding base)
+    vcf_alts: tuple[str, ...]  # VCF ALT consensus strings (same order as alleles 1..n)
 
 
 def gt_is_called(gt: Any) -> bool:
@@ -187,6 +225,41 @@ def record_info_summary(rec: Any) -> str:
     )
 
 
+def _norm_vcf_seq(x: Any) -> str:
+    """VCF REF/ALT as str (pysam may return ``bytes`` in some builds)."""
+    if x is None:
+        return ""
+    if isinstance(x, (bytes, bytearray)):
+        return bytes(x).decode("ascii", errors="replace")
+    return str(x)
+
+
+def _sv_hap_ins_seq(
+    gt: tuple[Optional[int], ...],
+    hap: int,
+    ref: str,
+    alts: tuple[Any, ...],
+    rec: Any,
+) -> Optional[str]:
+    """Inserted bases on ``hap`` for a VCF record; ``None`` if not a concrete insertion."""
+    if hap >= len(gt):
+        return None
+    ai = gt[hap]
+    if ai is None or ai <= 0:
+        return None
+    if ai - 1 < 0 or ai - 1 >= len(alts):
+        return None
+    alt = _norm_vcf_seq(alts[ai - 1])
+    if insertion_bp_from_ref_alt(ref, alt, rec) <= 0:
+        return None
+    if _is_symbolic_alt(alt):
+        return None
+    tail = alt[len(ref) :]
+    if not tail:
+        return None
+    return tail.upper()
+
+
 def parse_sv_rows(path: Path, chrom: str, start: int, end: int, sample: str) -> list[SVRow]:
     """Load indel SV records from REF/ALT (and symbolic alleles + SVLEN/END).
 
@@ -204,8 +277,8 @@ def parse_sv_rows(path: Path, chrom: str, start: int, end: int, sample: str) -> 
             gt = tuple(gt)
             if gt_is_homozygous_reference(gt):
                 continue
-            ref = rec.ref or ""
-            alts = rec.alts or ()
+            ref = _norm_vcf_seq(rec.ref)
+            alts = tuple(_norm_vcf_seq(a) for a in (rec.alts or ()))
             carried = sorted({a for a in gt if a is not None and a > 0})
             if not carried:
                 continue
@@ -248,6 +321,8 @@ def parse_sv_rows(path: Path, chrom: str, start: int, end: int, sample: str) -> 
             if ins_lens:
                 L = max(ins_lens)
                 suf = "_INS" if del_lens else ""
+                ins0 = _sv_hap_ins_seq(gt, 0, ref, alts, rec)
+                ins1 = _sv_hap_ins_seq(gt, 1, ref, alts, rec) if len(gt) > 1 else None
                 rows.append(
                     SVRow(
                         pos=pos,
@@ -259,6 +334,7 @@ def parse_sv_rows(path: Path, chrom: str, start: int, end: int, sample: str) -> 
                         qual=qual,
                         filter=flt,
                         info=info_txt,
+                        ins_seq=(ins0, ins1),
                     )
                 )
     return rows
@@ -290,6 +366,8 @@ def parse_trgt_rows(path: Path, chrom: str, start: int, end: int, sample: str) -
             if isinstance(raw_end, tuple):
                 raw_end = raw_end[0] if raw_end else None
             end_i = int(raw_end) if raw_end is not None else int(rec.stop)
+            ref_s = _norm_vcf_seq(rec.ref)
+            alt_tpl = tuple(_norm_vcf_seq(a) for a in (rec.alts or ()))
             rows.append(
                 TRGTRow(
                     pos=int(rec.pos) + 1,
@@ -300,6 +378,8 @@ def parse_trgt_rows(path: Path, chrom: str, start: int, end: int, sample: str) -
                     al=_fmt_tuple_ints(s.get("AL")),
                     mc=_fmt_tuple_ints(s.get("MC")),
                     info=record_info_summary(rec),
+                    ref=ref_s,
+                    vcf_alts=alt_tpl,
                 )
             )
     return rows
@@ -379,6 +459,47 @@ def display_figure_with_genomic_cursor(
     fw = FigureWidget(fig)
     fw.update_layout(hovermode="closest")
 
+    # Use trace *indices* into ``fw.data``: FigureWidget may not apply ``visible``
+    # updates to stale trace object references captured at build time.
+    insseq_indices_by_group: dict[str, list[int]] = {}
+    for i, tr in enumerate(fw.data):
+        gid_k: Optional[str] = None
+        meta = getattr(tr, "meta", None)
+        if isinstance(meta, dict) and meta.get("insseq_group"):
+            gid_k = str(meta["insseq_group"])
+        else:
+            nm = getattr(tr, "name", None) or ""
+            if isinstance(nm, str) and nm.startswith("_insseq:"):
+                gid_k = nm[len("_insseq:") :]
+        if gid_k:
+            insseq_indices_by_group.setdefault(gid_k, []).append(i)
+
+    def _insseq_group_is_visible(gid: str) -> bool:
+        for j in insseq_indices_by_group.get(gid, []):
+            if fw.data[j].visible:
+                return True
+        return False
+
+    def _cd_cell_detail(cell: Any) -> str:
+        if isinstance(cell, str):
+            return cell
+        try:
+            if len(cell) >= 1:  # type: ignore[arg-type]
+                return str(cell[0])
+        except Exception:
+            pass
+        return str(cell)
+
+    def _cd_cell_group(cell: Any) -> str:
+        if isinstance(cell, str):
+            return ""
+        try:
+            if len(cell) >= 2 and cell[1] is not None:  # type: ignore[arg-type]
+                return str(cell[1]).strip()
+        except Exception:
+            pass
+        return ""
+
     def on_hover(trace: Any, points: Any, state: Any) -> None:
         if not getattr(points, "point_inds", None):
             return
@@ -404,6 +525,8 @@ def display_figure_with_genomic_cursor(
                 return v
             try:
                 if 0 <= idx < len(v):
+                    if attr == "customdata":
+                        return _cd_cell_detail(v[idx])
                     return str(v[idx])
             except Exception:
                 return ""
@@ -422,9 +545,34 @@ def display_figure_with_genomic_cursor(
             return ""
         try:
             if 0 <= idx < len(v):
-                out = str(v[idx])
+                out = _cd_cell_detail(v[idx])
                 if out.strip():
                     return out
+        except Exception:
+            return ""
+        return ""
+
+    def _point_insseq_group(trace: Any, idx: int) -> str:
+        v = getattr(trace, "customdata", None)
+        if v is None:
+            return ""
+        try:
+            if 0 <= idx < len(v):
+                return _cd_cell_group(v[idx])
+        except Exception:
+            return ""
+        return ""
+
+    def _trace_insseq_group_scan(trace: Any) -> str:
+        """Filled polygons sometimes report a point index whose customdata row lacks the group; scan the trace."""
+        v = getattr(trace, "customdata", None)
+        if v is None:
+            return ""
+        try:
+            for item in v:
+                g = _cd_cell_group(item)
+                if g:
+                    return g
         except Exception:
             return ""
         return ""
@@ -437,7 +585,7 @@ def display_figure_with_genomic_cursor(
             return v if v.strip() else ""
         try:
             for item in v:
-                s = str(item)
+                s = _cd_cell_detail(item)
                 if s.strip():
                     return s
         except Exception:
@@ -448,19 +596,31 @@ def display_figure_with_genomic_cursor(
         if not getattr(points, "point_inds", None):
             return
         idx = points.point_inds[0]
+        gid = (
+            _point_insseq_group(trace, idx) or _trace_insseq_group_scan(trace)
+        ).strip()
         detail = (
             _point_customdata(trace, idx)
             or _first_nonempty_customdata(trace)
             or _point_text(trace, idx)
         )
-        if not detail.strip():
+        if detail.strip():
+            panel.value = (
+                '<div style="height:500px;overflow-y:auto;border:1px solid #e2e8f0;'
+                'border-radius:6px;padding:8px 10px;background:#f8fafc;'
+                'font-family:ui-monospace,monospace;font-size:11px;line-height:1.35">'
+                f"{detail}</div>"
+            )
+
+        if not gid:
             return
-        panel.value = (
-            '<div style="height:500px;overflow-y:auto;border:1px solid #e2e8f0;'
-            'border-radius:6px;padding:8px 10px;background:#f8fafc;'
-            'font-family:ui-monospace,monospace;font-size:11px;line-height:1.35">'
-            f"{detail}</div>"
-        )
+        # Per-variant toggle: multiple strips can stay visible at once.
+        if _insseq_group_is_visible(gid):
+            for j in insseq_indices_by_group.get(gid, []):
+                fw.data[j].visible = False
+        else:
+            for j in insseq_indices_by_group.get(gid, []):
+                fw.data[j].visible = True
 
     for tr in fw.data:
         nm = getattr(tr, "name", None) or ""
@@ -658,6 +818,67 @@ def trgt_hap_meets_min_allele_delta(
         return False
     ref_bp = trgt_ref_len_bp(r)
     return abs(int(r.al[ai]) - ref_bp) >= min_allele_bp
+
+
+def trgt_allele_seq_for_hap(r: TRGTRow, hap: int) -> Optional[str]:
+    """Consensus sequence for the carried ALT on ``hap``; strips TRGT padding base when it matches REF[0]."""
+    ai = allele_on_haplotype(r.gt, hap)
+    if ai is None or ai <= 0:
+        return None
+    if ai - 1 < 0 or ai - 1 >= len(r.vcf_alts):
+        return None
+    seq = r.vcf_alts[ai - 1].upper()
+    if r.ref and seq and seq[0] == r.ref[0]:
+        seq = seq[1:]
+    return seq if seq else None
+
+
+def sv_ins_seq_for_hap(r: SVRow, hap: int) -> Optional[str]:
+    if r.svtype != "INS":
+        return None
+    if hap >= len(r.ins_seq):
+        return None
+    return r.ins_seq[hap]
+
+
+def _clip_insseq(seq: str) -> str:
+    if len(seq) <= INSSEQ_MAX_BP:
+        return seq
+    return seq[:INSSEQ_MAX_BP]
+
+
+def _add_insseq_bar_trace(
+    fig: go.Figure,
+    seq: str,
+    ref_left_pos: float,
+    y_lo: float,
+    y_hi: float,
+    group_id: str,
+) -> None:
+    """One Bar trace: one column per bp at true genomic width (centers at half-integer offsets)."""
+    seq = _clip_insseq(seq)
+    if not seq:
+        return
+    n = len(seq)
+    h = y_hi - y_lo
+    xs = [ref_left_pos + i + 0.5 for i in range(n)]
+    colors = [base_color(seq[i]) for i in range(n)]
+    fig.add_trace(
+        go.Bar(
+            x=xs,
+            y=[h] * n,
+            base=[y_lo] * n,
+            width=[1.0] * n,
+            marker=dict(color=colors, line=dict(width=0)),
+            hoverinfo="skip",
+            showlegend=False,
+            visible=False,
+            name=f"_insseq:{group_id}",
+            meta=dict(insseq_group=group_id),
+            xaxis="x",
+            yaxis="y",
+        )
+    )
 
 
 def trgt_sites_visible_count(rows: list[TRGTRow], min_allele_bp: int) -> int:
@@ -881,7 +1102,10 @@ def build_figure(
         segs: list[tuple[float, float]] = []
         hovs: list[str] = []
         dets: list[str] = []
+        gids_tr: list[str] = []
         n_tr = 0
+        strip_y_hi = y_lo - INSSEQ_GAP_BELOW_MAIN
+        strip_y_lo = strip_y_hi - INSSEQ_STRIP_H
         for r in trgt_rows:
             if allele_on_haplotype(r.gt, hap) is None:
                 continue
@@ -895,14 +1119,29 @@ def build_figure(
             segs.append((xa, xb))
             hovs.append(trgt_hover(r, hap, chrom))
             dets.append(trgt_detail(r))
+            raw_sq = trgt_allele_seq_for_hap(r, hap)
+            gid = ""
+            if raw_sq:
+                gid = insseq_group_id(
+                    chrom=chrom, pos=r.pos, hap=hap, kind="TRGT", vid=r.trid
+                )
+                _add_insseq_bar_trace(
+                    fig,
+                    raw_sq,
+                    float(ref_left(r.pos)),
+                    strip_y_lo,
+                    strip_y_hi,
+                    gid,
+                )
+            gids_tr.append(gid)
         lx, ly, lt = _expand_multiseg_line(
             segs, y_mid, hovs, ms_plot, anchor_left=True
         )
-        cd_trgt: list[str] = []
-        for (xa, xb), d in zip(segs, dets):
+        cd_trgt: list[list[str]] = []
+        for (xa, xb), d, gid in zip(segs, dets, gids_tr):
             if xb <= xa:
                 continue
-            cd_trgt.extend([d, d, ""])  # aligns with lt=[h,h,""]
+            cd_trgt.extend([[d, gid], [d, gid], ["", ""]])
         leg_trgt: dict[str, Any] = {"legendgroup": "variants", "legendrank": 1}
         if variants_legend_title:
             leg_trgt["legendgrouptitle"] = dict(text="Variants")
@@ -913,7 +1152,7 @@ def build_figure(
                     x=lx,
                     y=ly,
                     mode="lines",
-                    line=dict(width=10, color=colors_trgt[hap], simplify=False),
+                    line=dict(width=VARIANT_LINE_WIDTH_PX, color=colors_trgt[hap], simplify=False),
                     name=f"TRGT H{hap + 1} ({n_tr})",
                     hoverinfo="text",
                     text=lt,
@@ -928,7 +1167,7 @@ def build_figure(
                     x=[],
                     y=[],
                     mode="lines",
-                    line=dict(width=10, color=colors_trgt[hap], simplify=False),
+                    line=dict(width=VARIANT_LINE_WIDTH_PX, color=colors_trgt[hap], simplify=False),
                     name=f"TRGT H{hap + 1} ({n_tr})",
                     hoverinfo="skip",
                     showlegend=True,
@@ -961,11 +1200,12 @@ def build_figure(
         lx_d, ly_d, lt_d = _expand_multiseg_line(
             segs_d, y_mid, hovs_d, ms_plot, anchor_left=True
         )
-        cd_sv_del: list[str] = []
+        cd_sv_del: list[list[str]] = []
         for (xa, xb), d in zip(segs_d, dets_d):
             if xb <= xa:
                 continue
-            cd_sv_del.extend([d, d, ""])
+            cd_sv_del.extend([[d, ""], [d, ""], ["", ""]])
+        ins_y_half = 0.5 * _variant_stroke_height_data()
         if segs_d:
             leg_sv: dict[str, Any] = {"legendgroup": "variants", "legendrank": 1}
             if variants_legend_title:
@@ -976,7 +1216,7 @@ def build_figure(
                     x=lx_d,
                     y=ly_d,
                     mode="lines",
-                    line=dict(width=15, color=col_del, simplify=False),
+                    line=dict(width=VARIANT_LINE_WIDTH_PX, color=col_del, simplify=False),
                     name=f"SV DEL H{hap + 1} ({n_sv_del})",
                     hoverinfo="text",
                     text=lt_d,
@@ -1001,12 +1241,29 @@ def build_figure(
                 xb = xa + float(span_bp)
                 hov = sv_hover(r, hap)
                 det = sv_detail(r, hap)
+                iy_lo, iy_hi = y_mid - ins_y_half, y_mid + ins_y_half
                 rx_i, ry_i, _ = _expand_multiseg_rects(
-                    [(xa, xb)], y_lo, y_hi, [hov], ms_plot, anchor_left=True
+                    [(xa, xb)], iy_lo, iy_hi, [hov], ms_plot, anchor_left=True
                 )
+                raw_ins = sv_ins_seq_for_hap(r, hap)
+                # Symbolic <INS> / missing ALT sequence: still draw bp-wide strip as N so
+                # zoom + click-toggle match TRGT (true bases when concrete REF/ALT).
+                seq_strip = raw_ins if raw_ins else None
+                if not seq_strip and int(r.svlen) > 0:
+                    seq_strip = "N" * min(int(r.svlen), INSSEQ_MAX_BP)
+                gid_ins = ""
+                if seq_strip:
+                    gid_ins = insseq_group_id(
+                        chrom=chrom, pos=r.pos, hap=hap, kind="SV_INS", vid=r.vid
+                    )
+                    sy_hi = iy_lo - INSSEQ_GAP_BELOW_MAIN
+                    sy_lo = sy_hi - INSSEQ_STRIP_H
+                    _add_insseq_bar_trace(
+                        fig, seq_strip, float(ref_left(r.pos)), sy_lo, sy_hi, gid_ins
+                    )
                 # Ensure every clickable point carries full sidebar detail.
                 # Plotly includes a trailing separator point; keep customdata non-empty there too.
-                cd_ins = [det, det, det, det, det, det]
+                cd_ins = [[det, gid_ins]] * 6
                 fig.add_trace(
                     go.Scatter(
                         x=rx_i,
@@ -1015,7 +1272,9 @@ def build_figure(
                         hoveron="fills",
                         fill="toself",
                         fillcolor="rgba(22, 163, 74, 0.8)",
-                        line=dict(width=0),
+                        # Non-zero line width helps Plotly register clicks on filled polygons
+                        # (width=0 INS rects often ignored by FigureWidget click handlers).
+                        line=dict(width=2, color="rgba(22, 163, 74, 0.45)"),
                         name=f"SV INS H{hap + 1} ({n_sv_ins})",
                         hoverinfo="text",
                         text=hov,
@@ -1138,6 +1397,7 @@ def build_figure(
     status_line = " | ".join(status_bits)
 
     fig.update_layout(
+        barmode="overlay",
         title=dict(
             text=f"<b>{sample}</b> ({chrom}:{win_start:,}-{win_end:,})",
             x=0.02,
@@ -1149,6 +1409,7 @@ def build_figure(
         height=500,
         margin=dict(l=52, r=24, t=64, b=168),
         xaxis=dict(
+            type="linear",
             title=dict(text="Reference position", standoff=10),
             tickvals=tick_x,
             ticktext=tick_text,
@@ -1156,7 +1417,7 @@ def build_figure(
             range=[ref_left(win_start) - 0.02 * ref_span, ref_left(win_end + 1) + 0.02 * ref_span],
         ),
         yaxis=dict(
-            range=[0.05, 3.38],
+            range=[FIG_Y_RANGE[0], FIG_Y_RANGE[1]],
             fixedrange=True,  # zoom/pan/scroll only affect x (genomic) axis
             tickmode="array",
             tickvals=[
