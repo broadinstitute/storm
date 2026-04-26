@@ -110,6 +110,8 @@ Storm helpers (synthetic cohort for pipeline tests):
   SAIGE `step1_fitNULLGLMM.R` then `step2_SPAtests.R` for both DS VCF strata
   (`--vcfField=DS`). Set `SAIGE_EXTDATA` or install the **SAIGE** R package; fill in
   `plink_prefix` and/or sparse GRM paths in the config before Step 1.
+  With **Pixi** (SAIGE docs), run `pixi run Rscript …/run_saige.R` from the SAIGE
+  checkout and set `STORM_SAIGE_RSCRIPT` to that env’s `Rscript` (see notebook cells).
 - SAIGE step 1 command templates and outputs (`.rda`, variance ratios) — one null
   model per ancestry stratum per phenotype.
 - GRM construction strategy documented (sparse vs. full, and rationale).

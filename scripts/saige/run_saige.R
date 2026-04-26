@@ -5,6 +5,10 @@
 #   - R package SAIGE installed, OR extdata on disk and SAIGE_EXTDATA set to that folder
 #   - tabix index (.csi) next to each Step 2 VCF unless you set vcf_index_* in the config
 #
+# Pixi (SAIGE docs): run from the SAIGE checkout and set STORM_SAIGE_RSCRIPT to the absolute
+# path of that environment's Rscript so nested Step 1/2 calls use the same interpreter, e.g.:
+#   export STORM_SAIGE_RSCRIPT="$(cd \"$SAIGE_SRC\" && pixi run bash -lc 'command -v Rscript')"
+#
 # Usage:
 #   Rscript scripts/saige/run_saige.R --config scripts/saige/example_chr22.config
 #   Rscript scripts/saige/run_saige.R --config my.config --repo-root /path/to/storm
@@ -74,14 +78,16 @@ find_saige_extdata_script <- function(filename) {
 }
 
 run_rscript <- function(script_path, args) {
-  message("----\nRscript ", script_path, " ...\n----")
-  code <- system2("Rscript", c(script_path, args), stdout = "", stderr = "")
-  if (code != 0L) stop("Rscript exited with code ", code)
+  rscript <- Sys.getenv("STORM_SAIGE_RSCRIPT", "Rscript")
+  message("----\n", rscript, " ", script_path, " ...\n----")
+  code <- system2(rscript, c(script_path, args), stdout = "", stderr = "")
+  if (code != 0L) stop(rscript, " exited with code ", code)
   invisible(TRUE)
 }
 
 usage <- function() {
   cat("Usage:\n  Rscript run_saige.R --config FILE [--repo-root DIR]\n\n")
+  cat("Optional: STORM_SAIGE_RSCRIPT=/abs/path/to/Rscript (Pixi SAIGE env) for nested Step 1/2.\n")
   cat("See scripts/saige/example_chr22.config for keys.\n")
 }
 
