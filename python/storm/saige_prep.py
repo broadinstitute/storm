@@ -534,6 +534,98 @@ def export_saige_stratum_vcfs(
     }
 
 
+def saige_synthetic_covar_col_list(*, n_pcs: int = 5) -> str:
+    """Comma-separated covariate column names for ``--covarColList`` (synthetic table)."""
+    if n_pcs < 0 or n_pcs > 50:
+        raise ValueError("n_pcs must be between 0 and 50")
+    cols = ["sex", "age", "seq_depth_log"]
+    cols += [f"PC{i}" for i in range(1, n_pcs + 1)]
+    return ",".join(cols)
+
+
+def build_synthetic_saige_pheno_covar_table(
+    manifest_ht: "hl.Table",
+    *,
+    sample_id_field: str = "sample_id",
+    iid_output_field: str = "IID",
+    n_pcs: int = 5,
+) -> "hl.Table":
+    """Build a **placeholder** phenotype + covariate table keyed to a sample manifest.
+
+    Values are **deterministic** from ``sample_id`` (via Hail ``hash``), so the same
+    cohort always gets the same synthetic fields. Replace with real EHR / QC tables
+    for production.
+
+    Columns:
+
+    - ``IID``: copy of sample id (use with ``--sampleIDColinphenoFile=IID``).
+    - ``pheno_binary``: 0/1 (roughly balanced).
+    - ``pheno_quant``: float (unrelated toy outcome).
+    - ``sex``, ``age``, ``seq_depth_log``, ``PC1`` … ``PC{n_pcs}``: toy covariates.
+
+    SAIGE Step 1 examples: ``--phenoCol=pheno_binary`` or ``pheno_quant``,
+    ``--covarColList`` from :func:`saige_synthetic_covar_col_list`.
+    """
+    if n_pcs < 0 or n_pcs > 50:
+        raise ValueError("n_pcs must be between 0 and 50")
+    hl = _require_hail()
+
+    sid = getattr(manifest_ht, sample_id_field)
+    t0 = manifest_ht.select(_sid=sid)
+    t1 = t0.annotate(
+        _h1=hl.abs(hl.int64(hl.hash(t0._sid))),
+        _h2=hl.abs(hl.int64(hl.hash(hl.str(t0._sid) + hl.literal("|storm_syn|")))),
+    )
+    sex = hl.int32(t1._h1 % 2)
+    age = hl.int32(30 + (t1._h1 % 50))
+    seq_depth_log = hl.log10(10.0 + hl.float64(t1._h2 % 90))
+    pheno_binary = hl.int32(((t1._h1 + t1._h2) % 100) < 42)
+    pheno_quant = hl.float64(t1._h1 % 100) * 0.1 + hl.float64(t1._h2 % 300) * 0.01
+
+    pc_fields: dict[str, hl.Expression] = {}
+    for k in range(1, n_pcs + 1):
+        pc_fields[f"PC{k}"] = hl.float64(
+            (t1._h1 // hl.int64(7 * k) + t1._h2 * hl.int64(k + 1)) % 2000
+        ) / 1000.0 - 1.0
+
+    return t1.select(
+        **{
+            iid_output_field: t1._sid,
+            "pheno_binary": pheno_binary,
+            "pheno_quant": pheno_quant,
+            "sex": sex,
+            "age": age,
+            "seq_depth_log": seq_depth_log,
+            **pc_fields,
+        }
+    )
+
+
+def export_saige_phenotype_covariate_tsv(
+    pheno_covar_ht: "hl.Table",
+    path: str | Path,
+    *,
+    sort_by_iid: str | None = "IID",
+) -> str:
+    """Write a tab-delimited phenotype/covariate file for SAIGE Step 1.
+
+    Parameters
+    ----------
+    sort_by_iid
+        If set, column name to ``order_by`` before export (stable cohort ordering).
+        Pass ``None`` to preserve table order.
+    """
+    _require_hail()
+    out = str(path)
+    ht = pheno_covar_ht
+    if sort_by_iid is not None:
+        if sort_by_iid not in ht.row:
+            raise ValueError(f"sort_by_iid={sort_by_iid!r} not in table row fields")
+        ht = ht.order_by(sort_by_iid)
+    ht.export(out, delimiter="\t")
+    return out
+
+
 def print_tr_annotation_summary(
     mt: "hl.MatrixTable",
     *,

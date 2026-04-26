@@ -177,6 +177,30 @@ class SaigePrepTest(unittest.TestCase):
             self.assertTrue(Path(paths["standard_sv"]).is_file())
             self.assertTrue(Path(paths["tr_quantitative"]).is_file())
 
+    def test_synthetic_pheno_covar_table(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            vcf = td_path / "m.vcf"
+            sites = td_path / "sites.parquet"
+            _write_vcf(vcf)
+            _write_sidecar(sites)
+            mt0 = hl.import_vcf(str(vcf), reference_genome="GRCh38", force=True)
+            mt1 = storm.annotate_svs(mt0, tr_sidecar_sites=sites)
+            manifest = mt1.cols().select(sample_id=hl.str(mt1.s)).order_by("sample_id")
+            ht = storm.build_synthetic_saige_pheno_covar_table(manifest, n_pcs=3)
+            self.assertEqual(ht.count(), 2)
+            row_s1 = ht.filter(ht.IID == "s1").collect()[0]
+            row_s1_again = ht.filter(ht.IID == "s1").collect()[0]
+            self.assertEqual(row_s1.pheno_binary, row_s1_again.pheno_binary)
+            self.assertEqual(row_s1.PC3, row_s1_again.PC3)
+            cl = storm.saige_synthetic_covar_col_list(n_pcs=3)
+            self.assertEqual(cl, "sex,age,seq_depth_log,PC1,PC2,PC3")
+            out_tsv = td_path / "pheno.tsv"
+            storm.export_saige_phenotype_covariate_tsv(ht, str(out_tsv))
+            self.assertTrue(out_tsv.is_file())
+            text = out_tsv.read_text(encoding="utf-8")
+            self.assertIn("IID\tpheno_binary", text.splitlines()[0])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -100,6 +100,12 @@ Checks:
 Deliverables:
 
 - Stable phenotype/covariate table(s): age, sex, sequencing depth, ancestry PCs.
+
+Storm helpers (synthetic cohort for pipeline tests):
+
+- `storm.build_synthetic_saige_pheno_covar_table(manifest_ht, n_pcs=5)` and
+  `storm.export_saige_phenotype_covariate_tsv` for a tab-delimited Step 1 file;
+  `storm.saige_synthetic_covar_col_list()` for `--covarColList`.
 - SAIGE step 1 command templates and outputs (`.rda`, variance ratios) — one null
   model per ancestry stratum per phenotype.
 - GRM construction strategy documented (sparse vs. full, and rationale).

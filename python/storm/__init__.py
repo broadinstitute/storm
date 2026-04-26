@@ -32,6 +32,9 @@ __all__ = [
     "saige_dosage_vcf_metadata",
     "export_saige_dosage_vcf",
     "export_saige_stratum_vcfs",
+    "saige_synthetic_covar_col_list",
+    "build_synthetic_saige_pheno_covar_table",
+    "export_saige_phenotype_covariate_tsv",
     "print_feature_inventory_stats",
     "print_long_predictor_stats",
     "print_tr_annotation_summary",
@@ -330,6 +333,32 @@ def export_saige_stratum_vcfs(
         parallel=parallel,
         tabix=tabix,
     )
+
+
+def saige_synthetic_covar_col_list(*, n_pcs=5):
+    """Covariate column list string for SAIGE ``--covarColList`` (synthetic cohort)."""
+    from storm.saige_prep import saige_synthetic_covar_col_list as _fn
+
+    return _fn(n_pcs=n_pcs)
+
+
+def build_synthetic_saige_pheno_covar_table(manifest_ht, *, sample_id_field="sample_id", iid_output_field="IID", n_pcs=5):
+    """Toy phenotype + covariates aligned to a sample manifest (SAIGE Step 1)."""
+    from storm.saige_prep import build_synthetic_saige_pheno_covar_table as _fn
+
+    return _fn(
+        manifest_ht,
+        sample_id_field=sample_id_field,
+        iid_output_field=iid_output_field,
+        n_pcs=n_pcs,
+    )
+
+
+def export_saige_phenotype_covariate_tsv(pheno_covar_ht, path, *, sort_by_iid="IID"):
+    """Export tab-delimited phenotype/covariate file for SAIGE Step 1."""
+    from storm.saige_prep import export_saige_phenotype_covariate_tsv as _fn
+
+    return _fn(pheno_covar_ht, path, sort_by_iid=sort_by_iid)
 
 
 def version() -> str:
