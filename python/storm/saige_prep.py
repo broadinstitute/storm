@@ -10,6 +10,8 @@ This module packages notebook-only logic into reusable functions so users can:
 
 from __future__ import annotations
 
+import hashlib
+import math
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,6 +19,12 @@ from storm.sv_annotate import _require_hail
 
 if TYPE_CHECKING:
     import hail as hl
+
+
+def _synthetic_u64_from_sample_id(sample_id: str, salt: bytes) -> int:
+    """Stable 64-bit digest for toy phenotypes (no ``hl.hash``; works on all Hail 0.2.x)."""
+    h = hashlib.sha256(sample_id.encode("utf-8") + salt).digest()[:8]
+    return int.from_bytes(h, "little", signed=False)
 
 
 def _vcf_export_row_value_fields(mt: "hl.MatrixTable") -> dict[str, "hl.Expression"]:
@@ -552,9 +560,11 @@ def build_synthetic_saige_pheno_covar_table(
 ) -> "hl.Table":
     """Build a **placeholder** phenotype + covariate table keyed to a sample manifest.
 
-    Values are **deterministic** from ``sample_id`` (via Hail ``hash``), so the same
-    cohort always gets the same synthetic fields. Replace with real EHR / QC tables
-    for production.
+    Values are **deterministic** from ``sample_id`` (SHA256-based; stable across Python
+    runs). Distinct sample IDs are collected to the driver — fine for typical cohort
+    sizes, but avoid multi-million-sample manifests without chunking.
+
+    Replace with real EHR / QC tables for production.
 
     Columns:
 
@@ -571,34 +581,42 @@ def build_synthetic_saige_pheno_covar_table(
     hl = _require_hail()
 
     sid = getattr(manifest_ht, sample_id_field)
-    t0 = manifest_ht.select(_sid=sid)
-    t1 = t0.annotate(
-        _h1=hl.abs(hl.int64(hl.hash(t0._sid))),
-        _h2=hl.abs(hl.int64(hl.hash(hl.str(t0._sid) + hl.literal("|storm_syn|")))),
-    )
-    sex = hl.int32(t1._h1 % 2)
-    age = hl.int32(30 + (t1._h1 % 50))
-    seq_depth_log = hl.log10(10.0 + hl.float64(t1._h2 % 90))
-    pheno_binary = hl.int32(((t1._h1 + t1._h2) % 100) < 42)
-    pheno_quant = hl.float64(t1._h1 % 100) * 0.1 + hl.float64(t1._h2 % 300) * 0.01
+    ids_tbl = manifest_ht.select(_sid=sid).distinct()
+    sample_ids = sorted({r._sid for r in ids_tbl.collect() if r._sid is not None})
 
-    pc_fields: dict[str, hl.Expression] = {}
-    for k in range(1, n_pcs + 1):
-        pc_fields[f"PC{k}"] = hl.float64(
-            (t1._h1 // hl.int64(7 * k) + t1._h2 * hl.int64(k + 1)) % 2000
-        ) / 1000.0 - 1.0
-
-    return t1.select(
-        **{
-            iid_output_field: t1._sid,
+    rows: list[dict] = []
+    for s in sample_ids:
+        h1 = _synthetic_u64_from_sample_id(s, b"|storm_syn|h1")
+        h2 = _synthetic_u64_from_sample_id(s, b"|storm_syn|h2")
+        sex = int(h1 % 2)
+        age = int(30 + (h1 % 50))
+        seq_depth_log = math.log10(10.0 + float(h2 % 90))
+        pheno_binary = int(((h1 + h2) % 100) < 42)
+        pheno_quant = float(h1 % 100) * 0.1 + float(h2 % 300) * 0.01
+        row: dict = {
+            iid_output_field: s,
             "pheno_binary": pheno_binary,
             "pheno_quant": pheno_quant,
             "sex": sex,
             "age": age,
             "seq_depth_log": seq_depth_log,
-            **pc_fields,
         }
-    )
+        for k in range(1, n_pcs + 1):
+            row[f"PC{k}"] = float(((h1 // (7 * k)) + h2 * (k + 1)) % 2000) / 1000.0 - 1.0
+        rows.append(row)
+
+    fields = {
+        iid_output_field: hl.tstr,
+        "pheno_binary": hl.tint32,
+        "pheno_quant": hl.tfloat64,
+        "sex": hl.tint32,
+        "age": hl.tint32,
+        "seq_depth_log": hl.tfloat64,
+    }
+    for i in range(1, n_pcs + 1):
+        fields[f"PC{i}"] = hl.tfloat64
+    schema = hl.tstruct(**fields)
+    return hl.Table.parallelize(rows, schema=schema).key_by(iid_output_field)
 
 
 def export_saige_phenotype_covariate_tsv(
