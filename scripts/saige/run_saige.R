@@ -30,15 +30,15 @@ read_kv_config <- function(path) {
   lines <- readLines(path, warn = FALSE)
   lines <- trimws(sub("#.*$", "", lines))
   lines <- lines[nzchar(lines) & !startsWith(lines, "#")]
-  kv <- strsplit(lines, "=", fixed = TRUE)
-  n <- length(kv)
+  n <- length(lines)
   keys <- character(n)
   vals <- character(n)
   for (i in seq_len(n)) {
-    pair <- kv[[i]]
-    if (length(pair) < 2L) stop("Bad config line (expected key=value): ", lines[i])
-    keys[i] <- trimws(pair[1L])
-    vals[i] <- paste(trimws(pair[-1L]), collapse = "=")
+    line <- lines[i]
+    eq <- regexpr("=", line, fixed = TRUE)[1L]
+    if (eq < 1L) stop("Bad config line (expected key=value): ", line)
+    keys[i] <- trimws(substr(line, 1L, eq - 1L))
+    vals[i] <- trimws(substr(line, eq + 1L, nchar(line)))
   }
   stats::setNames(as.list(vals), keys)
 }
