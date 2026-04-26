@@ -28,6 +28,8 @@ __all__ = [
     "print_feature_inventory_stats",
     "print_long_predictor_stats",
     "print_tr_annotation_summary",
+    "build_predictor_feature_qc",
+    "export_long_predictor_tables",
     "version",
 ]
 
@@ -170,6 +172,52 @@ def print_tr_annotation_summary(
         tr_field=tr_field,
         run_detailed_breakdowns=run_detailed_breakdowns,
         top_n=top_n,
+    )
+
+
+def build_predictor_feature_qc(
+    predictor_long,
+    *,
+    feature_id_field="feature_id",
+    predictor_field="predictor",
+):
+    """Build feature-level QC summary from a long predictor table."""
+    from storm.saige_prep import build_predictor_feature_qc as _build_predictor_feature_qc
+
+    return _build_predictor_feature_qc(
+        predictor_long,
+        feature_id_field=feature_id_field,
+        predictor_field=predictor_field,
+    )
+
+
+def export_long_predictor_tables(
+    standard_long,
+    tr_quant_long,
+    *,
+    out_dir,
+    prefix="saige",
+    include_qc=True,
+    include_sample_manifest=True,
+    carriers_only=False,
+    output_format="tsv",
+    sample_manifest=None,
+    sample_id_field="sample_id",
+):
+    """Export SAIGE staging tables and optional QC/manifest artifacts."""
+    from storm.saige_prep import export_long_predictor_tables as _export_long_predictor_tables
+
+    return _export_long_predictor_tables(
+        standard_long,
+        tr_quant_long,
+        out_dir=out_dir,
+        prefix=prefix,
+        include_qc=include_qc,
+        include_sample_manifest=include_sample_manifest,
+        carriers_only=carriers_only,
+        output_format=output_format,
+        sample_manifest=sample_manifest,
+        sample_id_field=sample_id_field,
     )
 
 

@@ -9,6 +9,7 @@ This module packages notebook-only logic into reusable functions so users can:
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from storm.sv_annotate import _require_hail
@@ -70,15 +71,15 @@ def annotate_saige_predictors(
     """
     hl = _require_hail()
 
-    tr = getattr(mt, tr_field)
     mt1 = mt.annotate_rows(
-        has_repeat_units=hl.is_defined(tr)
-        & hl.is_defined(tr.repeat_units_estimate)
-        & hl.is_finite(tr.repeat_units_estimate),
+        has_repeat_units=hl.is_defined(getattr(mt, tr_field))
+        & hl.is_defined(getattr(mt, tr_field).repeat_units_estimate)
+        & hl.is_finite(getattr(mt, tr_field).repeat_units_estimate),
     )
     mt1 = mt1.annotate_rows(
         feature_class=hl.if_else(mt1.has_repeat_units, tr_quant_label, standard_label),
     )
+    tr = getattr(mt1, tr_field)
 
     dosage = hl.if_else(hl.is_defined(mt1.dosage), mt1.dosage, mt1.GT.n_alt_alleles())
     return mt1.annotate_entries(
@@ -175,6 +176,121 @@ def print_long_predictor_stats(
         n_samples=hl.agg.count(),
         n_nonzero=hl.agg.count_where(tr_quant_long.predictor != 0),
     ).order_by(hl.desc("n_nonzero"), hl.desc("n_samples")).show(top_n)
+
+
+def build_predictor_feature_qc(
+    predictor_long: "hl.Table",
+    *,
+    feature_id_field: str = "feature_id",
+    predictor_field: str = "predictor",
+) -> "hl.Table":
+    """Aggregate feature-level QC metrics from a long-form predictor table."""
+    hl = _require_hail()
+    fid = getattr(predictor_long, feature_id_field)
+    pred = getattr(predictor_long, predictor_field)
+    return predictor_long.group_by(feature_id=fid).aggregate(
+        n_samples=hl.agg.count(),
+        n_nonzero=hl.agg.count_where(pred != 0),
+        predictor_mean=hl.agg.mean(pred),
+        predictor_stdev=hl.agg.stats(pred).stdev,
+        predictor_min=hl.agg.min(pred),
+        predictor_max=hl.agg.max(pred),
+    )
+
+
+def export_long_predictor_tables(
+    standard_long: "hl.Table",
+    tr_quant_long: "hl.Table",
+    *,
+    out_dir: str | Path,
+    prefix: str = "saige",
+    include_qc: bool = True,
+    include_sample_manifest: bool = True,
+    carriers_only: bool = False,
+    output_format: str = "tsv",
+    sample_manifest: "hl.Table | None" = None,
+    sample_id_field: str = "sample_id",
+) -> dict[str, str]:
+    """Export SAIGE staging tables and optional QC/manifest artifacts.
+
+    Returns a dict of emitted artifact paths.
+    """
+    hl = _require_hail()
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    if output_format not in {"tsv", "parquet", "ht"}:
+        raise ValueError("output_format must be one of: 'tsv', 'parquet', 'ht'")
+
+    std_to_write = standard_long
+    tr_to_write = tr_quant_long
+    if carriers_only:
+        std_to_write = std_to_write.filter(std_to_write.predictor != 0)
+        tr_to_write = tr_to_write.filter(tr_to_write.predictor != 0)
+        # Sparse export needs sample universe for correct zero-filling downstream.
+        include_sample_manifest = True
+
+    if output_format == "tsv":
+        standard_path = str(out / f"{prefix}.standard_long.tsv.bgz")
+        tr_quant_path = str(out / f"{prefix}.tr_quant_long.tsv.bgz")
+        std_to_write.export(standard_path)
+        tr_to_write.export(tr_quant_path)
+    elif output_format == "parquet":
+        standard_path = str(out / f"{prefix}.standard_long.parquet")
+        tr_quant_path = str(out / f"{prefix}.tr_quant_long.parquet")
+        try:
+            std_to_write.to_spark(flatten=True).write.mode("overwrite").parquet(standard_path)
+            tr_to_write.to_spark(flatten=True).write.mode("overwrite").parquet(tr_quant_path)
+        except NotImplementedError:
+            # LocalBackend does not support to_spark(); stage as native Hail tables.
+            output_format = "ht"
+            standard_path = str(out / f"{prefix}.standard_long.ht")
+            tr_quant_path = str(out / f"{prefix}.tr_quant_long.ht")
+            std_to_write.write(standard_path, overwrite=True)
+            tr_to_write.write(tr_quant_path, overwrite=True)
+    else:
+        standard_path = str(out / f"{prefix}.standard_long.ht")
+        tr_quant_path = str(out / f"{prefix}.tr_quant_long.ht")
+        std_to_write.write(standard_path, overwrite=True)
+        tr_to_write.write(tr_quant_path, overwrite=True)
+
+    emitted = {
+        "standard_long": standard_path,
+        "tr_quant_long": tr_quant_path,
+    }
+
+    if include_qc:
+        std_qc = build_predictor_feature_qc(std_to_write).order_by(
+            hl.desc("n_nonzero"), hl.desc("n_samples")
+        )
+        tr_qc = build_predictor_feature_qc(tr_to_write).order_by(
+            hl.desc("n_nonzero"), hl.desc("n_samples")
+        )
+        std_qc_path = str(out / f"{prefix}.standard_feature_qc.tsv.bgz")
+        tr_qc_path = str(out / f"{prefix}.tr_quant_feature_qc.tsv.bgz")
+        std_qc.export(std_qc_path)
+        tr_qc.export(tr_qc_path)
+        emitted["standard_feature_qc"] = std_qc_path
+        emitted["tr_quant_feature_qc"] = tr_qc_path
+
+    if include_sample_manifest:
+        if sample_manifest is None:
+            # Fallback (potentially expensive): derive from long tables.
+            s_std = standard_long.select("sample_id")
+            s_tr = tr_quant_long.select("sample_id")
+            sample_manifest_ht = s_std.union(s_tr).distinct().order_by("sample_id")
+        else:
+            sample_manifest_ht = sample_manifest.select(
+                sample_id=hl.str(getattr(sample_manifest, sample_id_field))
+            ).distinct().order_by("sample_id")
+        sample_manifest_path = str(out / f"{prefix}.sample_manifest.tsv")
+        sample_manifest_ht.export(sample_manifest_path)
+        emitted["sample_manifest"] = sample_manifest_path
+
+    emitted["carriers_only"] = str(bool(carriers_only))
+    emitted["output_format"] = output_format
+
+    return emitted
 
 
 def print_tr_annotation_summary(
