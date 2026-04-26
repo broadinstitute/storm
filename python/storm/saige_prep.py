@@ -581,7 +581,8 @@ def build_synthetic_saige_pheno_covar_table(
     hl = _require_hail()
 
     sid = getattr(manifest_ht, sample_id_field)
-    ids_tbl = manifest_ht.select(_sid=sid).distinct()
+    # Unkeyed manifest tables cannot use Table.distinct(); dedupe in Python.
+    ids_tbl = manifest_ht.select(_sid=sid)
     sample_ids = sorted({r._sid for r in ids_tbl.collect() if r._sid is not None})
 
     rows: list[dict] = []
