@@ -2,6 +2,10 @@
 
 A high-performance data processing library with both Rust and Python interfaces.
 
+## SV + tandem-repeat (Hail)
+
+For union SV call sets: generate **site-only** TR metadata with `storm-tr-sidecar`, then in Hail use `storm.annotate_svs(mt, tr_sidecar_sites=...)` so the TR sidecar joins on **`allele_id`** after multi-allelic split. See [data/tr_loci_hg38/README.md](data/tr_loci_hg38/README.md) and [examples/hail_join_example.py](examples/hail_join_example.py). **Hail** is optional at install time (`pip install 'storm[hail]'` pins **0.2.134** to match Terra, or use conda); `annotate_svs` imports Hail only when called.
+
 ## Requirements
 
 - Rust 1.87.0 or later

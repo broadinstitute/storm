@@ -4,12 +4,19 @@ build-backend = "maturin"
 
 [project]
 name = "storm"
-requires-python = ">=3.7"
-dependencies = ["cffi"]
+requires-python = ">=3.10"
+dependencies = ["cffi", "pysam", "pyarrow"]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
-] 
+]
+
+[project.scripts]
+storm-tr-sidecar = "storm.tr_sidecar.__main__:main"
+
+# Hail is often installed via conda or a lab image; the pip extra pins Terra's version.
+[project.optional-dependencies]
+hail = ["hail==0.2.134"]
 
 [tool.maturin]
 features = ["python"]
