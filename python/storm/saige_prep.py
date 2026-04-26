@@ -354,8 +354,11 @@ def align_matrix_cols_to_manifest(
     if col_key not in mt.col_key:
         raise ValueError(f"expected column key field {col_key!r}, found {list(mt.col_key)}")
     sid_expr = getattr(manifest_ht, sample_id_field)
-    ordered_tbl = manifest_ht.select(_manifest_sid=sid_expr).distinct()
-    ordered = ordered_tbl.order_by(ordered_tbl._manifest_sid)._manifest_sid.collect()
+    # Hail Table.distinct() requires a key; manifests from mt.cols().select(...) are often unkeyed.
+    ordered_tbl = (
+        manifest_ht.select(_manifest_sid=sid_expr).key_by("_manifest_sid").distinct()
+    )
+    ordered = ordered_tbl.order_by("_manifest_sid")["_manifest_sid"].collect()
     present = getattr(mt, col_key).collect()
     idx_map = {sid: i for i, sid in enumerate(present)}
     missing = [sid for sid in ordered if sid not in idx_map]
