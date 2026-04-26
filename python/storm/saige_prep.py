@@ -10,6 +10,7 @@ This module packages notebook-only logic into reusable functions so users can:
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import math
 from pathlib import Path
@@ -643,6 +644,70 @@ def export_saige_phenotype_covariate_tsv(
         ht = ht.order_by(sort_by_iid)
     ht.export(out, delimiter="\t")
     return out
+
+
+def write_unrelated_identity_sparse_grm_for_saige(
+    *,
+    pheno_tsv: str | Path,
+    sample_id_col: str = "IID",
+    output_prefix: str | Path,
+    diagonal: float = 1.0,
+) -> tuple[Path, Path]:
+    """Write SAIGE sparse GRM + sample-ID files for the no-relatedness case.
+
+    Writes Matrix Market ``coordinate real symmetric`` data with diagonal entries
+    only (off-diagonal kinship zero). Matrix row/column ``i`` is sample ID on
+    line ``i`` of the ``.sampleIDs.txt`` file (IID order after de-duplication).
+
+    Intended for **smoke tests** only; use genotype-based ``createSparseGRM`` (or
+    real PLINK inputs) for analyses. With sparse GRM only, set
+    ``skip_variance_ratio_estimation=TRUE`` in the driver config (variance ratio
+    needs PLINK dosages).
+    """
+    path = Path(pheno_tsv)
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    prefix = Path(output_prefix)
+    prefix.parent.mkdir(parents=True, exist_ok=True)
+
+    with path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        if reader.fieldnames is None or sample_id_col not in reader.fieldnames:
+            raise ValueError(
+                f"{path}: need column {sample_id_col!r}; found {reader.fieldnames!r}"
+            )
+        raw: list[str] = []
+        for row in reader:
+            v = (row.get(sample_id_col) or "").strip()
+            if v:
+                raw.append(v)
+
+    seen: set[str] = set()
+    iids: list[str] = []
+    for x in raw:
+        if x not in seen:
+            seen.add(x)
+            iids.append(x)
+
+    if not iids:
+        raise ValueError(f"{path}: no non-empty {sample_id_col} values")
+
+    n = len(iids)
+    mtx_path = prefix.with_name(prefix.name + ".sparseGRM.mtx")
+    ids_path = prefix.with_name(prefix.name + ".sparseGRM.mtx.sampleIDs.txt")
+
+    with ids_path.open("w", encoding="utf-8") as out:
+        for x in iids:
+            out.write(x + "\n")
+
+    # Matrix Market symmetric coordinate; only diagonal stored (unrelated off-diagonal).
+    with mtx_path.open("w", encoding="utf-8") as out:
+        out.write("%%MatrixMarket matrix coordinate real symmetric\n")
+        out.write(f"{n} {n} {n}\n")
+        for i in range(1, n + 1):
+            out.write(f"{i} {i} {diagonal}\n")
+
+    return mtx_path, ids_path
 
 
 def print_tr_annotation_summary(

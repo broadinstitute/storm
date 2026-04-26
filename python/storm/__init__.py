@@ -35,6 +35,7 @@ __all__ = [
     "saige_synthetic_covar_col_list",
     "build_synthetic_saige_pheno_covar_table",
     "export_saige_phenotype_covariate_tsv",
+    "write_unrelated_identity_sparse_grm_for_saige",
     "print_feature_inventory_stats",
     "print_long_predictor_stats",
     "print_tr_annotation_summary",
@@ -359,6 +360,20 @@ def export_saige_phenotype_covariate_tsv(pheno_covar_ht, path, *, sort_by_iid="I
     from storm.saige_prep import export_saige_phenotype_covariate_tsv as _fn
 
     return _fn(pheno_covar_ht, path, sort_by_iid=sort_by_iid)
+
+
+def write_unrelated_identity_sparse_grm_for_saige(
+    *, pheno_tsv, sample_id_col="IID", output_prefix, diagonal=1.0
+):
+    """Diagonal-only sparse GRM for unrelated samples (smoke tests; see saige_prep)."""
+    from storm.saige_prep import write_unrelated_identity_sparse_grm_for_saige as _fn
+
+    return _fn(
+        pheno_tsv=pheno_tsv,
+        sample_id_col=sample_id_col,
+        output_prefix=output_prefix,
+        diagonal=diagonal,
+    )
 
 
 def version() -> str:
