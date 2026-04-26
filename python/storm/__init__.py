@@ -25,6 +25,13 @@ __all__ = [
     "build_feature_inventory",
     "annotate_saige_predictors",
     "build_long_predictor_tables",
+    "build_feature_vcf_row_lookup",
+    "align_matrix_cols_to_manifest",
+    "build_dense_saige_marker_matrix",
+    "dense_marker_matrix_from_long",
+    "saige_dosage_vcf_metadata",
+    "export_saige_dosage_vcf",
+    "export_saige_stratum_vcfs",
     "print_feature_inventory_stats",
     "print_long_predictor_stats",
     "print_tr_annotation_summary",
@@ -218,6 +225,110 @@ def export_long_predictor_tables(
         output_format=output_format,
         sample_manifest=sample_manifest,
         sample_id_field=sample_id_field,
+    )
+
+
+def build_feature_vcf_row_lookup(mt, *, feature_field="allele_id"):
+    """Table keyed by feature id with locus/alleles/rsid for SAIGE VCF densification."""
+    from storm.saige_prep import build_feature_vcf_row_lookup as _fn
+
+    return _fn(mt, feature_field=feature_field)
+
+
+def align_matrix_cols_to_manifest(mt, manifest_ht, *, sample_id_field="sample_id", col_key="s"):
+    """Reorder MatrixTable columns to match a sample manifest table."""
+    from storm.saige_prep import align_matrix_cols_to_manifest as _fn
+
+    return _fn(mt, manifest_ht, sample_id_field=sample_id_field, col_key=col_key)
+
+
+def build_dense_saige_marker_matrix(
+    mt,
+    *,
+    stratum,
+    tr_field="tr",
+    standard_label="standard_sv",
+    tr_quant_label="tr_quantitative",
+    sample_field="s",
+    fill_value=0.0,
+):
+    """Dense DS MatrixTable for one SAIGE stratum."""
+    from storm.saige_prep import build_dense_saige_marker_matrix as _fn
+
+    return _fn(
+        mt,
+        stratum=stratum,
+        tr_field=tr_field,
+        standard_label=standard_label,
+        tr_quant_label=tr_quant_label,
+        sample_field=sample_field,
+        fill_value=fill_value,
+    )
+
+
+def dense_marker_matrix_from_long(
+    predictor_long,
+    row_lookup,
+    *,
+    feature_id_field="feature_id",
+    sample_id_field="sample_id",
+    predictor_field="predictor",
+    fill_value=0.0,
+):
+    """Dense DS matrix from a sparse long predictor table."""
+    from storm.saige_prep import dense_marker_matrix_from_long as _fn
+
+    return _fn(
+        predictor_long,
+        row_lookup,
+        feature_id_field=feature_id_field,
+        sample_id_field=sample_id_field,
+        predictor_field=predictor_field,
+        fill_value=fill_value,
+    )
+
+
+def saige_dosage_vcf_metadata():
+    """VCF header metadata dict for FORMAT/DS (``hail.export_vcf``)."""
+    from storm.saige_prep import saige_dosage_vcf_metadata as _fn
+
+    return _fn()
+
+
+def export_saige_dosage_vcf(mt, output_path, *, parallel=None, tabix=False):
+    """Write ``DS``-only entries to ``.vcf.bgz`` for SAIGE Step 2."""
+    from storm.saige_prep import export_saige_dosage_vcf as _fn
+
+    return _fn(mt, output_path, parallel=parallel, tabix=tabix)
+
+
+def export_saige_stratum_vcfs(
+    mt,
+    manifest_ht,
+    *,
+    out_dir,
+    prefix="saige",
+    sample_id_field="sample_id",
+    tr_field="tr",
+    standard_label="standard_sv",
+    tr_quant_label="tr_quantitative",
+    parallel=None,
+    tabix=False,
+):
+    """Export both strata as dosage VCFs with manifest column order."""
+    from storm.saige_prep import export_saige_stratum_vcfs as _fn
+
+    return _fn(
+        mt,
+        manifest_ht,
+        out_dir=out_dir,
+        prefix=prefix,
+        sample_id_field=sample_id_field,
+        tr_field=tr_field,
+        standard_label=standard_label,
+        tr_quant_label=tr_quant_label,
+        parallel=parallel,
+        tabix=tabix,
     )
 
 

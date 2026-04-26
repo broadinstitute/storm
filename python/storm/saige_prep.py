@@ -5,6 +5,7 @@ This module packages notebook-only logic into reusable functions so users can:
 1. classify variants into SAIGE feature strata
 2. project row-level repeat annotations into sample-level predictors
 3. export long-form staging tables for downstream marker-file conversion
+4. densify sparse long tables and write SAIGE Step 2 VCF inputs (FORMAT ``DS``)
 """
 
 from __future__ import annotations
@@ -16,6 +17,26 @@ from storm.sv_annotate import _require_hail
 
 if TYPE_CHECKING:
     import hail as hl
+
+
+def _vcf_row_select_from_mt(mt: "hl.MatrixTable") -> dict[str, "hl.Expression"]:
+    """Row fields required or commonly present for :func:`hail.export_vcf`."""
+    hl = _require_hail()
+    out: dict[str, hl.Expression] = {
+        "locus": mt.locus,
+        "alleles": mt.alleles,
+    }
+    if "rsid" in mt.row:
+        out["rsid"] = mt.rsid
+    else:
+        out["rsid"] = hl.missing(hl.tstr)
+    if "qual" in mt.row:
+        out["qual"] = mt.qual
+    if "filters" in mt.row:
+        out["filters"] = mt.filters
+    if "info" in mt.row:
+        out["info"] = mt.info
+    return out
 
 
 def build_feature_inventory(
@@ -291,6 +312,226 @@ def export_long_predictor_tables(
     emitted["output_format"] = output_format
 
     return emitted
+
+
+def build_feature_vcf_row_lookup(
+    mt: "hl.MatrixTable",
+    *,
+    feature_field: str = "allele_id",
+) -> "hl.Table":
+    """Map ``feature_field`` (default ``allele_id``) to VCF row fields for densification.
+
+    Use with sparse long predictor tables and :func:`dense_marker_matrix_from_long`.
+    """
+    hl = _require_hail()
+    rows = mt.rows()
+    fid = getattr(rows, feature_field)
+    sel = rows.select(
+        feature_id=fid,
+        locus=rows.locus,
+        alleles=rows.alleles,
+    )
+    if "rsid" in rows:
+        sel = sel.annotate(rsid=rows.rsid)
+    else:
+        sel = sel.annotate(rsid=hl.missing(hl.tstr))
+    return sel.key_by("feature_id")
+
+
+def align_matrix_cols_to_manifest(
+    mt: "hl.MatrixTable",
+    manifest_ht: "hl.Table",
+    *,
+    sample_id_field: str = "sample_id",
+    col_key: str = "s",
+) -> "hl.MatrixTable":
+    """Reorder columns to match ``manifest_ht`` (ordered by ``sample_id_field``).
+
+    Notes
+    -----
+    Uses ``MatrixTable.choose_cols``, which requires the full column order in memory
+    on the driver. Fine for biobank-scale *sample* counts in typical Hail setups, but
+    avoid calling in tight loops on huge clusters without revisiting.
+    """
+    if col_key not in mt.col_key:
+        raise ValueError(f"expected column key field {col_key!r}, found {list(mt.col_key)}")
+    sid_expr = getattr(manifest_ht, sample_id_field)
+    ordered_tbl = manifest_ht.select(_manifest_sid=sid_expr).distinct()
+    ordered = ordered_tbl.order_by(ordered_tbl._manifest_sid)._manifest_sid.collect()
+    present = getattr(mt, col_key).collect()
+    idx_map = {sid: i for i, sid in enumerate(present)}
+    missing = [sid for sid in ordered if sid not in idx_map]
+    if missing:
+        raise ValueError(
+            "manifest contains sample_ids not present in matrix columns "
+            f"(showing up to 5): {missing[:5]!r}"
+        )
+    return mt.choose_cols([idx_map[sid] for sid in ordered])
+
+
+def build_dense_saige_marker_matrix(
+    mt: "hl.MatrixTable",
+    *,
+    stratum: str,
+    tr_field: str = "tr",
+    standard_label: str = "standard_sv",
+    tr_quant_label: str = "tr_quantitative",
+    sample_field: str = "s",
+    fill_value: float = 0.0,
+) -> "hl.MatrixTable":
+    """Dense per-stratum matrix with entries ``DS`` for SAIGE ``--vcfField=DS``.
+
+    Keeps only rows whose ``feature_class`` matches ``stratum``, then fills missing
+    predictors with ``fill_value`` (non-carriers and filtered genotypes).
+    """
+    hl = _require_hail()
+    if stratum not in {standard_label, tr_quant_label}:
+        raise ValueError(f"stratum must be {standard_label!r} or {tr_quant_label!r}, got {stratum!r}")
+
+    mt1 = annotate_saige_predictors(
+        mt,
+        tr_field=tr_field,
+        standard_label=standard_label,
+        tr_quant_label=tr_quant_label,
+    )
+    mt1 = mt1.filter_rows(mt1.feature_class == stratum)
+    pred = (
+        mt1.predictor_standard if stratum == standard_label else mt1.predictor_tr_quant
+    )
+    mt1 = mt1.select_entries(DS=hl.float64(hl.or_else(pred, hl.float64(fill_value))))
+    s = getattr(mt1, sample_field)
+    mt1 = mt1.key_cols_by(s=hl.str(s))
+    row_sel = _vcf_row_select_from_mt(mt1)
+    return mt1.select_rows(**row_sel)
+
+
+def dense_marker_matrix_from_long(
+    predictor_long: "hl.Table",
+    row_lookup: "hl.Table",
+    *,
+    feature_id_field: str = "feature_id",
+    sample_id_field: str = "sample_id",
+    predictor_field: str = "predictor",
+    fill_value: float = 0.0,
+) -> "hl.MatrixTable":
+    """Build a dense ``DS`` matrix from a sparse long table + feature row lookup.
+
+    ``row_lookup`` must be keyed by ``feature_id`` (see :func:`build_feature_vcf_row_lookup`).
+    """
+    hl = _require_hail()
+    pl = predictor_long
+    fid = getattr(pl, feature_id_field)
+    sid = getattr(pl, sample_id_field)
+    pred = getattr(pl, predictor_field)
+    rk = row_lookup[fid]
+    joined = pl.filter(hl.is_defined(rk.locus)).annotate(
+        locus=rk.locus,
+        alleles=rk.alleles,
+        rsid=rk.rsid,
+    )
+    mt = joined.select(
+        locus=joined.locus,
+        alleles=joined.alleles,
+        rsid=joined.rsid,
+        sample_id=sid,
+        feature_id=fid,
+        predictor=pred,
+    ).to_matrix_table(
+        row_key=["feature_id"],
+        col_key=["sample_id"],
+        row_fields=["locus", "alleles", "rsid"],
+    )
+    mt = mt.annotate_entries(DS=hl.float64(hl.or_else(mt.predictor, hl.float64(fill_value))))
+    mt = mt.drop("predictor")
+    mt = mt.key_rows_by(locus=mt.locus, alleles=mt.alleles)
+    mt = mt.key_cols_by(s=hl.str(mt.sample_id))
+    drop_row: list[str] = [n for n in ("feature_id", "qual", "filters", "info") if n in mt.row]
+    if drop_row:
+        mt = mt.drop(*drop_row)
+    return mt
+
+
+def saige_dosage_vcf_metadata() -> dict[str, dict[str, dict[str, str]]]:
+    """VCF header fragment for FORMAT/DS (pass to :func:`hail.export_vcf` ``metadata``)."""
+    return {
+        "format": {
+            "DS": {
+                "Description": "Storm SAIGE predictor (dosage or dosage-weighted TR proxy)",
+                "Number": "1",
+                "Type": "Float",
+            },
+        },
+    }
+
+
+def export_saige_dosage_vcf(
+    mt: "hl.MatrixTable",
+    output_path: str | Path,
+    *,
+    parallel: str | None = None,
+    tabix: bool = False,
+) -> str:
+    """Write a MatrixTable with entry field ``DS`` to a blocked gzip VCF.
+
+    SAIGE Step 2: pass ``--vcfFile=...``, ``--vcfFileIndex=...``, ``--vcfField=DS``.
+    """
+    hl = _require_hail()
+    path = str(output_path)
+    if not path.endswith(".bgz"):
+        raise ValueError("output_path should end with .vcf.bgz for blocked gzip (tabix / SAIGE)")
+    hl.export_vcf(
+        mt,
+        path,
+        metadata=saige_dosage_vcf_metadata(),
+        parallel=parallel,
+        tabix=tabix,
+    )
+    return path
+
+
+def export_saige_stratum_vcfs(
+    mt: "hl.MatrixTable",
+    manifest_ht: "hl.Table",
+    *,
+    out_dir: str | Path,
+    prefix: str = "saige",
+    sample_id_field: str = "sample_id",
+    tr_field: str = "tr",
+    standard_label: str = "standard_sv",
+    tr_quant_label: str = "tr_quantitative",
+    parallel: str | None = None,
+    tabix: bool = False,
+) -> dict[str, str]:
+    """Export both SAIGE strata as dosage VCFs with identical column order.
+
+    Column order follows ``manifest_ht`` ordered by ``sample_id_field``.
+    """
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    m_std = build_dense_saige_marker_matrix(
+        mt,
+        stratum=standard_label,
+        tr_field=tr_field,
+        standard_label=standard_label,
+        tr_quant_label=tr_quant_label,
+    )
+    m_tr = build_dense_saige_marker_matrix(
+        mt,
+        stratum=tr_quant_label,
+        tr_field=tr_field,
+        standard_label=standard_label,
+        tr_quant_label=tr_quant_label,
+    )
+    m_std = align_matrix_cols_to_manifest(m_std, manifest_ht, sample_id_field=sample_id_field)
+    m_tr = align_matrix_cols_to_manifest(m_tr, manifest_ht, sample_id_field=sample_id_field)
+    p_std = str(out / f"{prefix}.{standard_label}.ds.vcf.bgz")
+    p_tr = str(out / f"{prefix}.{tr_quant_label}.ds.vcf.bgz")
+    export_saige_dosage_vcf(m_std, p_std, parallel=parallel, tabix=tabix)
+    export_saige_dosage_vcf(m_tr, p_tr, parallel=parallel, tabix=tabix)
+    return {
+        standard_label: p_std,
+        tr_quant_label: p_tr,
+    }
 
 
 def print_tr_annotation_summary(

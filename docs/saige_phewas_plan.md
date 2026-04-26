@@ -76,6 +76,19 @@ Deliverables:
   `predictor = dosage * repeat_units_estimate` (standardization optional).
 - Standard dosage marker export for `standard_sv`.
 
+Implementation (Storm):
+
+- **In-memory path**: `storm.build_dense_saige_marker_matrix(mt, stratum=...)` then
+  `storm.align_matrix_cols_to_manifest(mt, manifest_ht)`; or
+  `storm.export_saige_stratum_vcfs(mt, manifest_ht, out_dir=..., prefix=...)`.
+- **Sparse staging replay**: `storm.build_feature_vcf_row_lookup(mt)` plus
+  `storm.dense_marker_matrix_from_long(long_ht, row_lookup)` (e.g. long tables
+  from `storm.build_long_predictor_tables` or from exported `.ht` / TSV).
+- **SAIGE Step 2**: `storm.export_saige_dosage_vcf(mt, "…vcf.bgz")` writes FORMAT
+  `DS`; use `--vcfField=DS` with `--vcfFile` / `--vcfFileIndex` as in SAIGE docs.
+  `tr_quantitative` values can exceed 2.0 (dosage-weighted repeat proxy); ensure
+  your SAIGE build tolerates that for continuous encodings.
+
 Checks:
 
 - No missing/invalid marker IDs.
@@ -122,5 +135,5 @@ Deliverables:
 
 ## Next implementation target
 
-Phase 2: export SAIGE-ready marker matrices for `standard_sv` and
-`tr_quantitative` using the accepted dosage-weighted TR proxy.
+Phase 3: phenotype/covariate tables, SAIGE Step 1 null models, and GRM strategy
+(documented command templates and sample inclusion parity with marker VCFs).
