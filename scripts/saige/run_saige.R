@@ -253,6 +253,19 @@ if (!file.exists(variance_ratio)) {
   message("Warning: variance ratio file not found: ", variance_ratio, " (Step 2 may still run if your Step 1 mode does not estimate it).")
 }
 
+# SAIGE disables LOCO in the null model when Step 1 uses --useSparseGRMtoFitNULL=TRUE
+# (sparse GRM). ReadModel() then errors if Step 2 passes --LOCO=TRUE. Align Step 2.
+loco_step2 <- loco
+if (!skip_step1 && has_sparse) {
+  if (loco) {
+    message(
+      "Note: null model was fit with a sparse GRM, so SAIGE stores LOCO=FALSE; ",
+      "using --LOCO=FALSE for Step 2."
+    )
+  }
+  loco_step2 <- FALSE
+}
+
 if (!skip_step2) {
   step2_runs <- list(
     list(name = "standard_sv", vcf = vcf_standard, index = idx_std),
@@ -270,7 +283,7 @@ if (!skip_step2) {
       paste0("--minMAC=", min_mac),
       paste0("--GMMATmodelFile=", model_rda),
       if (file.exists(variance_ratio)) paste0("--varianceRatioFile=", variance_ratio) else NULL,
-      if (loco) "--LOCO=TRUE" else "--LOCO=FALSE",
+      if (loco_step2) "--LOCO=TRUE" else "--LOCO=FALSE",
       if (is_fast_test) "--is_fastTest=TRUE" else NULL
     )
     s2 <- unlist(Filter(Negate(is.null), s2))
