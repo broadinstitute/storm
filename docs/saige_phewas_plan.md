@@ -106,6 +106,10 @@ Storm helpers (synthetic cohort for pipeline tests):
 - `storm.build_synthetic_saige_pheno_covar_table(manifest_ht, n_pcs=5)` and
   `storm.export_saige_phenotype_covariate_tsv` for a tab-delimited Step 1 file;
   `storm.saige_synthetic_covar_col_list()` for `--covarColList`.
+- R driver: `scripts/saige/run_saige.R` + `scripts/saige/example_chr22.config` — runs
+  SAIGE `step1_fitNULLGLMM.R` then `step2_SPAtests.R` for both DS VCF strata
+  (`--vcfField=DS`). Set `SAIGE_EXTDATA` or install the **SAIGE** R package; fill in
+  `plink_prefix` and/or sparse GRM paths in the config before Step 1.
 - SAIGE step 1 command templates and outputs (`.rda`, variance ratios) — one null
   model per ancestry stratum per phenotype.
 - GRM construction strategy documented (sparse vs. full, and rationale).
