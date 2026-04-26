@@ -19,23 +19,21 @@ if TYPE_CHECKING:
     import hail as hl
 
 
-def _vcf_row_select_from_mt(mt: "hl.MatrixTable") -> dict[str, "hl.Expression"]:
-    """Row fields required or commonly present for :func:`hail.export_vcf`."""
+def _vcf_export_row_value_fields(mt: "hl.MatrixTable") -> dict[str, "hl.Expression"]:
+    """Non-key row fields to keep for :func:`hail.export_vcf`.
+
+    ``locus`` and ``alleles`` are MatrixTable row keys and must not be passed to
+    :meth:`MatrixTable.select_rows`; they are preserved automatically.
+    """
     hl = _require_hail()
-    out: dict[str, hl.Expression] = {
-        "locus": mt.locus,
-        "alleles": mt.alleles,
-    }
+    out: dict[str, hl.Expression] = {}
     if "rsid" in mt.row:
         out["rsid"] = mt.rsid
     else:
         out["rsid"] = hl.missing(hl.tstr)
-    if "qual" in mt.row:
-        out["qual"] = mt.qual
-    if "filters" in mt.row:
-        out["filters"] = mt.filters
-    if "info" in mt.row:
-        out["info"] = mt.info
+    for name in ("qual", "filters", "info"):
+        if name in mt.row:
+            out[name] = getattr(mt, name)
     return out
 
 
@@ -401,8 +399,7 @@ def build_dense_saige_marker_matrix(
     mt1 = mt1.select_entries(DS=hl.float64(hl.or_else(pred, hl.float64(fill_value))))
     s = getattr(mt1, sample_field)
     mt1 = mt1.key_cols_by(s=hl.str(s))
-    row_sel = _vcf_row_select_from_mt(mt1)
-    return mt1.select_rows(**row_sel)
+    return mt1.select_rows(**_vcf_export_row_value_fields(mt1))
 
 
 def dense_marker_matrix_from_long(
