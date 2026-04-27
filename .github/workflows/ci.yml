@@ -181,7 +181,7 @@ jobs:
         run: |
           cd python
           mkdir -p target/wheels
-          maturin build --release --no-default-features --target ${{ matrix.target }} --manifest-path ../Cargo.toml --out target/wheels
+          maturin build --release --no-default-features --target ${{ matrix.target }} --out target/wheels
 
       - name: Validate wheel contents
         shell: bash
