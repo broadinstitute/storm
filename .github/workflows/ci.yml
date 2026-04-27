@@ -179,10 +179,39 @@ jobs:
       
       - name: Build wheel
         run: |
+          cd python
           maturin build --release --no-default-features --target ${{ matrix.target }}
+
+      - name: Validate wheel contents
+        shell: bash
+        run: |
+          python - <<'PY'
+          import glob
+          import sys
+          import zipfile
+
+          wheels = sorted(glob.glob("python/target/wheels/*.whl"))
+          if not wheels:
+              raise SystemExit("No wheel produced under python/target/wheels")
+          wheel = wheels[-1]
+          required = {
+              "storm/__init__.py",
+              "storm/saige_prep.py",
+              "storm/sv_annotate.py",
+              "storm/tr_sidecar/__init__.py",
+          }
+          with zipfile.ZipFile(wheel) as zf:
+              names = set(zf.namelist())
+          missing = sorted(p for p in required if p not in names)
+          if missing:
+              print(f"Wheel missing required package files: {missing}", file=sys.stderr)
+              print(f"Wheel checked: {wheel}", file=sys.stderr)
+              raise SystemExit(1)
+          print(f"Wheel OK: {wheel}")
+          PY
       
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-wheel-${{ matrix.platform }}-py${{ matrix.python-version }}
-          path: target/wheels/*.whl
+          path: python/target/wheels/*.whl
