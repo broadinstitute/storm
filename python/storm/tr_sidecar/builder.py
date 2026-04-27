@@ -241,6 +241,36 @@ def _site_row(
     }
 
 
+def _json_safe_format(val: Any) -> Any:
+    if val is None:
+        return None
+    if isinstance(val, (bool, int, float, str)):
+        return val
+    if isinstance(val, tuple):
+        return [_json_safe_format(x) for x in val]
+    if isinstance(val, list):
+        return [_json_safe_format(x) for x in val]
+    return str(val)
+
+
+def _sample_format_json(
+    rec: pysam.VariantRecord, sample: str, keys: tuple[str, ...]
+) -> str:
+    """Serialize selected FORMAT fields for one sample (expansion / copy-number annotations)."""
+    if not keys:
+        return "{}"
+    try:
+        samp = rec.samples[sample]
+    except (KeyError, TypeError, AttributeError):
+        return "{}"
+    d: dict[str, Any] = {}
+    for k in keys:
+        if k not in samp:
+            continue
+        d[k] = _json_safe_format(samp[k])
+    return json.dumps(d, sort_keys=True)
+
+
 def _gt_summary(rec: pysam.VariantRecord, sample: str) -> tuple[str, bool, int]:
     try:
         gt = rec.samples[sample]["GT"]
@@ -262,8 +292,16 @@ def build_tr_sidecar(
     *,
     with_entries: bool = False,
     batch_size: int = 50_000,
+    entry_format_fields: tuple[str, ...] = (),
 ) -> SidecarResult:
-    """Stream ``vcf_path``, join ``catalog_path``, write Parquet sidecar under ``out_dir``."""
+    """Stream ``vcf_path``, join ``catalog_path``, write Parquet sidecar under ``out_dir``.
+
+    Parameters
+    ----------
+    entry_format_fields
+        FORMAT field names to copy into ``entries.parquet`` as JSON per (variant, sample),
+        e.g. ``("CN",)`` or caller-specific repeat fields. Only used when ``with_entries`` is True.
+    """
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     catalog_by_chrom = load_catalog(catalog_path)
@@ -300,17 +338,19 @@ def build_tr_sidecar(
 
                 if with_entries and samples:
                     vid = row["variant_id"]
+                    fmt_keys = tuple(entry_format_fields)
                     for s in samples:
                         gt_str, is_carrier, num_alt = _gt_summary(rec, s)
                         entries_buffer.append(
                             {
-                                "schema_version": schema.SCHEMA_VERSION,
+                                "schema_version": schema.ENTRY_SCHEMA_VERSION,
                                 "ruleset_version": schema.RULESET_VERSION,
                                 "variant_id": vid,
                                 "sample": s,
                                 "gt_str": gt_str,
                                 "is_carrier": is_carrier,
                                 "num_alt": num_alt,
+                                "format_json": _sample_format_json(rec, s, fmt_keys),
                             }
                         )
 
@@ -373,6 +413,7 @@ def build_tr_sidecar(
     catalog_sha = _sha256_file(Path(catalog_path))
     manifest = {
         "schema_version": schema.SCHEMA_VERSION,
+        "entry_schema_version": schema.ENTRY_SCHEMA_VERSION,
         "ruleset_version": schema.RULESET_VERSION,
         "sites_path": str(sites_path.resolve()),
         "entries_path": str(entries_path.resolve()) if entries_path else None,
@@ -381,6 +422,7 @@ def build_tr_sidecar(
         "catalog_sha256": catalog_sha,
         "n_variants_processed": n_variants,
         "with_entries": with_entries,
+        "entry_format_fields": list(entry_format_fields),
     }
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 

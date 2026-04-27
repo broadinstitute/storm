@@ -16,7 +16,17 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument(
         "--with-entries",
         action="store_true",
-        help="Also write entries.parquet (per-sample GT summary)",
+        help="Also write entries.parquet (per-sample GT + optional FORMAT JSON)",
+    )
+    p.add_argument(
+        "--entry-format-fields",
+        type=str,
+        default="",
+        help=(
+            "Comma-separated FORMAT names to store per (variant,sample) in entries.parquet "
+            "as JSON (e.g. CN for copy number; caller-specific repeat fields). "
+            "Only applies with --with-entries."
+        ),
     )
     p.add_argument(
         "--batch-size",
@@ -25,12 +35,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Records to buffer before writing a Parquet row group",
     )
     args = p.parse_args(argv)
+    fmt = tuple(x.strip() for x in args.entry_format_fields.split(",") if x.strip())
     res = build_tr_sidecar(
         args.vcf,
         args.catalog,
         args.out,
         with_entries=args.with_entries,
         batch_size=args.batch_size,
+        entry_format_fields=fmt,
     )
     print(
         f"Wrote {res.sites_path} ({res.n_variants} variants)",

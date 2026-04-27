@@ -149,49 +149,10 @@ def annotate_svs(
         sites_path = str(tr_sidecar_sites)
         if sites_path.endswith(".ht"):
             sites = hl.read_table(sites_path)
-        elif hasattr(hl, "import_parquet"):
-            sites = hl.import_parquet(sites_path)
         else:
-            # Many 0.2.x builds (incl. Terra's 0.2.134) lack hl.import_parquet; use pyarrow + explicit schema.
-            import pyarrow.parquet as pq
+            from storm.tr_sidecar.hail_io import read_tr_sidecar_sites_table
 
-            rows = pq.read_table(sites_path).to_pylist()
-            sites_schema = hl.tstruct(
-                schema_version=hl.tstr,
-                ruleset_version=hl.tstr,
-                variant_id=hl.tstr,
-                contig=hl.tstr,
-                pos_start=hl.tint32,
-                pos_end=hl.tint32,
-                ref=hl.tstr,
-                alt=hl.tstr,
-                svtype=hl.tstr,
-                svlen=hl.tint32,
-                end=hl.tint32,
-                motif=hl.tstr,
-                motif_size=hl.tint32,
-                detected=hl.tstr,
-                has_tr_flag=hl.tbool,
-                tr_locus_id=hl.tstr,
-                gene=hl.tstr,
-                motif_primary=hl.tstr,
-                motifs_accepted=hl.tstr,
-                rule_group=hl.tstr,
-                inheritance=hl.tstr,
-                benign_max_repeats=hl.tstr,
-                pathogenic_min_repeats=hl.tstr,
-                motif_change_required=hl.tbool,
-                contraction_pathogenic=hl.tbool,
-                prioritize_in_sv_scan=hl.tbool,
-                sv_scan_default_applicable=hl.tbool,
-                catalog_notes=hl.tstr,
-                catalog_overlap_bp=hl.tint32,
-                match_method=hl.tstr,
-                motif_matches_catalog=hl.tbool,
-                repeat_units_estimate=hl.tfloat64,
-                rule_applicable=hl.tbool,
-            )
-            sites = hl.Table.parallelize(rows, schema=sites_schema)
+            sites = read_tr_sidecar_sites_table(hl, sites_path)
         sites = sites.key_by("variant_id")
         mt2 = mt2.annotate_rows(tr=sites[mt2.allele_id])
 

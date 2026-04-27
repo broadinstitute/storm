@@ -21,17 +21,22 @@ Site table (one row per variant) — ``sites.parquet``:
 
 Entry table (optional) — ``entries.parquet``:
 
-- ``schema_version``, ``ruleset_version``, ``variant_id``, ``sample``
+- ``schema_version`` (use :data:`ENTRY_SCHEMA_VERSION`), ``ruleset_version``, ``variant_id``, ``sample``
 - ``gt_str`` (string): diploid GT summary.
 - ``is_carrier`` (bool): any non-reference allele.
 - ``num_alt`` (int32): count of non-ref alleles in GT.
+- ``format_json`` (string): JSON object of requested per-sample FORMAT fields (expansion callers),
+  e.g. ``CN`` / repeat intervals; ``"{}"`` when none were requested or missing.
 """
 
 from __future__ import annotations
 
 import pyarrow as pa
 
+# Per-row version written in ``sites.parquet`` rows.
 SCHEMA_VERSION = "1"
+# Per-row version written in ``entries.parquet`` rows (bumped when entry columns change).
+ENTRY_SCHEMA_VERSION = "2"
 RULESET_VERSION = "1"
 
 SITE_ARROW_SCHEMA = pa.schema(
@@ -81,5 +86,6 @@ ENTRY_ARROW_SCHEMA = pa.schema(
         ("gt_str", pa.string()),
         ("is_carrier", pa.bool_()),
         ("num_alt", pa.int32()),
+        ("format_json", pa.string()),
     ]
 )
