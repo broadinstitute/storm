@@ -13,30 +13,10 @@ when needed).
 
 from __future__ import annotations
 
-from ._api import (
-    align_matrix_cols_to_manifest,
-    annotate_saige_predictors,
-    annotate_svs,
-    build_dense_saige_marker_matrix,
-    build_feature_inventory,
-    build_feature_vcf_row_lookup,
-    build_long_predictor_tables,
-    build_predictor_feature_qc,
-    build_synthetic_saige_pheno_covar_table,
-    build_tr_sidecar,
-    dense_marker_matrix_from_long,
-    export_long_predictor_tables,
-    export_saige_dosage_vcf,
-    export_saige_phenotype_covariate_tsv,
-    export_saige_stratum_vcfs,
-    print_feature_inventory_stats,
-    print_long_predictor_stats,
-    print_tr_annotation_summary,
-    saige_dosage_vcf_metadata,
-    saige_synthetic_covar_col_list,
-    version,
-    write_unrelated_identity_sparse_grm_for_saige,
-)
+import importlib
+
+# Wheel / environment sanity check (present only in packages that bind API below).
+__STORM_PACKAGE_API__ = "dynamic-v1"
 
 __all__ = [
     "annotate_svs",
@@ -63,6 +43,7 @@ __all__ = [
     "version",
 ]
 
-
-def __dir__() -> list[str]:
-    return list(__all__)
+_api_mod = importlib.import_module(__name__ + "._api")
+for _public in __all__:
+    globals()[_public] = getattr(_api_mod, _public)
+del _api_mod, _public
