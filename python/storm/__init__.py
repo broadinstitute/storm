@@ -6,14 +6,37 @@ Storm is designed for high-performance data processing and analysis tasks.
 Pure-Python modules (e.g. ``storm.tr_sidecar``) work without the compiled
 extension; :func:`version` falls back when ``storm.storm`` is not built.
 
-Public helpers are loaded lazily via :pep:`562` so ``import storm`` does not
-import the native extension first (avoids partial package initialization on
-some hosts).
+The implementation lives in :mod:`storm._api`, which avoids importing the
+native ``storm.storm`` extension at import time (only :func:`version` loads it
+when needed).
 """
 
 from __future__ import annotations
 
-import importlib
+from ._api import (
+    align_matrix_cols_to_manifest,
+    annotate_saige_predictors,
+    annotate_svs,
+    build_dense_saige_marker_matrix,
+    build_feature_inventory,
+    build_feature_vcf_row_lookup,
+    build_long_predictor_tables,
+    build_predictor_feature_qc,
+    build_synthetic_saige_pheno_covar_table,
+    build_tr_sidecar,
+    dense_marker_matrix_from_long,
+    export_long_predictor_tables,
+    export_saige_dosage_vcf,
+    export_saige_phenotype_covariate_tsv,
+    export_saige_stratum_vcfs,
+    print_feature_inventory_stats,
+    print_long_predictor_stats,
+    print_tr_annotation_summary,
+    saige_dosage_vcf_metadata,
+    saige_synthetic_covar_col_list,
+    version,
+    write_unrelated_identity_sparse_grm_for_saige,
+)
 
 __all__ = [
     "annotate_svs",
@@ -39,13 +62,6 @@ __all__ = [
     "export_long_predictor_tables",
     "version",
 ]
-
-
-def __getattr__(name: str):
-    if name not in __all__:
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    mod = importlib.import_module("._api", __name__)
-    return getattr(mod, name)
 
 
 def __dir__() -> list[str]:
