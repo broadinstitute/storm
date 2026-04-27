@@ -146,12 +146,19 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             platform: manylinux
+            python-version: "3.10"
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: manylinux
+            python-version: "3.11"
           - os: macos-latest
             target: aarch64-apple-darwin
             platform: macosx_arm64
+            python-version: "3.11"
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             platform: win_amd64
+            python-version: "3.11"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
@@ -165,7 +172,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
       
       - name: Install maturin
         run: pip install maturin cffi
@@ -175,7 +182,7 @@ jobs:
           maturin build --release --no-default-features --target ${{ matrix.target }}
       
       - name: Upload wheel artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: python-wheel-${{ matrix.platform }}
+          name: python-wheel-${{ matrix.platform }}-py${{ matrix.python-version }}
           path: target/wheels/*.whl
