@@ -22,6 +22,7 @@ hail = ["hail==0.2.134"]
 features = ["python"]
 manifest-path = "../Cargo.toml"
 python-source = "."
+module-name = "storm.storm"
 dependencies = ["cffi"]
 
 [tool.black]
