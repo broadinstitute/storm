@@ -52,9 +52,15 @@ def load_catalog(path: str | Path) -> dict[str, list[TrLocus]]:
                 inheritance=row.get("inheritance", "").strip(),
                 benign_max_repeats=row.get("benign_max_repeats", "").strip(),
                 pathogenic_min_repeats=row.get("pathogenic_min_repeats", "").strip(),
-                motif_change_required=_parse_bool(row.get("motif_change_required", "0")),
-                contraction_pathogenic=_parse_bool(row.get("contraction_pathogenic", "0")),
-                prioritize_in_sv_scan=_parse_bool(row.get("prioritize_in_sv_scan", "1")),
+                motif_change_required=_parse_bool(
+                    row.get("motif_change_required", "0")
+                ),
+                contraction_pathogenic=_parse_bool(
+                    row.get("contraction_pathogenic", "0")
+                ),
+                prioritize_in_sv_scan=_parse_bool(
+                    row.get("prioritize_in_sv_scan", "1")
+                ),
                 sv_scan_default_applicable=_parse_bool(
                     row.get("sv_scan_default_applicable", "1")
                 ),

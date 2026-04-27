@@ -125,7 +125,9 @@ def build_long_predictor_tables(
     tr_quant_label="tr_quantitative",
 ):
     """Build long-form sample-feature predictor tables for SAIGE staging."""
-    from storm.saige_prep import build_long_predictor_tables as _build_long_predictor_tables
+    from storm.saige_prep import (
+        build_long_predictor_tables as _build_long_predictor_tables,
+    )
 
     return _build_long_predictor_tables(
         mt,
@@ -143,7 +145,9 @@ def print_feature_inventory_stats(
     top_n=20,
 ):
     """Print common feature-inventory summary tables for SAIGE prep."""
-    from storm.saige_prep import print_feature_inventory_stats as _print_feature_inventory_stats
+    from storm.saige_prep import (
+        print_feature_inventory_stats as _print_feature_inventory_stats,
+    )
 
     return _print_feature_inventory_stats(
         feature_inventory,
@@ -159,7 +163,9 @@ def print_long_predictor_stats(
     top_n=20,
 ):
     """Print common long-predictor summary tables for SAIGE prep."""
-    from storm.saige_prep import print_long_predictor_stats as _print_long_predictor_stats
+    from storm.saige_prep import (
+        print_long_predictor_stats as _print_long_predictor_stats,
+    )
 
     return _print_long_predictor_stats(
         standard_long,
@@ -176,7 +182,9 @@ def print_tr_annotation_summary(
     top_n=20,
 ):
     """Print TR annotation summary with optional detailed breakdowns."""
-    from storm.saige_prep import print_tr_annotation_summary as _print_tr_annotation_summary
+    from storm.saige_prep import (
+        print_tr_annotation_summary as _print_tr_annotation_summary,
+    )
 
     return _print_tr_annotation_summary(
         mt,
@@ -193,7 +201,9 @@ def build_predictor_feature_qc(
     predictor_field="predictor",
 ):
     """Build feature-level QC summary from a long predictor table."""
-    from storm.saige_prep import build_predictor_feature_qc as _build_predictor_feature_qc
+    from storm.saige_prep import (
+        build_predictor_feature_qc as _build_predictor_feature_qc,
+    )
 
     return _build_predictor_feature_qc(
         predictor_long,
@@ -216,7 +226,9 @@ def export_long_predictor_tables(
     sample_id_field="sample_id",
 ):
     """Export SAIGE staging tables and optional QC/manifest artifacts."""
-    from storm.saige_prep import export_long_predictor_tables as _export_long_predictor_tables
+    from storm.saige_prep import (
+        export_long_predictor_tables as _export_long_predictor_tables,
+    )
 
     return _export_long_predictor_tables(
         standard_long,
@@ -239,7 +251,9 @@ def build_feature_vcf_row_lookup(mt, *, feature_field="allele_id"):
     return _fn(mt, feature_field=feature_field)
 
 
-def align_matrix_cols_to_manifest(mt, manifest_ht, *, sample_id_field="sample_id", col_key="s"):
+def align_matrix_cols_to_manifest(
+    mt, manifest_ht, *, sample_id_field="sample_id", col_key="s"
+):
     """Reorder MatrixTable columns to match a sample manifest table."""
     from storm.saige_prep import align_matrix_cols_to_manifest as _fn
 
@@ -343,7 +357,9 @@ def saige_synthetic_covar_col_list(*, n_pcs=5):
     return _fn(n_pcs=n_pcs)
 
 
-def build_synthetic_saige_pheno_covar_table(manifest_ht, *, sample_id_field="sample_id", iid_output_field="IID", n_pcs=5):
+def build_synthetic_saige_pheno_covar_table(
+    manifest_ht, *, sample_id_field="sample_id", iid_output_field="IID", n_pcs=5
+):
     """Toy phenotype + covariates aligned to a sample manifest (SAIGE Step 1)."""
     from storm.saige_prep import build_synthetic_saige_pheno_covar_table as _fn
 

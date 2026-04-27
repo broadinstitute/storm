@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from .catalog import TrLocus
 
-import pysam
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pysam
 
 from . import schema
 from .catalog import load_catalog, norm_chrom
@@ -377,9 +377,7 @@ def build_tr_sidecar(
                         entries_buffer.clear()
 
         if sites_buffer:
-            table = pa.Table.from_pylist(
-                sites_buffer, schema=schema.SITE_ARROW_SCHEMA
-            )
+            table = pa.Table.from_pylist(sites_buffer, schema=schema.SITE_ARROW_SCHEMA)
             if writer is None:
                 writer = pq.ParquetWriter(str(sites_path), schema.SITE_ARROW_SCHEMA)
             writer.write_table(table)
@@ -390,9 +388,7 @@ def build_tr_sidecar(
                 entry_writer = pq.ParquetWriter(
                     str(entries_path), schema=schema.ENTRY_ARROW_SCHEMA
                 )
-            et = pa.Table.from_pylist(
-                entries_buffer, schema=schema.ENTRY_ARROW_SCHEMA
-            )
+            et = pa.Table.from_pylist(entries_buffer, schema=schema.ENTRY_ARROW_SCHEMA)
             assert entry_writer is not None
             entry_writer.write_table(et)
             entries_buffer.clear()

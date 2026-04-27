@@ -67,7 +67,9 @@ def build_feature_inventory(
         svtype=hl.if_else(hl.is_defined(tr), tr.svtype, ""),
         svlen=rows.svlen,
         tr_locus_id=hl.if_else(hl.is_defined(tr), tr.tr_locus_id, ""),
-        rule_applicable=hl.if_else(hl.is_defined(tr), tr.rule_applicable, hl.missing(hl.tbool)),
+        rule_applicable=hl.if_else(
+            hl.is_defined(tr), tr.rule_applicable, hl.missing(hl.tbool)
+        ),
         motif=hl.if_else(hl.is_defined(tr), tr.motif, ""),
         repeat_units_estimate=hl.if_else(
             hl.is_defined(tr),
@@ -267,8 +269,12 @@ def export_long_predictor_tables(
         standard_path = str(out / f"{prefix}.standard_long.parquet")
         tr_quant_path = str(out / f"{prefix}.tr_quant_long.parquet")
         try:
-            std_to_write.to_spark(flatten=True).write.mode("overwrite").parquet(standard_path)
-            tr_to_write.to_spark(flatten=True).write.mode("overwrite").parquet(tr_quant_path)
+            std_to_write.to_spark(flatten=True).write.mode("overwrite").parquet(
+                standard_path
+            )
+            tr_to_write.to_spark(flatten=True).write.mode("overwrite").parquet(
+                tr_quant_path
+            )
         except NotImplementedError:
             # LocalBackend does not support to_spark(); stage as native Hail tables.
             output_format = "ht"
@@ -308,9 +314,13 @@ def export_long_predictor_tables(
             s_tr = tr_quant_long.select("sample_id")
             sample_manifest_ht = s_std.union(s_tr).distinct().order_by("sample_id")
         else:
-            sample_manifest_ht = sample_manifest.select(
-                sample_id=hl.str(getattr(sample_manifest, sample_id_field))
-            ).distinct().order_by("sample_id")
+            sample_manifest_ht = (
+                sample_manifest.select(
+                    sample_id=hl.str(getattr(sample_manifest, sample_id_field))
+                )
+                .distinct()
+                .order_by("sample_id")
+            )
         sample_manifest_path = str(out / f"{prefix}.sample_manifest.tsv")
         sample_manifest_ht.export(sample_manifest_path)
         emitted["sample_manifest"] = sample_manifest_path
@@ -361,7 +371,9 @@ def align_matrix_cols_to_manifest(
     avoid calling in tight loops on huge clusters without revisiting.
     """
     if col_key not in mt.col_key:
-        raise ValueError(f"expected column key field {col_key!r}, found {list(mt.col_key)}")
+        raise ValueError(
+            f"expected column key field {col_key!r}, found {list(mt.col_key)}"
+        )
     sid_expr = getattr(manifest_ht, sample_id_field)
     # Hail Table.distinct() requires a key; manifests from mt.cols().select(...) are often unkeyed.
     ordered_tbl = (
@@ -396,7 +408,9 @@ def build_dense_saige_marker_matrix(
     """
     hl = _require_hail()
     if stratum not in {standard_label, tr_quant_label}:
-        raise ValueError(f"stratum must be {standard_label!r} or {tr_quant_label!r}, got {stratum!r}")
+        raise ValueError(
+            f"stratum must be {standard_label!r} or {tr_quant_label!r}, got {stratum!r}"
+        )
 
     mt1 = annotate_saige_predictors(
         mt,
@@ -450,11 +464,15 @@ def dense_marker_matrix_from_long(
         col_key=["sample_id"],
         row_fields=["locus", "alleles", "rsid"],
     )
-    mt = mt.annotate_entries(DS=hl.float64(hl.or_else(mt.predictor, hl.float64(fill_value))))
+    mt = mt.annotate_entries(
+        DS=hl.float64(hl.or_else(mt.predictor, hl.float64(fill_value)))
+    )
     mt = mt.drop("predictor")
     mt = mt.key_rows_by(locus=mt.locus, alleles=mt.alleles)
     mt = mt.key_cols_by(s=hl.str(mt.sample_id))
-    drop_row: list[str] = [n for n in ("feature_id", "qual", "filters", "info") if n in mt.row]
+    drop_row: list[str] = [
+        n for n in ("feature_id", "qual", "filters", "info") if n in mt.row
+    ]
     if drop_row:
         mt = mt.drop(*drop_row)
     return mt
@@ -487,7 +505,9 @@ def export_saige_dosage_vcf(
     hl = _require_hail()
     path = str(output_path)
     if not path.endswith(".bgz"):
-        raise ValueError("output_path should end with .vcf.bgz for blocked gzip (tabix / SAIGE)")
+        raise ValueError(
+            "output_path should end with .vcf.bgz for blocked gzip (tabix / SAIGE)"
+        )
     hl.export_vcf(
         mt,
         path,
@@ -531,8 +551,12 @@ def export_saige_stratum_vcfs(
         standard_label=standard_label,
         tr_quant_label=tr_quant_label,
     )
-    m_std = align_matrix_cols_to_manifest(m_std, manifest_ht, sample_id_field=sample_id_field)
-    m_tr = align_matrix_cols_to_manifest(m_tr, manifest_ht, sample_id_field=sample_id_field)
+    m_std = align_matrix_cols_to_manifest(
+        m_std, manifest_ht, sample_id_field=sample_id_field
+    )
+    m_tr = align_matrix_cols_to_manifest(
+        m_tr, manifest_ht, sample_id_field=sample_id_field
+    )
     p_std = str(out / f"{prefix}.{standard_label}.ds.vcf.bgz")
     p_tr = str(out / f"{prefix}.{tr_quant_label}.ds.vcf.bgz")
     export_saige_dosage_vcf(m_std, p_std, parallel=parallel, tabix=tabix)
@@ -604,7 +628,9 @@ def build_synthetic_saige_pheno_covar_table(
             "seq_depth_log": seq_depth_log,
         }
         for k in range(1, n_pcs + 1):
-            row[f"PC{k}"] = float(((h1 // (7 * k)) + h2 * (k + 1)) % 2000) / 1000.0 - 1.0
+            row[f"PC{k}"] = (
+                float(((h1 // (7 * k)) + h2 * (k + 1)) % 2000) / 1000.0 - 1.0
+            )
         rows.append(row)
 
     fields = {
@@ -731,7 +757,9 @@ def print_tr_annotation_summary(
         hl.struct(
             rows_total=hl.agg.count(),
             rows_with_tr_struct=hl.agg.count_where(hl.is_defined(tr)),
-            rows_with_catalog_locus=hl.agg.count_where(hl.is_defined(tr) & (tr.tr_locus_id != "")),
+            rows_with_catalog_locus=hl.agg.count_where(
+                hl.is_defined(tr) & (tr.tr_locus_id != "")
+            ),
             rows_match_method_best_overlap=hl.agg.count_where(
                 hl.is_defined(tr) & (tr.match_method == "best_overlap")
             ),
@@ -755,10 +783,14 @@ def print_tr_annotation_summary(
                 & hl.is_finite(tr.repeat_units_estimate)
             ),
             rows_rule_applicable_true=hl.agg.count_where(
-                hl.is_defined(tr) & hl.is_defined(tr.rule_applicable) & tr.rule_applicable
+                hl.is_defined(tr)
+                & hl.is_defined(tr.rule_applicable)
+                & tr.rule_applicable
             ),
             rows_rule_applicable_false=hl.agg.count_where(
-                hl.is_defined(tr) & hl.is_defined(tr.rule_applicable) & (~tr.rule_applicable)
+                hl.is_defined(tr)
+                & hl.is_defined(tr.rule_applicable)
+                & (~tr.rule_applicable)
             ),
         )
     )
@@ -768,7 +800,9 @@ def print_tr_annotation_summary(
         print(f"{k}: {v}")
     if core.rows_total:
         print("\nSelected percentages")
-        print(f"catalog_locus_pct: {100.0 * core.rows_with_catalog_locus / core.rows_total:.3f}%")
+        print(
+            f"catalog_locus_pct: {100.0 * core.rows_with_catalog_locus / core.rows_total:.3f}%"
+        )
         print(
             f"repeat_units_estimate_pct: {100.0 * core.rows_with_repeat_units_estimate / core.rows_total:.3f}%"
         )

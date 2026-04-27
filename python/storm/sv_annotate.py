@@ -62,15 +62,11 @@ def annotate_svs(
     # then the VCF column-3 id available as ``rsid`` in Hail).
     id_info = mt1.info.ID
     id_from_info = hl.or_missing(
-        hl.is_defined(id_info)
-        & (hl.str(id_info) != "")
-        & (hl.str(id_info) != "."),
+        hl.is_defined(id_info) & (hl.str(id_info) != "") & (hl.str(id_info) != "."),
         hl.str(id_info),
     )
     id_from_rsid = hl.or_missing(
-        hl.is_defined(mt1.rsid)
-        & (hl.str(mt1.rsid) != "")
-        & (hl.str(mt1.rsid) != "."),
+        hl.is_defined(mt1.rsid) & (hl.str(mt1.rsid) != "") & (hl.str(mt1.rsid) != "."),
         hl.str(mt1.rsid),
     )
     raw_id = hl.coalesce(id_from_info, id_from_rsid, "")
@@ -114,7 +110,8 @@ def annotate_svs(
             svlen_from_info = hl.int32(mt2.info.SVLEN)
         elif svlen_dtype in (hl.tarray(hl.tint32), hl.tarray(hl.tint64)):
             svlen_from_info = hl.or_missing(
-                hl.is_defined(mt2.info.SVLEN) & (mt2.a_index - 1 < hl.len(mt2.info.SVLEN)),
+                hl.is_defined(mt2.info.SVLEN)
+                & (mt2.a_index - 1 < hl.len(mt2.info.SVLEN)),
                 hl.int32(mt2.info.SVLEN[mt2.a_index - 1]),
             )
     except Exception:
