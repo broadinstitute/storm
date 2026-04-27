@@ -19,7 +19,7 @@ fn _version() -> PyResult<String> {
 
 #[cfg(feature = "python")]
 #[pymodule]
-fn storm(_py: Python, m: &PyModule) -> PyResult<()> {
+fn storm(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(add, m)?)?;
     m.add_function(wrap_pyfunction!(_version, m)?)?;
     Ok(())
