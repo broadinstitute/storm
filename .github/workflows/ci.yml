@@ -195,6 +195,7 @@ jobs:
           wheel = wheels[-1]
           required = {
               "storm/__init__.py",
+              "storm/_api.py",
               "storm/saige_prep.py",
               "storm/sv_annotate.py",
               "storm/tr_sidecar/__init__.py",
